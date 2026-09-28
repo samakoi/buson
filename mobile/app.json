@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "Bus On",
+    "slug": "bus-on",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.buson.app"
+    },
+    "android": {
+      "package": "com.buson.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1E5AA8"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0D2F52",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#0B1520",
+            "image": "./assets/splash-icon.png"
+          }
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O Bus On usa a câmera para ler o QR Code de embarque dos alunos.",
+          "recordAudioAndroid": false
+        }
+      ]
+    ]
+  }
+}

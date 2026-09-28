@@ -1,0 +1,121 @@
+import React, { useState } from "react";
+import { View } from "react-native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { api } from "../../services/api";
+import { PerfilAlunoAdmin, StatusConta } from "../../types";
+import { useCarregamento } from "../../hooks/useCarregamento";
+import { criarEstilos } from "../../theme/TemaProvider";
+import { Botao, Cabecalho, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista, Pilula, Secao, Tela, Texto, iniciaisDe } from "../../components/ui";
+import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
+import { formatarTelefone } from "../../utils/formatos";
+import { formatarDiaBR, diaISO, tempoRelativo } from "../../utils/datas";
+import { acaoAuditoria, rotuloValorAuditoria, statusConta } from "../../utils/rotulos";
+import type { PilhaAdmin } from "../../navigation/AdminTabs";
+
+export default function PerfilAlunoScreen() {
+  const navegacao = useNavigation();
+  const { alunoId } = useRoute<RouteProp<PilhaAdmin, "PerfilAluno">>().params;
+  const s = useEstilos();
+  const [aluno, setAluno] = useState<PerfilAlunoAdmin | null>(null);
+  const [inativarAberto, setInativarAberto] = useState(false);
+  const [motivo, setMotivo] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
+  const { carregando, atualizando, atualizar } = useCarregamento(async () => {
+    const { data } = await api.get<PerfilAlunoAdmin>(`/alunos/${alunoId}`);
+    setAluno(data);
+  });
+
+  async function alterarStatus(status: StatusConta, motivoTexto?: string) {
+    setSalvando(true);
+    try {
+      const { data } = await api.patch<PerfilAlunoAdmin>(`/alunos/${alunoId}/status`, { status, motivo: motivoTexto || undefined });
+      setAluno(data);
+      setInativarAberto(false);
+      setMotivo("");
+    } catch (err) {
+      avisar("Não foi possível alterar", mensagemDeErro(err, "Tente novamente."));
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  async function ativar() {
+    if (!aluno) return;
+    const ok = await confirmar("Ativar conta", `Ativar a conta de ${aluno.usuario.nome}? O aluno será avisado e poderá usar o transporte.`, { textoConfirmar: "Ativar" });
+    if (ok) alterarStatus("ATIVO");
+  }
+
+  if (carregando || !aluno) return <Carregando />;
+
+  const st = statusConta[aluno.statusConta];
+
+  return (
+    <Tela atualizando={atualizando} onAtualizar={atualizar}>
+      <Cabecalho titulo={aluno.usuario.nome} subtitulo={aluno.universidade.nome} onVoltar={() => navegacao.goBack()} />
+
+      <Card>
+        <View style={s.topo}>
+          <View style={s.avatar}>
+            <Texto variante="titulo" cor="primaria">
+              {iniciaisDe(aluno.usuario.nome)}
+            </Texto>
+          </View>
+          <View style={{ flex: 1, gap: 6 }}>
+            <Pilula texto={st.conta} tom={st.tom} icone={st.icone} />
+            <Texto variante="pequeno" cor="textoSuave">
+              Cadastrado em {formatarDiaBR(diaISO(new Date(aluno.criadoEm)))}
+            </Texto>
+          </View>
+        </View>
+        <View style={s.acoes}>
+          {aluno.statusConta !== "ATIVO" && <Botao titulo="Ativar conta" icone="checkmark-circle" onPress={ativar} carregando={salvando} style={{ flex: 1 }} />}
+          {aluno.statusConta !== "INATIVO" && (
+            <Botao titulo="Inativar" icone="pause-circle-outline" variante="secundario" onPress={() => setInativarAberto(true)} style={{ flex: 1 }} />
+          )}
+        </View>
+      </Card>
+
+      <Secao titulo="Dados" />
+      <Card semPadding>
+        <ItemLista icone="mail-outline" tomIcone="neutro" titulo={aluno.usuario.email} subtitulo="E-mail" />
+        <ItemLista icone="call-outline" tomIcone="neutro" titulo={formatarTelefone(aluno.telefone)} subtitulo="Telefone" />
+        <ItemLista icone="card-outline" tomIcone="neutro" titulo={aluno.matricula ?? "Não informada"} subtitulo="Matrícula" />
+        <ItemLista icone="school-outline" tomIcone="neutro" titulo={aluno.curso ?? "Não informado"} subtitulo="Curso" ultimo />
+      </Card>
+
+      <Secao titulo="Histórico" />
+      <Card semPadding>
+        {aluno.historico.map((h, i) => {
+          const d = h.detalhes as { de?: string; para?: string; motivo?: string | null } | null;
+          const mudanca = d?.de && d?.para ? `${rotuloValorAuditoria(d.de)} → ${rotuloValorAuditoria(d.para)}` : "";
+          return (
+            <ItemLista
+              key={h.id}
+              icone="time-outline"
+              tomIcone="neutro"
+              titulo={acaoAuditoria[h.acao] ?? h.acao}
+              subtitulo={[mudanca, d?.motivo, `${h.usuario ? h.usuario.nome : "Sistema"} • ${tempoRelativo(h.criadoEm)}`].filter(Boolean).join("\n")}
+              ultimo={i === aluno.historico.length - 1}
+            />
+          );
+        })}
+        {aluno.historico.length === 0 && <EstadoVazio icone="time-outline" titulo="Sem registros ainda" />}
+      </Card>
+
+      <Folha visivel={inativarAberto} onFechar={() => setInativarAberto(false)} titulo="Inativar conta">
+        <Texto variante="pequeno" cor="textoSuave">
+          O aluno não poderá usar o transporte enquanto estiver inativo e deixa de ocupar vagas. Ele será avisado.
+        </Texto>
+        <Campo rotulo="Motivo (opcional)" value={motivo} onChangeText={setMotivo} placeholder="Ex.: trancou o semestre" maxLength={200} />
+        <Botao titulo="Inativar conta" icone="pause-circle" variante="perigo" onPress={() => alterarStatus("INATIVO", motivo.trim())} carregando={salvando} style={{ marginTop: 24 }} />
+      </Folha>
+    </Tela>
+  );
+}
+
+const useEstilos = criarEstilos((t) => ({
+  topo: { flexDirection: "row", alignItems: "center", gap: t.espaco.lg },
+  avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: t.cores.primariaSuave, alignItems: "center", justifyContent: "center" },
+  acoes: { flexDirection: "row", gap: t.espaco.sm, marginTop: t.espaco.lg },
+}));

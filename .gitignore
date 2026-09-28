@@ -1,0 +1,21 @@
+# Dependências e builds
+node_modules/
+dist/
+web-build/
+.expo/
+*.tsbuildinfo
+
+# Segredos e configurações locais (nunca versionar)
+.env
+.env.*
+!.env.example
+
+# Arquivos enviados pelos usuários (documentos, fotos)
+backend/uploads/
+
+# Sistema / editores
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

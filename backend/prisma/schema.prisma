@@ -1,0 +1,246 @@
+// Schema do banco de dados do Bus On
+// Documentação: veja Bus_On_Documentacao_Completa.docx, seção 8.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Papel {
+  ALUNO
+  MOTORISTA
+  ADMIN
+}
+
+enum StatusCheckin {
+  CONFIRMADO
+  ESPERA
+  CANCELADO
+}
+
+enum StatusConta {
+  PENDENTE // cadastrado, aguardando validação da matrícula
+  ATIVO
+  INATIVO // temporariamente sem usar o transporte
+}
+
+enum StatusDocumento {
+  PENDENTE // enviado, aguardando o admin abrir
+  EM_ANALISE
+  APROVADO
+  REPROVADO
+}
+
+enum TipoDocumento {
+  DECLARACAO // declaração de matrícula
+  COMPROVANTE // comprovante de matrícula
+  OUTRO
+}
+
+enum CategoriaNotificacao {
+  GERAL
+  CADASTRO
+  DOCUMENTO
+  LEMBRETE
+  DIAS
+  FALTA
+  TRANSPORTE
+  LIBERACAO
+  ROTA
+}
+
+enum StatusViagem {
+  AGUARDANDO
+  EM_ANDAMENTO
+  ENCERRADA
+}
+
+model Usuario {
+  id         String   @id @default(uuid())
+  nome       String
+  email      String   @unique
+  senhaHash  String
+  papel      Papel
+  criadoEm   DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  aluno      Aluno?
+  motorista  Motorista?
+  notificacoes Notificacao[]
+  auditorias   Auditoria[]
+  documentosAnalisados Documento[] @relation("DocumentoAnalisadoPor")
+
+  @@map("usuarios")
+}
+
+model Universidade {
+  id       String   @id @default(uuid())
+  nome     String   @unique
+  endereco String?
+  criadoEm DateTime @default(now())
+
+  alunos      Aluno[]
+  pontosRota  PontoRota[]
+
+  @@map("universidades")
+}
+
+model Aluno {
+  id             String   @id @default(uuid())
+  usuarioId      String   @unique
+  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  universidadeId String
+  universidade   Universidade @relation(fields: [universidadeId], references: [id])
+  qrCode         String   @unique @default(uuid())
+  matricula      String?  @unique
+  curso          String?
+  telefone       String?
+  fotoArquivo    String?
+  statusConta    StatusConta @default(PENDENTE)
+  criadoEm       DateTime @default(now())
+
+  checkins       Checkin[]
+  documentos     Documento[]
+
+  @@map("alunos")
+}
+
+model Onibus {
+  id         String   @id @default(uuid())
+  placa      String   @unique
+  capacidade Int      @default(30)
+  emManutencao         Boolean @default(false)
+  observacaoManutencao String? // ex.: "Troca de pneus, volta na sexta"
+  criadoEm   DateTime @default(now())
+
+  motoristas Motorista[]
+  viagens    Viagem[]
+
+  @@map("onibus")
+}
+
+model Motorista {
+  id        String   @id @default(uuid())
+  usuarioId String   @unique
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  onibusId  String?
+  onibus    Onibus?  @relation(fields: [onibusId], references: [id])
+  criadoEm  DateTime @default(now())
+
+  viagens   Viagem[]
+
+  @@map("motoristas")
+}
+
+model Rota {
+  id       String      @id @default(uuid())
+  nome     String
+  criadoEm DateTime    @default(now())
+
+  pontos   PontoRota[]
+  viagens  Viagem[]
+
+  @@map("rotas")
+}
+
+model PontoRota {
+  id             String       @id @default(uuid())
+  rotaId         String
+  rota           Rota         @relation(fields: [rotaId], references: [id], onDelete: Cascade)
+  universidadeId String
+  universidade   Universidade @relation(fields: [universidadeId], references: [id])
+  ordem          Int
+
+  @@map("pontos_rota")
+}
+
+model Viagem {
+  id          String       @id @default(uuid())
+  rotaId      String
+  rota        Rota         @relation(fields: [rotaId], references: [id])
+  onibusId    String
+  onibus      Onibus       @relation(fields: [onibusId], references: [id])
+  motoristaId String
+  motorista   Motorista    @relation(fields: [motoristaId], references: [id])
+  data        DateTime
+  horario     String
+  vagas       Int          @default(30)
+  status      StatusViagem @default(AGUARDANDO)
+  latitude    Float?
+  longitude   Float?
+  criadoEm    DateTime     @default(now())
+
+  checkins    Checkin[]
+
+  @@map("viagens")
+}
+
+model Checkin {
+  id         String        @id @default(uuid())
+  viagemId   String
+  viagem     Viagem        @relation(fields: [viagemId], references: [id], onDelete: Cascade)
+  alunoId    String
+  aluno      Aluno         @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  status     StatusCheckin @default(CONFIRMADO)
+  embarcado  Boolean       @default(false)
+  posicaoFila Int?
+  criadoEm  DateTime       @default(now())
+  atualizadoEm DateTime    @updatedAt
+
+  @@unique([viagemId, alunoId])
+  @@map("checkins")
+}
+
+model Notificacao {
+  id        String   @id @default(uuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  categoria CategoriaNotificacao @default(GERAL)
+  mensagem  String   @db.VarChar(500)
+  lida      Boolean  @default(false)
+  criadoEm  DateTime @default(now())
+
+  @@index([usuarioId, lida])
+  @@map("notificacoes")
+}
+
+/// Comprovante de matrícula enviado pelo aluno (Fase 2)
+model Documento {
+  id               String          @id @default(uuid())
+  alunoId          String
+  aluno            Aluno           @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  tipo             TipoDocumento
+  arquivo          String // caminho relativo dentro da pasta de uploads
+  nomeOriginal     String
+  mimeType         String
+  tamanho          Int
+  status           StatusDocumento @default(PENDENTE)
+  motivoReprovacao String?         @db.VarChar(300)
+  analisadoPorId   String?
+  analisadoPor     Usuario?        @relation("DocumentoAnalisadoPor", fields: [analisadoPorId], references: [id], onDelete: SetNull)
+  analisadoEm      DateTime?
+  criadoEm         DateTime        @default(now())
+
+  @@index([alunoId, criadoEm])
+  @@index([status])
+  @@map("documentos")
+}
+
+/// Registro de ações importantes (Regra 10 — auditoria)
+model Auditoria {
+  id         String   @id @default(uuid())
+  usuarioId  String?  // quem fez (null = sistema)
+  usuario    Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  acao       String
+  entidade   String
+  entidadeId String
+  detalhes   Json?
+  criadoEm   DateTime @default(now())
+
+  @@index([entidade, entidadeId])
+  @@map("auditorias")
+}
