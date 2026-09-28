@@ -1,13 +1,13 @@
 import React, { useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from "react-native";
-import { useAuth } from "../../contexts/AuthContext";
+import { useSessao } from "../../store/sessao";
 import { criarEstilos } from "../../theme/TemaProvider";
 import { Aviso, Botao, Campo, Texto } from "../../components/ui";
 import { Logo } from "../../components/Logo";
 import { mensagemDeErro } from "../../utils/feedback";
 
 export default function LoginScreen({ onCriarConta }: { onCriarConta: () => void }) {
-  const { login } = useAuth();
+  const { login } = useSessao();
   const s = useEstilos();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");

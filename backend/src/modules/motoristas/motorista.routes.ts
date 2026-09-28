@@ -1,13 +1,14 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma";
-import { autenticar, permitir } from "../../middlewares/auth";
-import { AppError } from "../../middlewares/errorHandler";
+import { autenticar, exigir } from "../../middlewares/auth";
+import { AppError } from "../../errors/AppError";
 import { hashPassword } from "../../utils/password";
+import { registrarAuditoria } from "../auditoria/auditoria.service";
 
 export const motoristaRouter = Router();
 
-motoristaRouter.use(autenticar, permitir("ADMIN"));
+motoristaRouter.use(autenticar, exigir("motoristas:gerenciar"));
 
 const motoristaSelect = {
   id: true,
@@ -39,9 +40,10 @@ motoristaRouter.post("/", async (req, res, next) => {
   try {
     const dados = schema.parse(req.body);
     const existente = await prisma.usuario.findUnique({ where: { email: dados.email } });
-    if (existente) throw new AppError("Este e-mail já está cadastrado.", 409);
+    if (existente) throw new AppError("EMAIL_JA_CADASTRADO");
 
-    const motorista = await prisma.motorista.create({
+    const motorista = await prisma.$transaction(async (tx) => {
+      const criado = await tx.motorista.create({
       data: {
         onibus: dados.onibusId ? { connect: { id: dados.onibusId } } : undefined,
         usuario: {
@@ -49,6 +51,15 @@ motoristaRouter.post("/", async (req, res, next) => {
         },
       },
       select: motoristaSelect,
+      });
+      await registrarAuditoria(tx, {
+        usuarioId: req.usuario!.sub,
+        acao: "MOTORISTA_CADASTRADO",
+        entidade: "Motorista",
+        entidadeId: criado.id,
+        valorNovo: { nome: dados.nome, email: dados.email, onibusId: dados.onibusId ?? null },
+      });
+      return criado;
     });
     res.status(201).json(motorista);
   } catch (err) {
@@ -63,11 +74,20 @@ motoristaRouter.delete("/:id", async (req, res, next) => {
       where: { id: req.params.id },
       include: { _count: { select: { viagens: true } } },
     });
-    if (!motorista) throw new AppError("Motorista não encontrado.", 404);
+    if (!motorista) throw new AppError("MOTORISTA_NAO_ENCONTRADO");
     if (motorista._count.viagens > 0) {
-      throw new AppError("Este motorista tem viagens cadastradas e não pode ser removido.", 409);
+      throw new AppError("MOTORISTA_COM_VIAGENS");
     }
-    await prisma.usuario.delete({ where: { id: motorista.usuarioId } });
+    await prisma.$transaction(async (tx) => {
+      const usuario = await tx.usuario.delete({ where: { id: motorista.usuarioId } });
+      await registrarAuditoria(tx, {
+        usuarioId: req.usuario!.sub,
+        acao: "MOTORISTA_REMOVIDO",
+        entidade: "Motorista",
+        entidadeId: motorista.id,
+        valorAnterior: { nome: usuario.nome, email: usuario.email },
+      });
+    });
     res.status(204).send();
   } catch (err) {
     next(err);

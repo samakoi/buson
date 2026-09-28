@@ -1,41 +1,56 @@
 import { NextFunction, Request, Response } from "express";
 import { Prisma } from "@prisma/client";
+import { MulterError } from "multer";
 import { ZodError } from "zod";
+import { AppError } from "../errors/AppError";
+import { CodigoErro, ERROS } from "../errors/catalogo";
 
-export class AppError extends Error {
-  constructor(public mensagem: string, public status = 400) {
-    super(mensagem);
-  }
-}
+// Mantido para compatibilidade de import; o AppError agora vive em errors/
+export { AppError };
 
 // Erros conhecidos do Prisma que são culpa da requisição, não do servidor
-const errosPrisma: Record<string, { status: number; mensagem: string }> = {
-  P2002: { status: 409, mensagem: "Já existe um cadastro com esses dados." },
-  P2003: { status: 409, mensagem: "Este registro está em uso e não pode ser removido (ou referencia algo que não existe)." },
-  P2025: { status: 404, mensagem: "Registro não encontrado." },
+const errosPrisma: Record<string, CodigoErro> = {
+  P2002: "DUPLICADO",
+  P2003: "EM_USO",
+  P2025: "NAO_ENCONTRADO",
 };
 
 /** Primeira mensagem de validação, traduzindo o "Required" padrão do Zod. */
 function mensagemZod(err: ZodError) {
   const primeiro = err.issues[0];
-  if (!primeiro) return "Dados inválidos.";
+  if (!primeiro) return ERROS.VALIDACAO.mensagem;
   if (primeiro.code === "invalid_type" && primeiro.received === "undefined") {
     return `O campo "${primeiro.path.join(".")}" é obrigatório.`;
   }
   return primeiro.message;
 }
 
-export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+function responder(req: Request, res: Response, status: number, codigo: CodigoErro, mensagem: string, detalhes?: unknown) {
+  return res.status(status).json({
+    error: { code: codigo, message: mensagem, ...(detalhes !== undefined && { details: detalhes }), requestId: req.id },
+  });
+}
+
+/** Formato único de erro: { error: { code, message, details?, requestId } }. */
+export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
   if (err instanceof AppError) {
-    return res.status(err.status).json({ erro: err.mensagem });
+    return responder(req, res, err.status, err.codigo, err.message, err.detalhes);
   }
   if (err instanceof ZodError) {
-    return res.status(400).json({ erro: mensagemZod(err), detalhes: err.flatten() });
+    return responder(req, res, 400, "VALIDACAO", mensagemZod(err), err.flatten());
   }
   if (err instanceof Prisma.PrismaClientKnownRequestError && errosPrisma[err.code]) {
-    const { status, mensagem } = errosPrisma[err.code];
-    return res.status(status).json({ erro: mensagem });
+    const codigo = errosPrisma[err.code];
+    return responder(req, res, ERROS[codigo].status, codigo, ERROS[codigo].mensagem);
   }
-  console.error(err);
-  return res.status(500).json({ erro: "Erro interno do servidor." });
+  if (err instanceof MulterError) {
+    const mensagem = err.code === "LIMIT_FILE_SIZE" ? "O arquivo é grande demais." : "Não foi possível receber o arquivo.";
+    return responder(req, res, 400, "VALIDACAO", mensagem);
+  }
+  if (err instanceof SyntaxError && "body" in err) {
+    return responder(req, res, 400, "VALIDACAO", "O corpo da requisição não é um JSON válido.");
+  }
+  // Inesperado: registra com o requestId e devolve mensagem genérica
+  req.log?.error({ err }, "erro inesperado");
+  return responder(req, res, 500, "ERRO_INTERNO", ERROS.ERRO_INTERNO.mensagem);
 }

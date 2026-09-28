@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { autenticar, permitir } from "../../middlewares/auth";
+import { autenticar, exigir } from "../../middlewares/auth";
 import * as alunoService from "./aluno.service";
 
 export const alunoRouter = Router();
@@ -9,7 +9,7 @@ alunoRouter.use(autenticar);
 
 // ---- Próprio aluno
 
-alunoRouter.get("/me", permitir("ALUNO"), async (req, res, next) => {
+alunoRouter.get("/me", exigir("aluno:proprio"), async (req, res, next) => {
   try {
     res.json(await alunoService.meusDados(req.usuario!.sub));
   } catch (err) {
@@ -30,7 +30,7 @@ const dadosSchema = z.object({
   universidadeId: z.string().uuid("Selecione a universidade.").optional(),
 });
 
-alunoRouter.patch("/me", permitir("ALUNO"), async (req, res, next) => {
+alunoRouter.patch("/me", exigir("aluno:proprio"), async (req, res, next) => {
   try {
     res.json(await alunoService.atualizarMeusDados(req.usuario!.sub, dadosSchema.parse(req.body)));
   } catch (err) {
@@ -50,7 +50,7 @@ const listarSchema = z.object({
   porPagina: z.coerce.number().int().min(1).max(100).default(20),
 });
 
-alunoRouter.get("/", permitir("ADMIN"), async (req, res, next) => {
+alunoRouter.get("/", exigir("alunos:ler"), async (req, res, next) => {
   try {
     res.json(await alunoService.listar(listarSchema.parse(req.query)));
   } catch (err) {
@@ -58,7 +58,7 @@ alunoRouter.get("/", permitir("ADMIN"), async (req, res, next) => {
   }
 });
 
-alunoRouter.get("/:id", permitir("ADMIN"), async (req, res, next) => {
+alunoRouter.get("/:id", exigir("alunos:ler"), async (req, res, next) => {
   try {
     res.json(await alunoService.detalhar(req.params.id));
   } catch (err) {
@@ -68,7 +68,7 @@ alunoRouter.get("/:id", permitir("ADMIN"), async (req, res, next) => {
 
 const statusSchema = z.object({ status, motivo: z.string().trim().max(200).optional() });
 
-alunoRouter.patch("/:id/status", permitir("ADMIN"), async (req, res, next) => {
+alunoRouter.patch("/:id/status", exigir("alunos:gerenciar"), async (req, res, next) => {
   try {
     const { status: novo, motivo } = statusSchema.parse(req.body);
     await alunoService.alterarStatus(req.params.id, novo, motivo, req.usuario!.sub);

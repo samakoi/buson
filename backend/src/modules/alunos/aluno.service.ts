@@ -1,6 +1,6 @@
 import { Prisma, StatusConta } from "@prisma/client";
 import { prisma } from "../../config/prisma";
-import { AppError } from "../../middlewares/errorHandler";
+import { AppError } from "../../errors/AppError";
 import { historico, registrarAuditoria } from "../auditoria/auditoria.service";
 import { notificarAluno } from "../notificacoes/notificacao.service";
 
@@ -64,7 +64,7 @@ export async function listar(f: FiltroAlunos) {
 /** Perfil completo (admin). */
 export async function detalhar(alunoId: string) {
   const aluno = await prisma.aluno.findUnique({ where: { id: alunoId }, select: alunoResumo });
-  if (!aluno) throw new AppError("Aluno não encontrado.", 404);
+  if (!aluno) throw new AppError("ALUNO_NAO_ENCONTRADO");
   return { ...aluno, historico: await historico("Aluno", alunoId) };
 }
 
@@ -72,7 +72,7 @@ export async function detalhar(alunoId: string) {
 export async function alterarStatus(alunoId: string, status: StatusConta, motivo: string | undefined, adminId: string) {
   return prisma.$transaction(async (tx) => {
     const aluno = await tx.aluno.findUnique({ where: { id: alunoId } });
-    if (!aluno) throw new AppError("Aluno não encontrado.", 404);
+    if (!aluno) throw new AppError("ALUNO_NAO_ENCONTRADO");
     if (aluno.statusConta === status) return aluno;
 
     const atualizado = await tx.aluno.update({ where: { id: alunoId }, data: { statusConta: status } });
@@ -81,7 +81,9 @@ export async function alterarStatus(alunoId: string, status: StatusConta, motivo
       acao: "STATUS_CONTA_ALTERADO",
       entidade: "Aluno",
       entidadeId: alunoId,
-      detalhes: { de: aluno.statusConta, para: status, motivo: motivo ?? null },
+      detalhes: { motivo: motivo ?? null },
+      valorAnterior: { statusConta: aluno.statusConta },
+      valorNovo: { statusConta: status },
     });
 
     const mensagens: Record<StatusConta, string> = {
@@ -97,7 +99,7 @@ export async function alterarStatus(alunoId: string, status: StatusConta, motivo
 /** Dados do próprio aluno + o que falta para completar o cadastro. */
 export async function meusDados(usuarioId: string) {
   const aluno = await prisma.aluno.findUnique({ where: { usuarioId }, select: alunoResumo });
-  if (!aluno) throw new AppError("Perfil de aluno não encontrado para este usuário.", 404);
+  if (!aluno) throw new AppError("PERFIL_ALUNO_NAO_ENCONTRADO");
   const pendencias: string[] = [];
   if (!aluno.matricula || !aluno.curso || !aluno.telefone) pendencias.push("DADOS_ACADEMICOS");
   return { ...aluno, pendencias };
@@ -114,11 +116,11 @@ export interface DadosAcademicos {
 export async function atualizarMeusDados(usuarioId: string, dados: DadosAcademicos) {
   return prisma.$transaction(async (tx) => {
     const aluno = await tx.aluno.findUnique({ where: { usuarioId } });
-    if (!aluno) throw new AppError("Perfil de aluno não encontrado para este usuário.", 404);
+    if (!aluno) throw new AppError("PERFIL_ALUNO_NAO_ENCONTRADO");
 
     if (dados.matricula && dados.matricula !== aluno.matricula) {
       const dono = await tx.aluno.findUnique({ where: { matricula: dados.matricula } });
-      if (dono) throw new AppError("Esta matrícula já está cadastrada para outro aluno.", 409);
+      if (dono) throw new AppError("MATRICULA_JA_CADASTRADA");
     }
 
     if (dados.nome) await tx.usuario.update({ where: { id: usuarioId }, data: { nome: dados.nome } });
@@ -139,7 +141,8 @@ export async function atualizarMeusDados(usuarioId: string, dados: DadosAcademic
         acao: "UNIVERSIDADE_ALTERADA",
         entidade: "Aluno",
         entidadeId: aluno.id,
-        detalhes: { de: aluno.universidadeId, para: dados.universidadeId },
+        valorAnterior: { universidadeId: aluno.universidadeId },
+        valorNovo: { universidadeId: dados.universidadeId },
       });
     }
     return { ok: true };

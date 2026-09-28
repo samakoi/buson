@@ -1,13 +1,13 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma";
-import { autenticar, permitir } from "../../middlewares/auth";
-import { AppError } from "../../middlewares/errorHandler";
+import { autenticar, exigir } from "../../middlewares/auth";
+import { AppError } from "../../errors/AppError";
 import { formatarDia, intervaloDeDias, parseDia, somarDias } from "../../utils/datas";
 
 export const dashboardRouter = Router();
 
-dashboardRouter.use(autenticar, permitir("ADMIN"));
+dashboardRouter.use(autenticar, exigir("dashboard:ler"));
 
 dashboardRouter.get("/resumo", async (_req, res, next) => {
   try {
@@ -80,9 +80,9 @@ dashboardRouter.get("/relatorio", async (req, res, next) => {
     const hoje = formatarDia(new Date());
     const inicio = parseDia(q.inicio ?? q.fim ?? hoje);
     const fim = parseDia(q.fim ?? q.inicio ?? hoje);
-    if (fim < inicio) throw new AppError("A data final deve ser igual ou posterior à inicial.", 400);
+    if (fim < inicio) throw new AppError("PERIODO_INVALIDO");
     const totalDias = Math.round((fim.getTime() - inicio.getTime()) / 86_400_000) + 1;
-    if (totalDias > MAX_DIAS) throw new AppError(`O período máximo é de ${MAX_DIAS} dias.`, 400);
+    if (totalDias > MAX_DIAS) throw new AppError("PERIODO_MUITO_LONGO");
 
     const viagens = await prisma.viagem.findMany({
       where: { data: intervaloDeDias(inicio, fim) },

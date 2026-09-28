@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { DarkTheme, DefaultTheme, NavigationContainer, Theme } from "@react-navigation/native";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "../contexts/AuthContext";
+import { useSessao } from "../store/sessao";
 import { useTema } from "../theme/TemaProvider";
 import { Carregando } from "../components/ui";
 import { NotificacoesProvider } from "../contexts/NotificacoesContext";
@@ -28,7 +28,12 @@ function FluxoDeEntrada() {
 }
 
 export default function RootNavigator() {
-  const { usuario, carregando } = useAuth();
+  const { usuario, carregando, iniciar } = useSessao();
+
+  // Lê a sessão salva no aparelho ao abrir o app
+  useEffect(() => {
+    iniciar();
+  }, [iniciar]);
   const { cores, escuro } = useTema();
 
   // Tema do React Navigation montado a partir dos nossos tokens

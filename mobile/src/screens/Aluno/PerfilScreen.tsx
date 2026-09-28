@@ -5,7 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { api } from "../../services/api";
 import { MeusDados } from "../../types";
-import { useAuth } from "../../contexts/AuthContext";
+import { useSessao } from "../../store/sessao";
 import { useCarregamento } from "../../hooks/useCarregamento";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
 import { Aviso, Botao, Cabecalho, Card, Carregando, ItemLista, Pilula, Secao, Tela, Texto, iniciaisDe } from "../../components/ui";
@@ -16,7 +16,7 @@ import type { PilhaAluno } from "../../navigation/AlunoTabs";
 /** Central do cadastro do aluno: status da conta e os passos para ficar ativo. */
 export default function PerfilScreen() {
   const navegacao = useNavigation<NativeStackNavigationProp<PilhaAluno>>();
-  const { logout } = useAuth();
+  const { logout } = useSessao();
   const { cores } = useTema();
   const s = useEstilos();
   const [dados, setDados] = useState<MeusDados | null>(null);

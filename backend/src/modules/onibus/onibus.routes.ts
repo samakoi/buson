@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma";
-import { autenticar, permitir } from "../../middlewares/auth";
+import { autenticar, exigir } from "../../middlewares/auth";
 import { inicioDoDia } from "../../utils/datas";
 import { notificarAlunos } from "../notificacoes/notificacao.service";
+import { diferenca, registrarAuditoria } from "../auditoria/auditoria.service";
+import { AppError } from "../../errors/AppError";
 
 export const onibusRouter = Router();
 
@@ -22,7 +24,7 @@ onibusRouter.get("/status", async (_req, res, next) => {
   }
 });
 
-onibusRouter.use(permitir("ADMIN"));
+onibusRouter.use(exigir("frota:gerenciar"));
 
 onibusRouter.get("/", async (_req, res, next) => {
   try {
@@ -41,7 +43,11 @@ const schema = z.object({
 onibusRouter.post("/", async (req, res, next) => {
   try {
     const dados = schema.parse(req.body);
-    const onibus = await prisma.onibus.create({ data: dados });
+    const onibus = await prisma.$transaction(async (tx) => {
+      const criado = await tx.onibus.create({ data: dados });
+      await registrarAuditoria(tx, { usuarioId: req.usuario!.sub, acao: "ONIBUS_CADASTRADO", entidade: "Onibus", entidadeId: criado.id, valorNovo: dados });
+      return criado;
+    });
     res.status(201).json(onibus);
   } catch (err) {
     next(err);
@@ -51,7 +57,14 @@ onibusRouter.post("/", async (req, res, next) => {
 onibusRouter.patch("/:id", async (req, res, next) => {
   try {
     const dados = schema.partial().parse(req.body);
-    const onibus = await prisma.onibus.update({ where: { id: req.params.id }, data: dados });
+    const onibus = await prisma.$transaction(async (tx) => {
+      const antes = await tx.onibus.findUnique({ where: { id: req.params.id } });
+      if (!antes) throw new AppError("ONIBUS_NAO_ENCONTRADO");
+      const atualizado = await tx.onibus.update({ where: { id: antes.id }, data: dados });
+      const { valorAnterior, valorNovo, mudou } = diferenca(antes, dados);
+      if (mudou) await registrarAuditoria(tx, { usuarioId: req.usuario!.sub, acao: "ONIBUS_ALTERADO", entidade: "Onibus", entidadeId: antes.id, valorAnterior, valorNovo });
+      return atualizado;
+    });
     res.json(onibus);
   } catch (err) {
     next(err);
@@ -66,9 +79,21 @@ const manutencaoSchema = z.object({
 onibusRouter.patch("/:id/manutencao", async (req, res, next) => {
   try {
     const { emManutencao, observacao } = manutencaoSchema.parse(req.body);
-    const onibus = await prisma.onibus.update({
-      where: { id: req.params.id },
-      data: { emManutencao, observacaoManutencao: emManutencao ? observacao || null : null },
+    const novos = { emManutencao, observacaoManutencao: emManutencao ? observacao || null : null };
+    const onibus = await prisma.$transaction(async (tx) => {
+      const antes = await tx.onibus.findUnique({ where: { id: req.params.id } });
+      if (!antes) throw new AppError("ONIBUS_NAO_ENCONTRADO");
+      const atualizado = await tx.onibus.update({ where: { id: antes.id }, data: novos });
+      const { valorAnterior, valorNovo } = diferenca(antes, novos);
+      await registrarAuditoria(tx, {
+        usuarioId: req.usuario!.sub,
+        acao: emManutencao ? "ONIBUS_EM_MANUTENCAO" : "ONIBUS_LIBERADO",
+        entidade: "Onibus",
+        entidadeId: antes.id,
+        valorAnterior,
+        valorNovo,
+      });
+      return atualizado;
     });
 
     // Avisa os alunos com check-in ativo nas próximas viagens deste ônibus
@@ -92,7 +117,16 @@ onibusRouter.patch("/:id/manutencao", async (req, res, next) => {
 
 onibusRouter.delete("/:id", async (req, res, next) => {
   try {
-    await prisma.onibus.delete({ where: { id: req.params.id } });
+    await prisma.$transaction(async (tx) => {
+      const removido = await tx.onibus.delete({ where: { id: req.params.id } });
+      await registrarAuditoria(tx, {
+        usuarioId: req.usuario!.sub,
+        acao: "ONIBUS_REMOVIDO",
+        entidade: "Onibus",
+        entidadeId: removido.id,
+        valorAnterior: { placa: removido.placa, capacidade: removido.capacidade },
+      });
+    });
     res.status(204).send();
   } catch (err) {
     next(err);

@@ -5,7 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { api } from "../../services/api";
 import { MeusDados, Viagem } from "../../types";
-import { useAuth } from "../../contexts/AuthContext";
+import { useSessao } from "../../store/sessao";
 import { useNotificacoes } from "../../contexts/NotificacoesContext";
 import { useCarregamento } from "../../hooks/useCarregamento";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
@@ -32,7 +32,7 @@ function useAgora() {
 }
 
 export default function AlunoHomeScreen() {
-  const { usuario } = useAuth();
+  const { usuario } = useSessao();
   const { atualizar: atualizarAvisos } = useNotificacoes();
   const navegacao = useNavigation<BottomTabNavigationProp<AbasAluno>>();
   const { cores } = useTema();

@@ -1,23 +1,23 @@
 import { Router } from "express";
 import * as viagemController from "./viagem.controller";
-import { autenticar, permitir } from "../../middlewares/auth";
+import { autenticar, exigir } from "../../middlewares/auth";
 
 export const viagemRouter = Router();
 
 viagemRouter.use(autenticar);
 
 viagemRouter.get("/", viagemController.listar);
-viagemRouter.get("/atual", permitir("ALUNO", "MOTORISTA"), viagemController.atual);
-viagemRouter.get("/:id/passageiros", permitir("MOTORISTA", "ADMIN"), viagemController.passageiros);
+viagemRouter.get("/atual", exigir("viagem:atual"), viagemController.atual);
+viagemRouter.get("/:id/passageiros", exigir("viagem:passageiros"), viagemController.passageiros);
 viagemRouter.get("/:id/rota", viagemController.rotaDoDia);
 
-viagemRouter.post("/", permitir("ADMIN"), viagemController.criar);
-viagemRouter.delete("/:id", permitir("ADMIN"), viagemController.excluir);
+viagemRouter.post("/", exigir("viagens:gerenciar"), viagemController.criar);
+viagemRouter.delete("/:id", exigir("viagens:gerenciar"), viagemController.excluir);
 
-viagemRouter.post("/:id/checkin", permitir("ALUNO"), viagemController.checkin);
-viagemRouter.post("/:id/checkin/cancelar", permitir("ALUNO"), viagemController.cancelarCheckin);
+viagemRouter.post("/:id/checkin", exigir("checkin:fazer"), viagemController.checkin);
+viagemRouter.post("/:id/checkin/cancelar", exigir("checkin:fazer"), viagemController.cancelarCheckin);
 
-viagemRouter.post("/:id/embarque", permitir("MOTORISTA"), viagemController.embarque);
-viagemRouter.post("/:id/iniciar", permitir("MOTORISTA"), viagemController.iniciar);
-viagemRouter.post("/:id/encerrar", permitir("MOTORISTA"), viagemController.encerrar);
-viagemRouter.post("/:id/localizacao", permitir("MOTORISTA"), viagemController.localizacao);
+viagemRouter.post("/:id/embarque", exigir("viagem:operar"), viagemController.embarque);
+viagemRouter.post("/:id/iniciar", exigir("viagem:operar"), viagemController.iniciar);
+viagemRouter.post("/:id/encerrar", exigir("viagem:operar"), viagemController.encerrar);
+viagemRouter.post("/:id/localizacao", exigir("viagem:operar"), viagemController.localizacao);

@@ -1,7 +1,7 @@
 import { app } from "./app";
 import { env } from "./config/env";
+import { logger } from "./config/logger";
 
 app.listen(env.port, () => {
-  console.log(`🚌 Bus On API rodando em http://localhost:${env.port}`);
-  console.log(`   Documentação rápida: http://localhost:${env.port}/api`);
+  logger.info({ porta: env.port, ambiente: env.ambiente }, `Bus On API rodando em http://localhost:${env.port}/api/v1`);
 });

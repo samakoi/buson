@@ -1,7 +1,9 @@
+import bcrypt from "bcryptjs";
 import { prisma } from "../../config/prisma";
 import { hashPassword, comparePassword } from "../../utils/password";
-import { signAccessToken, signRefreshToken } from "../../utils/jwt";
-import { AppError } from "../../middlewares/errorHandler";
+import { gerarRefreshToken, hashToken, signAccessToken } from "../../utils/jwt";
+import { env } from "../../config/env";
+import { AppError } from "../../errors/AppError";
 import { registrarAuditoria } from "../auditoria/auditoria.service";
 import { notificarAdmins } from "../notificacoes/notificacao.service";
 
@@ -14,7 +16,7 @@ interface CadastroAlunoInput {
 
 export async function cadastrarAluno(input: CadastroAlunoInput) {
   const existente = await prisma.usuario.findUnique({ where: { email: input.email } });
-  if (existente) throw new AppError("Este e-mail já está cadastrado.", 409);
+  if (existente) throw new AppError("EMAIL_JA_CADASTRADO");
 
   const senhaHash = await hashPassword(input.senha);
 
@@ -57,24 +59,134 @@ export async function perfil(usuarioId: string) {
       aluno: { select: { id: true, qrCode: true, statusConta: true, universidade: { select: { id: true, nome: true } } } },
     },
   });
-  if (!usuario) throw new AppError("Usuário não encontrado.", 404);
+  if (!usuario) throw new AppError("USUARIO_NAO_ENCONTRADO");
   return usuario;
 }
 
-export async function login(email: string, senha: string) {
+/** Dados do dispositivo que abriu a sessão (para listar e encerrar sessões). */
+export interface ContextoSessao {
+  deviceId?: string;
+  ip?: string;
+  userAgent?: string;
+}
+
+// Hash usado quando o e-mail não existe: o tempo de resposta fica igual ao de uma senha errada
+const HASH_FICTICIO = bcrypt.hashSync("usuario-inexistente", 10);
+
+async function criarSessao(db: Pick<typeof prisma, "refreshToken">, usuarioId: string, ctx: ContextoSessao) {
+  const { token, hash } = gerarRefreshToken();
+  const expiraEm = new Date(Date.now() + env.refreshTokenDias * 86_400_000);
+  const sessao = await db.refreshToken.create({
+    data: {
+      usuarioId,
+      tokenHash: hash,
+      deviceId: ctx.deviceId?.slice(0, 100),
+      ip: ctx.ip?.slice(0, 64),
+      userAgent: ctx.userAgent?.slice(0, 255),
+      expiraEm,
+    },
+  });
+  return { token, sessao };
+}
+
+export async function login(email: string, senha: string, ctx: ContextoSessao = {}) {
   const usuario = await prisma.usuario.findUnique({ where: { email } });
-  if (!usuario) throw new AppError("E-mail ou senha inválidos.", 401);
+  const senhaConfere = await comparePassword(senha, usuario?.senhaHash ?? HASH_FICTICIO);
+  if (!usuario || !senhaConfere) throw new AppError("CREDENCIAIS_INVALIDAS");
 
-  const senhaConfere = await comparePassword(senha, usuario.senhaHash);
-  if (!senhaConfere) throw new AppError("E-mail ou senha inválidos.", 401);
-
-  const payload = { sub: usuario.id, papel: usuario.papel };
-  const accessToken = signAccessToken(payload);
-  const refreshToken = signRefreshToken(payload);
-
+  const { token } = await criarSessao(prisma, usuario.id, ctx);
   return {
-    accessToken,
-    refreshToken,
+    accessToken: signAccessToken({ sub: usuario.id, papel: usuario.papel }),
+    refreshToken: token,
     usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, papel: usuario.papel },
   };
+}
+
+/** Reuso de um token já rotacionado (sinal de roubo): encerra a família de sessões do dispositivo. */
+async function derrubarSessoesDoDispositivo(usuarioId: string, deviceId: string | null) {
+  await prisma.refreshToken.updateMany({
+    where: { usuarioId, deviceId, revogadoEm: null },
+    data: { revogadoEm: new Date() },
+  });
+}
+
+/**
+ * Troca o refresh token por um novo par (rotação). Se um token já trocado for
+ * reapresentado — sinal de roubo —, todas as sessões daquele dispositivo caem.
+ */
+export async function renovar(refreshToken: string, ctx: ContextoSessao = {}) {
+  const atual = await prisma.refreshToken.findUnique({
+    where: { tokenHash: hashToken(refreshToken) },
+    include: { usuario: { select: { id: true, papel: true } } },
+  });
+  if (!atual) throw new AppError("REFRESH_INVALIDO");
+
+  if (atual.revogadoEm) {
+    // Fora de transação de propósito: a revogação precisa persistir mesmo com o erro abaixo
+    if (atual.substituidoPorId) await derrubarSessoesDoDispositivo(atual.usuarioId, atual.deviceId);
+    throw new AppError("SESSAO_REVOGADA");
+  }
+  if (atual.expiraEm < new Date()) throw new AppError("REFRESH_INVALIDO");
+
+  const novo = await prisma.$transaction(async (tx) => {
+    const { token, sessao } = await criarSessao(tx, atual.usuarioId, {
+      deviceId: atual.deviceId ?? ctx.deviceId,
+      ip: ctx.ip,
+      userAgent: ctx.userAgent ?? atual.userAgent ?? undefined,
+    });
+    // Troca atômica: só revoga se ainda estiver ativo. Se outra renovação com o
+    // mesmo token chegou antes, count = 0 e esta é tratada como reuso.
+    const { count } = await tx.refreshToken.updateMany({
+      where: { id: atual.id, revogadoEm: null },
+      data: { revogadoEm: new Date(), substituidoPorId: sessao.id, ultimoUsoEm: new Date() },
+    });
+    if (count === 0) {
+      await tx.refreshToken.delete({ where: { id: sessao.id } });
+      return null;
+    }
+    return token;
+  });
+
+  if (!novo) {
+    await derrubarSessoesDoDispositivo(atual.usuarioId, atual.deviceId);
+    throw new AppError("SESSAO_REVOGADA");
+  }
+  return {
+    accessToken: signAccessToken({ sub: atual.usuario.id, papel: atual.usuario.papel }),
+    refreshToken: novo,
+  };
+}
+
+/** Sair deste dispositivo: revoga a sessão do refresh token informado. */
+export async function logout(refreshToken: string) {
+  await prisma.refreshToken.updateMany({
+    where: { tokenHash: hashToken(refreshToken), revogadoEm: null },
+    data: { revogadoEm: new Date() },
+  });
+}
+
+/** Sair de todos os dispositivos. */
+export async function logoutTodos(usuarioId: string) {
+  const { count } = await prisma.refreshToken.updateMany({
+    where: { usuarioId, revogadoEm: null },
+    data: { revogadoEm: new Date() },
+  });
+  return { sessoesEncerradas: count };
+}
+
+export async function listarSessoes(usuarioId: string) {
+  return prisma.refreshToken.findMany({
+    where: { usuarioId, revogadoEm: null, expiraEm: { gt: new Date() } },
+    select: { id: true, deviceId: true, ip: true, userAgent: true, criadoEm: true, ultimoUsoEm: true },
+    orderBy: { ultimoUsoEm: "desc" },
+  });
+}
+
+/** Encerrar a sessão de um dispositivo específico (tela "Aparelhos conectados"). */
+export async function revogarSessao(usuarioId: string, sessaoId: string) {
+  const { count } = await prisma.refreshToken.updateMany({
+    where: { id: sessaoId, usuarioId, revogadoEm: null },
+    data: { revogadoEm: new Date() },
+  });
+  if (count === 0) throw new AppError("SESSAO_NAO_ENCONTRADA");
 }

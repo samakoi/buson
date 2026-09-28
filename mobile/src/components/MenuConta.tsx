@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Pressable, View } from "react-native";
-import { useAuth } from "../contexts/AuthContext";
+import { useSessao } from "../store/sessao";
 import { criarEstilos } from "../theme/TemaProvider";
-import { confirmar } from "../utils/feedback";
+import { avisar, confirmar, mensagemDeErro } from "../utils/feedback";
 import { nomePapel } from "../utils/rotulos";
 import { Texto } from "./Texto";
 import { Folha } from "./Folha";
@@ -16,7 +16,7 @@ export function iniciaisDe(nome: string) {
 
 /** Avatar com as iniciais; ao tocar, mostra a conta e o botão de sair. */
 export function MenuConta() {
-  const { usuario, logout } = useAuth();
+  const { usuario, logout, sairDeTodos } = useSessao();
   const s = useEstilos();
   const [aberto, setAberto] = useState(false);
   if (!usuario) return null;
@@ -25,6 +25,21 @@ export function MenuConta() {
     if (await confirmar("Sair da conta", "Deseja realmente sair?", { textoConfirmar: "Sair", destrutivo: true })) {
       setAberto(false);
       logout();
+    }
+  }
+
+  async function sairDeTodosOsAparelhos() {
+    const ok = await confirmar(
+      "Sair de todos os aparelhos",
+      "Sua conta será desconectada deste e de todos os outros aparelhos. Use se perdeu o celular ou entrou num aparelho de outra pessoa.",
+      { textoConfirmar: "Sair de todos", destrutivo: true }
+    );
+    if (!ok) return;
+    try {
+      setAberto(false);
+      await sairDeTodos();
+    } catch (err) {
+      avisar("Não foi possível sair", mensagemDeErro(err, "Tente novamente."));
     }
   }
 
@@ -57,7 +72,8 @@ export function MenuConta() {
             <Pilula texto={nomePapel[usuario.papel]} tom="info" />
           </View>
         </View>
-        <Botao titulo="Sair da conta" icone="log-out-outline" variante="perigoFantasma" onPress={sair} style={{ marginTop: 8 }} />
+        <Botao titulo="Sair deste aparelho" icone="log-out-outline" variante="perigoFantasma" onPress={sair} style={{ marginTop: 8 }} />
+        <Botao titulo="Sair de todos os aparelhos" icone="phone-portrait-outline" variante="fantasma" onPress={sairDeTodosOsAparelhos} />
       </Folha>
     </>
   );

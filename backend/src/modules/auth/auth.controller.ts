@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import * as authService from "./auth.service";
-import { verifyRefreshToken, signAccessToken } from "../../utils/jwt";
-import { AppError } from "../../middlewares/errorHandler";
+
 
 const email = z.string().trim().toLowerCase().email("Informe um e-mail válido.");
 
@@ -13,10 +12,23 @@ const cadastroSchema = z.object({
   universidadeId: z.string().uuid("Selecione sua universidade."),
 });
 
+const deviceId = z.string().trim().max(100).optional();
+
 const loginSchema = z.object({
   email,
   senha: z.string().min(1, "Informe a senha."),
+  deviceId,
 });
+
+const refreshSchema = z.object({
+  refreshToken: z.string().min(20, "Sessão inválida. Entre novamente."),
+  deviceId,
+});
+
+/** Dados do aparelho que ficam na sessão (IP real via "trust proxy" atrás do Cloudflare). */
+function contexto(req: Request, deviceIdInformado?: string): authService.ContextoSessao {
+  return { deviceId: deviceIdInformado, ip: req.ip, userAgent: req.get("user-agent") ?? undefined };
+}
 
 export async function cadastrar(req: Request, res: Response, next: NextFunction) {
   try {
@@ -30,9 +42,8 @@ export async function cadastrar(req: Request, res: Response, next: NextFunction)
 
 export async function autenticar(req: Request, res: Response, next: NextFunction) {
   try {
-    const { email, senha } = loginSchema.parse(req.body);
-    const resultado = await authService.login(email, senha);
-    res.json(resultado);
+    const { email, senha, deviceId: dispositivo } = loginSchema.parse(req.body);
+    res.json(await authService.login(email, senha, contexto(req, dispositivo)));
   } catch (err) {
     next(err);
   }
@@ -49,12 +60,44 @@ export async function me(req: Request, res: Response, next: NextFunction) {
 
 export async function renovarToken(req: Request, res: Response, next: NextFunction) {
   try {
-    const { refreshToken } = req.body;
-    if (!refreshToken) throw new AppError("refreshToken é obrigatório.", 400);
-    const payload = verifyRefreshToken(refreshToken);
-    const accessToken = signAccessToken({ sub: payload.sub, papel: payload.papel });
-    res.json({ accessToken });
-  } catch {
-    next(new AppError("Refresh token inválido ou expirado.", 401));
+    const { refreshToken, deviceId: dispositivo } = refreshSchema.parse(req.body);
+    res.json(await authService.renovar(refreshToken, contexto(req, dispositivo)));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function sair(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { refreshToken } = refreshSchema.parse(req.body);
+    await authService.logout(refreshToken);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function sairDeTodos(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await authService.logoutTodos(req.usuario!.sub));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function sessoes(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await authService.listarSessoes(req.usuario!.sub));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function encerrarSessao(req: Request, res: Response, next: NextFunction) {
+  try {
+    await authService.revogarSessao(req.usuario!.sub, req.params.id);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
   }
 }

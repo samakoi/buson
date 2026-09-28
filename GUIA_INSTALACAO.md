@@ -117,8 +117,9 @@ Se tudo certo, aparece:
 🚌 Bus On API rodando em http://localhost:3333
 ```
 
-Teste no navegador: abra `http://localhost:3333/api` — deve retornar um JSON
-`{"nome":"Bus On API","status":"online", ...}`.
+Teste no navegador: abra `http://localhost:3333/api/v1/saude` — deve retornar um JSON
+`{"data":{"api":"ok","banco":"ok", ...}}` (todas as respostas da API vêm dentro de `data`;
+erros vêm como `{"error":{"code":"...","message":"..."}}`).
 
 ### Explorar o banco visualmente (opcional)
 
@@ -146,10 +147,10 @@ conforme como você vai testar o app:
 
 | Onde você vai testar | Valor de `API_URL` |
 |---|---|
-| Navegador (`npx expo start --web`) | `http://localhost:3333/api` (já é o padrão) |
-| Emulador Android (Android Studio) | `http://10.0.2.2:3333/api` |
-| Simulador iOS (Mac) | `http://localhost:3333/api` |
-| Celular físico com o app **Expo Go** | `http://SEU_IP_LOCAL:3333/api` |
+| Navegador (`npx expo start --web`) | `http://localhost:3333/api/v1` (já é o padrão) |
+| Emulador Android (Android Studio) | `http://10.0.2.2:3333/api/v1` |
+| Simulador iOS (Mac) | `http://localhost:3333/api/v1` |
+| Celular físico com o app **Expo Go** | `http://SEU_IP_LOCAL:3333/api/v1` |
 
 Para descobrir o "SEU_IP_LOCAL" (necessário para testar no celular físico, já
 que ele precisa enxergar seu computador na mesma rede Wi-Fi):
@@ -159,13 +160,13 @@ que ele precisa enxergar seu computador na mesma rede Wi-Fi):
 
 Exemplo final no arquivo:
 ```ts
-export const API_URL = "http://192.168.0.10:3333/api";
+export const API_URL = "http://192.168.0.10:3333/api/v1";
 ```
 
 Ou, sem editar o arquivo, defina a variável ao iniciar o Expo:
 
 ```bash
-EXPO_PUBLIC_API_URL=http://192.168.0.10:3333/api npx expo start
+EXPO_PUBLIC_API_URL=http://192.168.0.10:3333/api/v1 npx expo start
 ```
 
 > ⚠️ O celular e o computador precisam estar **na mesma rede Wi-Fi** para isso

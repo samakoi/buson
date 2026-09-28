@@ -1,5 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { verifyAccessToken, JwtPayload } from "../utils/jwt";
+import { AppError } from "../errors/AppError";
+import { Permissao, temPermissao } from "../auth/permissoes";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -10,25 +12,22 @@ declare global {
   }
 }
 
-export function autenticar(req: Request, res: Response, next: NextFunction) {
+export function autenticar(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
-  if (!header?.startsWith("Bearer ")) {
-    return res.status(401).json({ erro: "Token de acesso não informado." });
-  }
-  const token = header.replace("Bearer ", "");
+  if (!header?.startsWith("Bearer ")) return next(new AppError("NAO_AUTENTICADO"));
   try {
-    req.usuario = verifyAccessToken(token);
+    req.usuario = verifyAccessToken(header.slice("Bearer ".length));
     next();
   } catch {
-    return res.status(401).json({ erro: "Token inválido ou expirado." });
+    next(new AppError("TOKEN_INVALIDO"));
   }
 }
 
-export function permitir(...papeis: Array<"ALUNO" | "MOTORISTA" | "ADMIN">) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.usuario || !papeis.includes(req.usuario.papel)) {
-      return res.status(403).json({ erro: "Você não tem permissão para acessar este recurso." });
-    }
+/** Exige ao menos uma das permissões (o backend sempre valida — nunca só a interface). */
+export function exigir(...permissoes: Permissao[]) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    if (!req.usuario) return next(new AppError("NAO_AUTENTICADO"));
+    if (!permissoes.some((p) => temPermissao(req.usuario!.papel, p))) return next(new AppError("SEM_PERMISSAO"));
     next();
   };
 }

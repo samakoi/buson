@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { prisma } from "../config/prisma";
 import { authRouter } from "../modules/auth/auth.routes";
 import { viagemRouter } from "../modules/viagens/viagem.routes";
 import { universidadeRouter } from "../modules/universidades/universidade.routes";
@@ -12,7 +13,17 @@ import { alunoRouter } from "../modules/alunos/aluno.routes";
 export const routes = Router();
 
 routes.get("/", (_req, res) => {
-  res.json({ nome: "Bus On API", status: "online", versao: "1.0.0" });
+  res.json({ nome: "Bus On API", status: "online", versao: "1.0.0", api: "v1" });
+});
+
+// Saúde: usado pelo Cloudflare/monitoramento para saber se API e banco respondem
+routes.get("/saude", async (_req, res, next) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ api: "ok", banco: "ok", horario: new Date().toISOString() });
+  } catch (err) {
+    next(err);
+  }
 });
 
 routes.use("/auth", authRouter);

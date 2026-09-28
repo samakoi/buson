@@ -7,7 +7,7 @@ import { Cabecalho, Card, EstadoVazio, ItemLista, Secao, Tela } from "../../comp
 import { diaISO, tempoRelativo } from "../../utils/datas";
 import { Notificacao, Papel } from "../../types";
 import { categoriaAviso } from "../../utils/rotulos";
-import { useAuth } from "../../contexts/AuthContext";
+import { useSessao } from "../../store/sessao";
 
 const subtituloPorPapel: Record<Papel, string> = {
   ALUNO: "Vagas, documentos, lembretes e transporte",
@@ -24,7 +24,7 @@ const vazioPorPapel: Record<Papel, string> = {
 export default function AvisosScreen() {
   const { itens, naoLidas, atualizar, marcarTodasComoLidas } = useNotificacoes();
   const { cores } = useTema();
-  const { usuario } = useAuth();
+  const { usuario } = useSessao();
   const focada = useIsFocused();
   const [atualizando, setAtualizando] = useState(false);
   // Guarda quais estavam não lidas ao abrir a tela, para destacá-las mesmo depois de marcar como lidas

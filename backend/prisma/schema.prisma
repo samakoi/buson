@@ -73,6 +73,7 @@ model Usuario {
   notificacoes Notificacao[]
   auditorias   Auditoria[]
   documentosAnalisados Documento[] @relation("DocumentoAnalisadoPor")
+  refreshTokens RefreshToken[]
 
   @@map("usuarios")
 }
@@ -239,8 +240,31 @@ model Auditoria {
   entidade   String
   entidadeId String
   detalhes   Json?
+  valorAnterior Json?
+  valorNovo     Json?
   criadoEm   DateTime @default(now())
 
   @@index([entidade, entidadeId])
   @@map("auditorias")
+}
+
+/// Sessão de um dispositivo (refresh token com rotação e revogação).
+/// Só o hash SHA-256 do token é guardado.
+model RefreshToken {
+  id               String    @id @default(uuid())
+  usuarioId        String
+  usuario          Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tokenHash        String    @unique @db.Char(64)
+  deviceId         String?   @db.VarChar(100)
+  ip               String?   @db.VarChar(64)
+  userAgent        String?   @db.VarChar(255)
+  expiraEm         DateTime
+  revogadoEm       DateTime?
+  /// Preenchido na rotação: aponta para o token que substituiu este
+  substituidoPorId String?
+  ultimoUsoEm      DateTime  @default(now())
+  criadoEm         DateTime  @default(now())
+
+  @@index([usuarioId, revogadoEm])
+  @@map("refresh_tokens")
 }

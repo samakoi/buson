@@ -37,10 +37,20 @@ export function confirmar(titulo: string, mensagem: string, opcoes: OpcoesConfir
   });
 }
 
-/** Mensagem de erro da API (campo `erro`) ou um texto padrão. */
+interface ErroDaApi {
+  response?: { data?: { error?: { code?: string; message?: string } } };
+  message?: string;
+}
+
+/** Mensagem de erro da API ({ error: { message } }) ou um texto padrão. */
 export function mensagemDeErro(err: unknown, padrao: string): string {
-  const e = err as { response?: { data?: { erro?: string } }; message?: string };
-  if (e?.response?.data?.erro) return e.response.data.erro;
+  const e = err as ErroDaApi;
+  if (e?.response?.data?.error?.message) return e.response.data.error.message;
   if (e?.message === "Network Error") return "Sem conexão com o servidor. Verifique sua internet e tente novamente.";
   return padrao;
+}
+
+/** Código estável do erro da API (ex.: "VIAGEM_ENCERRADA"), para decidir o que mostrar. */
+export function codigoDeErro(err: unknown): string | undefined {
+  return (err as ErroDaApi)?.response?.data?.error?.code;
 }

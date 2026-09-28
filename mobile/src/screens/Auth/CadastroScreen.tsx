@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, TextInput, View } from "react-native";
-import { useAuth } from "../../contexts/AuthContext";
+import { useSessao } from "../../store/sessao";
 import { api } from "../../services/api";
 import { Universidade } from "../../types";
 import { criarEstilos } from "../../theme/TemaProvider";
@@ -8,7 +8,7 @@ import { Aviso, Botao, BotaoIcone, Campo, Chips, Rotulo, Texto } from "../../com
 import { mensagemDeErro } from "../../utils/feedback";
 
 export default function CadastroScreen({ onVoltar }: { onVoltar: () => void }) {
-  const { login } = useAuth();
+  const { login } = useSessao();
   const s = useEstilos();
   const [universidades, setUniversidades] = useState<Universidade[]>([]);
   const [nome, setNome] = useState("");

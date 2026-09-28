@@ -1,6 +1,6 @@
 // Datas "de calendário" (sem hora) usam o fuso do servidor, no formato YYYY-MM-DD.
 
-import { AppError } from "../middlewares/errorHandler";
+import { AppError } from "../errors/AppError";
 
 const FORMATO_DIA = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -8,7 +8,7 @@ const FORMATO_DIA = /^(\d{4})-(\d{2})-(\d{2})$/;
 export function parseDia(dia: string): Date {
   const m = FORMATO_DIA.exec(dia);
   const data = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(NaN);
-  if (!m || data.getMonth() !== Number(m[2]) - 1) throw new AppError(`Data inválida: ${dia}.`, 400);
+  if (!m || data.getMonth() !== Number(m[2]) - 1) throw new AppError("DATA_INVALIDA", `Data inválida: ${dia}.`);
   return data;
 }
 

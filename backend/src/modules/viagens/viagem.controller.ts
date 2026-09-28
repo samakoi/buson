@@ -2,17 +2,17 @@ import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma";
 import * as viagemService from "./viagem.service";
-import { AppError } from "../../middlewares/errorHandler";
+import { AppError } from "../../errors/AppError";
 
 async function getAlunoId(usuarioId: string) {
   const aluno = await prisma.aluno.findUnique({ where: { usuarioId } });
-  if (!aluno) throw new AppError("Perfil de aluno não encontrado para este usuário.", 404);
+  if (!aluno) throw new AppError("PERFIL_ALUNO_NAO_ENCONTRADO");
   return aluno.id;
 }
 
 async function getMotoristaId(usuarioId: string) {
   const motorista = await prisma.motorista.findUnique({ where: { usuarioId } });
-  if (!motorista) throw new AppError("Perfil de motorista não encontrado para este usuário.", 404);
+  if (!motorista) throw new AppError("PERFIL_MOTORISTA_NAO_ENCONTRADO");
   return motorista.id;
 }
 
@@ -42,7 +42,7 @@ const novaViagemSchema = z.object({
 export async function criar(req: Request, res: Response, next: NextFunction) {
   try {
     const dados = novaViagemSchema.parse(req.body);
-    const viagem = await viagemService.criarViagem(dados);
+    const viagem = await viagemService.criarViagem(dados, req.usuario!.sub);
     res.status(201).json(viagem);
   } catch (err) {
     next(err);
@@ -51,7 +51,7 @@ export async function criar(req: Request, res: Response, next: NextFunction) {
 
 export async function excluir(req: Request, res: Response, next: NextFunction) {
   try {
-    res.json(await viagemService.excluirViagem(req.params.id));
+    res.json(await viagemService.excluirViagem(req.params.id, req.usuario!.sub));
   } catch (err) {
     next(err);
   }
