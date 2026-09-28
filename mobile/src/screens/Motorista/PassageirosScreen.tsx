@@ -23,15 +23,15 @@ export default function PassageirosScreen() {
     { intervaloMs: 20_000 }
   );
 
-  // Alternativa ao leitor de QR (aluno sem celular, câmera com defeito etc.)
+  // Emergência: aluno sem celular, câmera com defeito etc. (fica auditado no servidor)
   async function confirmarManualmente(item: Checkin) {
     if (!viagem) return;
-    const ok = await confirmar("Confirmar embarque", `Confirmar o embarque de ${item.aluno.usuario.nome} sem ler o QR Code?`, {
+    const ok = await confirmar("Confirmar embarque manual", `${item.aluno.usuario.nome} não conseguiu escanear o QR? Confirmar o embarque manualmente (fica registrado)?`, {
       textoConfirmar: "Confirmar",
     });
     if (!ok) return;
     try {
-      await api.post(`/viagens/${viagem.id}/embarque`, { qrCode: item.aluno.qrCode });
+      await api.post(`/viagens/${viagem.id}/embarque/manual`, { alunoId: item.alunoId });
       await recarregar();
     } catch (err) {
       avisar("Não foi possível confirmar", mensagemDeErro(err, "Tente novamente."));

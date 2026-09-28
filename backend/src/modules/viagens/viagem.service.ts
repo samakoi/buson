@@ -5,13 +5,14 @@ import { JwtPayload } from "../../utils/jwt";
 import { formatarDia, inicioDoDia, intervaloDeHoje, parseDia } from "../../utils/datas";
 import { notificarAluno, notificarAlunos } from "../notificacoes/notificacao.service";
 import { registrarAuditoria } from "../auditoria/auditoria.service";
+import { encerrarSessoes } from "../embarque/embarque.service";
 
 /**
  * Regras de negócio implementadas aqui (ver Bus_On_Documentacao_Completa.docx, seção 3):
  *  - 3.1 Reserva antecipada: check-in fecha automaticamente ao atingir o limite de vagas.
  *  - 3.2 Lista de espera inteligente: cancelamento promove automaticamente o próximo da fila.
  *  - 3.3 Rota inteligente: pontos sem alunos confirmados são sinalizados como removidos do dia.
- *  - 3.5 QR Code: motorista confirma embarque validando o QR Code do aluno.
+ *  - 3.5 Embarque: o aluno escaneia o QR temporário do motorista (ver modules/embarque).
  */
 
 type Tx = Prisma.TransactionClient;
@@ -97,13 +98,14 @@ export async function listarViagens(usuario: JwtPayload, filtro: FiltroViagensAd
     include: {
       ...viagemInclude,
       checkins: { where: { alunoId: aluno.id }, select: { status: true, embarcado: true, criadoEm: true } },
+      embarques: { where: { alunoId: aluno.id }, select: { dataHora: true, metodo: true } },
     },
     orderBy: { horario: "asc" },
   });
   const resumos = await resumirViagens(viagens.map((v) => v.id));
 
   return Promise.all(
-    viagens.map(async ({ checkins, ...viagem }) => {
+    viagens.map(async ({ checkins, embarques, ...viagem }) => {
       const resumo = resumos.get(viagem.id)!;
       const meu = checkins[0];
       // Posição na lista de espera = quantos entraram na fila antes dele + 1
@@ -117,7 +119,9 @@ export async function listarViagens(usuario: JwtPayload, filtro: FiltroViagensAd
         ...viagem,
         resumo,
         vagasRestantes: Math.max(0, viagem.vagas - resumo.confirmados),
-        meuCheckin: meu ? { status: meu.status, embarcado: meu.embarcado, posicaoFila } : null,
+        meuCheckin: meu
+          ? { status: meu.status, embarcado: meu.embarcado, embarcadoEm: embarques[0]?.dataHora ?? null, posicaoFila }
+          : null,
       };
     })
   );
@@ -294,36 +298,6 @@ export async function cancelarCheckin(viagemId: string, alunoId: string) {
   });
 }
 
-/** Regra 3.5 — o motorista lê o QR Code do aluno (Aluno.qrCode) e confirma o embarque. */
-export async function confirmarEmbarque(viagemId: string, qrCode: string, motoristaId: string) {
-  const viagem = await buscarViagemDoMotorista(viagemId, motoristaId);
-  if (viagem.status !== "EM_ANDAMENTO") {
-    throw new AppError("VIAGEM_NAO_INICIADA");
-  }
-
-  const aluno = await prisma.aluno.findUnique({
-    where: { qrCode },
-    include: { usuario: usuarioPublico, universidade: true },
-  });
-  if (!aluno) throw new AppError("QR_NAO_RECONHECIDO");
-
-  const checkin = await prisma.checkin.findUnique({
-    where: { viagemId_alunoId: { viagemId, alunoId: aluno.id } },
-  });
-  if (!checkin || checkin.status !== "CONFIRMADO") {
-    throw new AppError("SEM_VAGA_CONFIRMADA", `${aluno.usuario.nome} não possui vaga confirmada nesta viagem.`);
-  }
-  if (checkin.embarcado) {
-    throw new AppError("EMBARQUE_JA_CONFIRMADO", `O embarque de ${aluno.usuario.nome} já foi confirmado.`);
-  }
-
-  const atualizado = await prisma.checkin.update({
-    where: { id: checkin.id },
-    data: { embarcado: true },
-  });
-  return { ...atualizado, aluno: { nome: aluno.usuario.nome, universidade: aluno.universidade.nome } };
-}
-
 export async function listarPassageiros(viagemId: string, usuario: JwtPayload) {
   if (usuario.papel === "MOTORISTA") {
     const motorista = await prisma.motorista.findUnique({ where: { usuarioId: usuario.sub } });
@@ -333,7 +307,7 @@ export async function listarPassageiros(viagemId: string, usuario: JwtPayload) {
 
   return prisma.checkin.findMany({
     where: { viagemId, status: { in: ["CONFIRMADO", "ESPERA"] } },
-    include: { aluno: { include: { usuario: usuarioPublico, universidade: true } } },
+    include: { aluno: { select: { id: true, usuario: usuarioPublico, universidade: true } } },
     orderBy: [{ status: "asc" }, { criadoEm: "asc" }],
   });
 }
@@ -381,7 +355,12 @@ const erroTransicaoInvalida = {
 async function alterarStatusViagem(viagemId: string, motoristaId: string, de: StatusViagem, para: "EM_ANDAMENTO" | "ENCERRADA") {
   const viagem = await buscarViagemDoMotorista(viagemId, motoristaId);
   if (viagem.status !== de) throw new AppError(erroTransicaoInvalida[para]);
-  return prisma.viagem.update({ where: { id: viagemId }, data: { status: para } });
+  return prisma.$transaction(async (tx) => {
+    const atualizada = await tx.viagem.update({ where: { id: viagemId }, data: { status: para } });
+    // Viagem encerrada: o QR de embarque deixa de valer na hora
+    if (para === "ENCERRADA") await encerrarSessoes(tx, viagemId);
+    return atualizada;
+  });
 }
 
 export async function atualizarLocalizacao(viagemId: string, motoristaId: string, latitude: number, longitude: number) {

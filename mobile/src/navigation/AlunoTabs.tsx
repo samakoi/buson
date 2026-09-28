@@ -4,13 +4,13 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useNotificacoes } from "../contexts/NotificacoesContext";
 import { iconeAba, useOpcoesAbas } from "./opcoesAbas";
 import HomeScreen from "../screens/Aluno/HomeScreen";
-import QRCodeScreen from "../screens/Aluno/QRCodeScreen";
+import EmbarcarScreen from "../features/embarque/EmbarcarScreen";
 import OnibusScreen from "../screens/Aluno/OnibusScreen";
 import PerfilScreen from "../screens/Aluno/PerfilScreen";
 import DadosAcademicosScreen from "../screens/Aluno/DadosAcademicosScreen";
 import AvisosScreen from "../screens/Comum/AvisosScreen";
 
-export type AbasAluno = { Início: undefined; "QR Code": undefined; Ônibus: undefined; Avisos: undefined; Perfil: undefined };
+export type AbasAluno = { Início: undefined; Embarcar: undefined; Ônibus: undefined; Avisos: undefined; Perfil: undefined };
 export type PilhaAluno = { Abas: undefined; DadosAcademicos: undefined };
 
 const Tab = createBottomTabNavigator<AbasAluno>();
@@ -22,7 +22,7 @@ function Abas() {
   return (
     <Tab.Navigator screenOptions={opcoes}>
       <Tab.Screen name="Início" component={HomeScreen} options={{ tabBarIcon: iconeAba("home", "home-outline") }} />
-      <Tab.Screen name="QR Code" component={QRCodeScreen} options={{ tabBarIcon: iconeAba("qr-code", "qr-code-outline") }} />
+      <Tab.Screen name="Embarcar" component={EmbarcarScreen} options={{ tabBarIcon: iconeAba("scan-circle", "scan-circle-outline") }} />
       <Tab.Screen name="Ônibus" component={OnibusScreen} options={{ tabBarIcon: iconeAba("bus", "bus-outline") }} />
       <Tab.Screen
         name="Avisos"

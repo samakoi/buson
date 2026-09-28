@@ -56,7 +56,7 @@ export async function perfil(usuarioId: string) {
       nome: true,
       email: true,
       papel: true,
-      aluno: { select: { id: true, qrCode: true, statusConta: true, universidade: { select: { id: true, nome: true } } } },
+      aluno: { select: { id: true, statusConta: true, universidade: { select: { id: true, nome: true } } } },
     },
   });
   if (!usuario) throw new AppError("USUARIO_NAO_ENCONTRADO");

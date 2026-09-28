@@ -49,10 +49,14 @@ export const ERROS = {
   ENCERRAMENTO_INVALIDO: { status: 409, mensagem: "Só é possível encerrar uma viagem em andamento." },
   ONIBUS_EM_MANUTENCAO: { status: 409, mensagem: "O ônibus desta viagem está em manutenção. Fale com a administração." },
 
-  // ---- Embarque
-  QR_NAO_RECONHECIDO: { status: 404, mensagem: "QR Code não reconhecido." },
-  SEM_VAGA_CONFIRMADA: { status: 400, mensagem: "Este aluno não possui vaga confirmada nesta viagem." },
-  EMBARQUE_JA_CONFIRMADO: { status: 409, mensagem: "O embarque deste aluno já foi confirmado." },
+  VIAGEM_ENCERRADA: { status: 409, mensagem: "Esta viagem já foi encerrada." },
+
+  // ---- Embarque (QR temporário do motorista)
+  QR_INVALIDO: { status: 400, mensagem: "Embarque não autorizado: este QR Code não é desta viagem ou já foi substituído. Escaneie o QR que está na tela do motorista." },
+  QR_EXPIRADO: { status: 400, mensagem: "Embarque não autorizado: o QR Code expirou. Peça ao motorista para atualizar o QR." },
+  ROTA_INCOMPATIVEL: { status: 403, mensagem: "Embarque não autorizado: sua instituição não faz parte da rota desta viagem." },
+  SEM_VAGA_CONFIRMADA: { status: 400, mensagem: "Embarque não autorizado: não há vaga confirmada nesta viagem." },
+  EMBARQUE_JA_CONFIRMADO: { status: 409, mensagem: "O embarque já foi confirmado nesta viagem." },
 
   // ---- Relatórios e datas
   DATA_INVALIDA: { status: 400, mensagem: "Data inválida." },

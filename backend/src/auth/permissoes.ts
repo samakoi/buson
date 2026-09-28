@@ -7,6 +7,7 @@ import { Papel } from "@prisma/client";
 export type Permissao =
   | "aluno:proprio" // dados, dias, documentos do próprio aluno
   | "checkin:fazer"
+  | "embarque:escanear" // aluno escaneia o QR do motorista
   | "viagem:atual" // ver a viagem do dia
   | "viagem:passageiros"
   | "viagem:operar" // iniciar, encerrar, embarque manual, localização
@@ -35,7 +36,7 @@ const ADMINISTRACAO: Permissao[] = [
 ];
 
 export const PERMISSOES_POR_PAPEL: Record<PapelComPrevistos, readonly Permissao[]> = {
-  ALUNO: ["aluno:proprio", "checkin:fazer", "viagem:atual"],
+  ALUNO: ["aluno:proprio", "checkin:fazer", "embarque:escanear", "viagem:atual"],
   MOTORISTA: ["viagem:atual", "viagem:passageiros", "viagem:operar"],
   ADMIN: ADMINISTRACAO,
   // Previstos para a operação em escala (Secretarias, empresas de transporte):

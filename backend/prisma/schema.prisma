@@ -41,6 +41,11 @@ enum TipoDocumento {
   OUTRO
 }
 
+enum MetodoEmbarque {
+  QR_MOTORISTA // aluno escaneou o QR temporário exibido pelo motorista
+  MANUAL // confirmado pelo motorista (recurso de emergência)
+}
+
 enum CategoriaNotificacao {
   GERAL
   CADASTRO
@@ -106,6 +111,7 @@ model Aluno {
 
   checkins       Checkin[]
   documentos     Documento[]
+  embarques      Embarque[]
 
   @@map("alunos")
 }
@@ -120,6 +126,7 @@ model Onibus {
 
   motoristas Motorista[]
   viagens    Viagem[]
+  sessoesEmbarque BoardingSession[]
 
   @@map("onibus")
 }
@@ -133,6 +140,7 @@ model Motorista {
   criadoEm  DateTime @default(now())
 
   viagens   Viagem[]
+  sessoesEmbarque BoardingSession[]
 
   @@map("motoristas")
 }
@@ -176,6 +184,8 @@ model Viagem {
   criadoEm    DateTime     @default(now())
 
   checkins    Checkin[]
+  sessoesEmbarque BoardingSession[]
+  embarques   Embarque[]
 
   @@map("viagens")
 }
@@ -229,6 +239,49 @@ model Documento {
   @@index([alunoId, criadoEm])
   @@index([status])
   @@map("documentos")
+}
+
+/// Sessão de embarque: o QR temporário que o motorista exibe durante a viagem.
+/// O QR carrega um token aleatório; o banco guarda só o hash.
+model BoardingSession {
+  id          String    @id @default(uuid())
+  viagemId    String
+  viagem      Viagem    @relation(fields: [viagemId], references: [id], onDelete: Cascade)
+  motoristaId String
+  motorista   Motorista @relation(fields: [motoristaId], references: [id])
+  onibusId    String
+  onibus      Onibus    @relation(fields: [onibusId], references: [id])
+  tokenHash   String    @unique @db.Char(64)
+  expiraEm    DateTime
+  ativa       Boolean   @default(true)
+  criadoEm    DateTime  @default(now())
+
+  embarques Embarque[]
+
+  @@index([viagemId, ativa])
+  @@map("boarding_sessions")
+}
+
+/// Histórico de embarques (um por aluno por viagem)
+model Embarque {
+  id              String           @id @default(uuid())
+  viagemId        String
+  viagem          Viagem           @relation(fields: [viagemId], references: [id], onDelete: Cascade)
+  alunoId         String
+  aluno           Aluno            @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  metodo          MetodoEmbarque
+  sessaoId        String?
+  sessao          BoardingSession? @relation(fields: [sessaoId], references: [id], onDelete: SetNull)
+  /// Quem registrou no embarque manual (motorista)
+  registradoPorId String?
+  dataHora        DateTime         @default(now())
+  /// Localização opcional (será usada na fase de GPS)
+  latitude        Float?
+  longitude       Float?
+  criadoEm        DateTime         @default(now())
+
+  @@unique([viagemId, alunoId])
+  @@map("embarques")
 }
 
 /// Registro de ações importantes (Regra 10 — auditoria)

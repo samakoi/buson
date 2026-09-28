@@ -11,7 +11,6 @@ export interface Usuario {
 export interface Perfil extends Usuario {
   aluno: {
     id: string;
-    qrCode: string;
     universidade: { id: string; nome: string };
     statusConta: StatusConta;
   } | null;
@@ -67,7 +66,7 @@ export interface Viagem {
   /** Só vem para o aluno */
   vagasRestantes?: number;
   /** Só vem para o aluno: o check-in dele nesta viagem */
-  meuCheckin?: { status: StatusCheckin; embarcado: boolean; posicaoFila: number | null } | null;
+  meuCheckin?: { status: StatusCheckin; embarcado: boolean; embarcadoEm?: string | null; posicaoFila: number | null } | null;
 }
 
 export interface Checkin {
@@ -76,7 +75,6 @@ export interface Checkin {
   status: StatusCheckin;
   embarcado: boolean;
   aluno: {
-    qrCode: string;
     universidade: { nome: string };
     usuario: { nome: string };
   };

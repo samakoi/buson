@@ -7,9 +7,10 @@ import { Viagem } from "../../types";
 import { useCarregamento } from "../../hooks/useCarregamento";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
 import { Aviso, BarraProgresso, Botao, Cabecalho, Card, Carregando, EstadoVazio, Estatistica, GradeEstatisticas, Pilula, Tela, Texto } from "../../components/ui";
-import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
+import { avisar, mensagemDeErro } from "../../utils/feedback";
 import { statusViagem } from "../../utils/rotulos";
 import type { AbasMotorista } from "../../navigation/MotoristaTabs";
+import { useEncerrarViagem } from "../../features/viagens/api";
 
 export default function PainelScreen() {
   const navegacao = useNavigation<BottomTabNavigationProp<AbasMotorista>>();
@@ -40,27 +41,10 @@ export default function PainelScreen() {
     }
   }
 
-  async function encerrar() {
-    if (!viagem) return;
-    const faltando = viagem.resumo.confirmados - viagem.resumo.embarcados;
-    const ok = await confirmar(
-      "Encerrar viagem",
-      faltando > 0
-        ? `${faltando} aluno(s) com vaga confirmada ainda não embarcaram e serão registrados como falta. Deseja encerrar mesmo assim?`
-        : "Todos os alunos confirmados embarcaram. Deseja encerrar a viagem?",
-      { textoConfirmar: "Encerrar", destrutivo: faltando > 0 }
-    );
-    if (!ok) return;
-    setProcessando(true);
-    try {
-      await api.post(`/viagens/${viagem.id}/encerrar`);
-      await recarregar();
-    } catch (err) {
-      avisar("Não foi possível encerrar", mensagemDeErro(err, "Tente novamente."));
-    } finally {
-      setProcessando(false);
-    }
-  }
+  // Mesma confirmação e regra da tela do QR (evita duas versões do "encerrar")
+  const { encerrar: confirmarEncerramento, encerrando } = useEncerrarViagem(() => recarregar());
+  const encerrar = () => viagem && confirmarEncerramento(viagem);
+
 
   if (carregando) return <Carregando />;
 
@@ -91,7 +75,7 @@ export default function PainelScreen() {
         desabilitado={viagem.onibus.emManutencao}
       />
     ) : viagem.status === "EM_ANDAMENTO" ? (
-      <Botao titulo="Encerrar viagem" icone="stop-circle" tamanho="grande" variante="perigo" onPress={encerrar} carregando={processando} />
+      <Botao titulo="Encerrar viagem" icone="stop-circle" tamanho="grande" variante="perigo" onPress={encerrar} carregando={encerrando} />
     ) : undefined;
 
   return (
@@ -139,7 +123,7 @@ export default function PainelScreen() {
       </GradeEstatisticas>
 
       {viagem.status === "EM_ANDAMENTO" && (
-        <Botao titulo="Ler QR Code dos alunos" icone="scan" variante="secundario" tamanho="grande" onPress={() => navegacao.navigate("Embarque")} />
+        <Botao titulo="Mostrar QR de embarque" icone="qr-code" variante="secundario" tamanho="grande" onPress={() => navegacao.navigate("Embarque")} />
       )}
       {viagem.status === "AGUARDANDO" && !viagem.onibus.emManutencao && (
         <Texto variante="pequeno" cor="textoSuave" alinhar="center">

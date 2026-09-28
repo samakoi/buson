@@ -175,15 +175,9 @@ export default function AlunoHomeScreen() {
         carregando={processando}
       />
     );
-  } else if (meu?.status === "CONFIRMADO" && !meu.embarcado && viagem.status !== "ENCERRADA") {
-    acao = (
-      <Botao
-        titulo={viagem.status === "EM_ANDAMENTO" ? "Mostrar QR Code para embarcar" : "Ver meu QR Code"}
-        icone="qr-code"
-        variante="claro"
-        onPress={() => navegacao.navigate("QR Code")}
-      />
-    );
+  } else if (meu?.status === "CONFIRMADO" && !meu.embarcado && viagem.status === "EM_ANDAMENTO") {
+    // Ônibus saiu: o aluno escaneia o QR exibido pelo motorista
+    acao = <Botao titulo="Embarcar" icone="scan" variante="claro" onPress={() => navegacao.navigate("Embarcar")} />;
   }
 
   return (
@@ -237,6 +231,11 @@ export default function AlunoHomeScreen() {
             {situacao.texto}
           </Texto>
         </View>
+        {meu?.status === "CONFIRMADO" && !meu.embarcado && viagem.status === "AGUARDANDO" && (
+          <Texto variante="pequeno" cor="sobreDestaqueSuave" style={{ marginTop: 4 }}>
+            Quando o motorista iniciar a viagem, toque em Embarcar e escaneie o QR Code que aparece no celular dele.
+          </Texto>
+        )}
         {meu?.status === "ESPERA" && (
           <Texto variante="pequeno" cor="sobreDestaqueSuave" style={{ marginTop: 4 }}>
             Se alguém cancelar, sua vaga é confirmada automaticamente e você recebe um aviso.

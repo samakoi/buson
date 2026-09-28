@@ -86,20 +86,6 @@ export async function cancelarCheckin(req: Request, res: Response, next: NextFun
   }
 }
 
-// O conteúdo do QR Code do aluno é o campo Aluno.qrCode
-const embarqueSchema = z.object({ qrCode: z.string().min(1) });
-
-export async function embarque(req: Request, res: Response, next: NextFunction) {
-  try {
-    const motoristaId = await getMotoristaId(req.usuario!.sub);
-    const { qrCode } = embarqueSchema.parse(req.body);
-    const resultado = await viagemService.confirmarEmbarque(req.params.id, qrCode, motoristaId);
-    res.json(resultado);
-  } catch (err) {
-    next(err);
-  }
-}
-
 export async function passageiros(req: Request, res: Response, next: NextFunction) {
   try {
     const resultado = await viagemService.listarPassageiros(req.params.id, req.usuario!);

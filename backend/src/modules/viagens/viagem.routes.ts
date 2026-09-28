@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as viagemController from "./viagem.controller";
 import { autenticar, exigir } from "../../middlewares/auth";
+import { embarqueRouter } from "../embarque/embarque.routes";
 
 export const viagemRouter = Router();
 
@@ -17,7 +18,9 @@ viagemRouter.delete("/:id", exigir("viagens:gerenciar"), viagemController.exclui
 viagemRouter.post("/:id/checkin", exigir("checkin:fazer"), viagemController.checkin);
 viagemRouter.post("/:id/checkin/cancelar", exigir("checkin:fazer"), viagemController.cancelarCheckin);
 
-viagemRouter.post("/:id/embarque", exigir("viagem:operar"), viagemController.embarque);
 viagemRouter.post("/:id/iniciar", exigir("viagem:operar"), viagemController.iniciar);
 viagemRouter.post("/:id/encerrar", exigir("viagem:operar"), viagemController.encerrar);
 viagemRouter.post("/:id/localizacao", exigir("viagem:operar"), viagemController.localizacao);
+
+// Embarque pelo QR temporário do motorista (sessão, scan do aluno e manual)
+viagemRouter.use("/:id/embarque", embarqueRouter);
