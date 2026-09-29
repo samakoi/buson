@@ -112,6 +112,10 @@ const listarSchema = z.object({
   busca: z.string().max(80).optional(),
   status: status.optional(),
   universidadeId: z.string().uuid().optional(),
+  documentoPendente: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .optional(),
   pagina: z.coerce.number().int().min(1).default(1),
   porPagina: z.coerce.number().int().min(1).max(100).default(20),
 });

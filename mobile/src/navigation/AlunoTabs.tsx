@@ -10,9 +10,10 @@ import PerfilScreen from "../screens/Aluno/PerfilScreen";
 import DadosAcademicosScreen from "../screens/Aluno/DadosAcademicosScreen";
 import AvisosScreen from "../screens/Comum/AvisosScreen";
 import MeusDiasScreen from "../features/alocacao/MeusDiasScreen";
+import DocumentacaoScreen from "../features/documentos/DocumentacaoScreen";
 
 export type AbasAluno = { Início: undefined; Embarcar: undefined; Ônibus: undefined; Avisos: undefined; Perfil: undefined };
-export type PilhaAluno = { Abas: undefined; DadosAcademicos: undefined; MeusDias: undefined };
+export type PilhaAluno = { Abas: undefined; DadosAcademicos: undefined; MeusDias: undefined; Documentacao: undefined };
 
 const Tab = createBottomTabNavigator<AbasAluno>();
 const Pilha = createNativeStackNavigator<PilhaAluno>();
@@ -45,6 +46,7 @@ export default function AlunoNavegacao() {
       <Pilha.Screen name="Abas" component={Abas} />
       <Pilha.Screen name="DadosAcademicos" component={DadosAcademicosScreen} />
       <Pilha.Screen name="MeusDias" component={MeusDiasScreen} />
+      <Pilha.Screen name="Documentacao" component={DocumentacaoScreen} />
     </Pilha.Navigator>
   );
 }

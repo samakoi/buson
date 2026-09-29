@@ -129,6 +129,14 @@ npx prisma studio
 
 Abre uma interface no navegador para ver e editar os dados das tabelas.
 
+### Arquivos enviados pelos alunos (documentos)
+
+Os comprovantes de matrícula ficam em `backend/uploads/` (ou na pasta definida em
+`UPLOADS_DIR` no `.env`). Essa pasta fica fora do git e fora da parte pública da API:
+os arquivos só abrem por um link temporário gerado pelo app. O banco guarda apenas os
+dados do arquivo, então **faça backup desta pasta junto com o backup do banco** — sem
+ela, os documentos já enviados não abrem mais.
+
 ---
 
 ## 4. App mobile (React Native / Expo)

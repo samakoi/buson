@@ -187,9 +187,39 @@ export interface AlunoResumo {
   universidade: { id: string; nome: string };
 }
 
+export type StatusDocumento = "PENDENTE" | "EM_ANALISE" | "APROVADO" | "REPROVADO";
+export type TipoDocumento = "DECLARACAO" | "COMPROVANTE" | "OUTRO";
+
+/** Documento de matrícula (sem o caminho do arquivo; o arquivo abre por link temporário). */
+export interface Documento {
+  id: string;
+  tipo: TipoDocumento;
+  nomeOriginal: string;
+  mimeType: string;
+  tamanho: number;
+  status: StatusDocumento;
+  motivoReprovacao: string | null;
+  analisadoEm: string | null;
+  criadoEm: string;
+  analisadoPor: { nome: string } | null;
+}
+
+/** GET /documentos (admin) */
+export interface FilaDocumentos {
+  itens: (Documento & {
+    aluno: { id: string; matricula: string | null; statusConta: StatusConta; usuario: { nome: string }; universidade: { nome: string } };
+  })[];
+  total: number;
+  pagina: number;
+  porPagina: number;
+  contagens: Record<StatusDocumento, number>;
+}
+
 /** GET /alunos/me */
 export interface MeusDados extends AlunoResumo {
   pendencias: string[];
+  /** Último documento enviado */
+  documento: { id: string; status: StatusDocumento; motivoReprovacao: string | null; criadoEm: string } | null;
 }
 
 export interface EventoAuditoria {
@@ -205,6 +235,7 @@ export interface EventoAuditoria {
 /** GET /alunos/:id (admin) */
 export interface PerfilAlunoAdmin extends AlunoResumo {
   dias: DiaAlocado[];
+  documentos: Documento[];
   historico: EventoAuditoria[];
 }
 
@@ -215,6 +246,8 @@ export interface ListaAlunos {
   pagina: number;
   porPagina: number;
   contagens: Record<StatusConta, number>;
+  /** Alunos com documento aguardando análise (com a mesma busca) */
+  documentosPendentes: number;
 }
 
 /** Resposta de GET /dashboard/relatorio */

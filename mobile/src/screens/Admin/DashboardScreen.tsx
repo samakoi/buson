@@ -37,6 +37,9 @@ interface Resumo {
   totalUniversidades: number;
   viagensAtivas: number;
   onibusEmManutencao: number;
+  alunosAtivos: number;
+  alunosPendentes: number;
+  documentosPendentes: number;
 }
 
 type Preset = "hoje" | "ontem" | "7d" | "30d" | "mes" | "personalizado";
@@ -289,7 +292,9 @@ export default function DashboardScreen() {
 
       <Secao titulo="Visão geral do sistema" />
       <GradeEstatisticas colunas={3}>
-        <Estatistica compacta rotulo="Alunos" valor={resumo.totalAlunos} />
+        <Estatistica compacta rotulo="Alunos ativos" valor={resumo.alunosAtivos} tom="sucesso" />
+        <Estatistica compacta rotulo="Pendentes" valor={resumo.alunosPendentes} tom={resumo.alunosPendentes > 0 ? "alerta" : "neutro"} />
+        <Estatistica compacta rotulo="Documentos" valor={resumo.documentosPendentes} tom={resumo.documentosPendentes > 0 ? "alerta" : "neutro"} />
         <Estatistica compacta rotulo="Motoristas" valor={resumo.totalMotoristas} />
         <Estatistica compacta rotulo="Universidades" valor={resumo.totalUniversidades} />
         <Estatistica compacta rotulo="Ônibus" valor={resumo.totalOnibus} />

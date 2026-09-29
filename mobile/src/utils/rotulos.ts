@@ -1,6 +1,6 @@
 import type { NomeIcone } from "../components/icones";
 import type { Tom } from "../theme/tokens";
-import type { CategoriaNotificacao, StatusConta, StatusViagem } from "../types";
+import type { CategoriaNotificacao, StatusConta, StatusDocumento, StatusViagem } from "../types";
 
 /** Rótulos únicos de status — use sempre estes em vez de escrever o texto na tela. */
 export const statusViagem: Record<StatusViagem, { rotulo: string; tom: Tom; icone: NomeIcone }> = {
@@ -23,10 +23,21 @@ export const statusConta: Record<StatusConta, { rotulo: string; conta: string; t
   INATIVO: { rotulo: "Inativo", conta: "Conta inativa", tom: "neutro", icone: "pause-circle-outline" },
 };
 
+export const statusDocumento: Record<StatusDocumento, { rotulo: string; tom: Tom; icone: NomeIcone }> = {
+  PENDENTE: { rotulo: "Aguardando análise", tom: "alerta", icone: "hourglass-outline" },
+  EM_ANALISE: { rotulo: "Em análise", tom: "info", icone: "eye-outline" },
+  APROVADO: { rotulo: "Aprovado", tom: "sucesso", icone: "checkmark-circle" },
+  REPROVADO: { rotulo: "Reprovado", tom: "perigo", icone: "close-circle" },
+};
+
+export const tipoDocumento = { DECLARACAO: "Declaração de matrícula", COMPROVANTE: "Comprovante de matrícula", OUTRO: "Outro documento" } as const;
+
 /** Converte valores gravados na auditoria (ex.: "ATIVO") no texto da tela. */
 export function rotuloValorAuditoria(valor: unknown): string {
   if (typeof valor !== "string") return String(valor ?? "");
-  return valor in statusConta ? statusConta[valor as StatusConta].rotulo : valor;
+  if (valor in statusConta) return statusConta[valor as StatusConta].rotulo;
+  if (valor in statusDocumento) return statusDocumento[valor as StatusDocumento].rotulo;
+  return valor;
 }
 
 export const categoriaAviso: Record<CategoriaNotificacao, { icone: NomeIcone; tom: Tom }> = {
@@ -48,6 +59,10 @@ export const acaoAuditoria: Record<string, string> = {
   UNIVERSIDADE_ALTERADA: "Universidade alterada",
   DIAS_ALTERADOS: "Dias de uso alterados",
   DIAS_REMOVIDOS_PELO_SISTEMA: "Dias liberados automaticamente",
+  DOCUMENTO_ENVIADO: "Documento enviado",
+  DOCUMENTO_EM_ANALISE: "Documento em análise",
+  DOCUMENTO_APROVADO: "Documento aprovado",
+  DOCUMENTO_REPROVADO: "Documento reprovado",
 };
 
 type DiaAuditado = { dia: string; rota?: string; ponto?: string | null };
@@ -58,6 +73,9 @@ export function mudancaAuditoria(h: { valorAnterior: Record<string, unknown> | n
   const depois = h.valorNovo ?? {};
   if ("statusConta" in antes || "statusConta" in depois) {
     return `${rotuloValorAuditoria(antes.statusConta)} → ${rotuloValorAuditoria(depois.statusConta)}`;
+  }
+  if ("documento" in depois) {
+    return "documento" in antes ? `${rotuloValorAuditoria(antes.documento)} → ${rotuloValorAuditoria(depois.documento)}` : rotuloValorAuditoria(depois.documento);
   }
   const dias = (v: unknown) => {
     if (!Array.isArray(v)) return null;

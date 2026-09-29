@@ -42,8 +42,17 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "O Bus On usa a câmera para ler o QR Code de embarque dos alunos.",
+          "cameraPermission": "O Bus On usa a câmera para ler o QR Code de embarque e para fotografar seu comprovante de matrícula.",
           "recordAudioAndroid": false
+        }
+      ],
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O Bus On acessa suas fotos para você anexar o comprovante de matrícula.",
+          "cameraPermission": "O Bus On usa a câmera para ler o QR Code de embarque e para fotografar seu comprovante de matrícula.",
+          "microphonePermission": false
         }
       ]
     ]

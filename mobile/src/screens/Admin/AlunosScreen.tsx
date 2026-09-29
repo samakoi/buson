@@ -7,11 +7,12 @@ import { api } from "../../services/api";
 import { AlunoResumo, ListaAlunos, StatusConta } from "../../types";
 import { useCarregamento } from "../../hooks/useCarregamento";
 import { useTema } from "../../theme/TemaProvider";
-import { Botao, Cabecalho, Campo, Card, Carregando, Chips, EstadoVazio, ItemLista, Pilula, Tela, iniciaisDe } from "../../components/ui";
+import { Botao, BotaoIcone, Cabecalho, Campo, Card, Carregando, Chips, EstadoVazio, ItemLista, Pilula, Tela, iniciaisDe } from "../../components/ui";
 import { statusConta } from "../../utils/rotulos";
 import type { PilhaAdmin } from "../../navigation/AdminTabs";
 
-type FiltroStatus = "TODOS" | StatusConta;
+/** DOCUMENTO = alunos com documento aguardando análise */
+type FiltroStatus = "TODOS" | StatusConta | "DOCUMENTO";
 const POR_PAGINA = 20;
 
 export default function AlunosScreen() {
@@ -32,7 +33,13 @@ export default function AlunosScreen() {
 
   async function buscar(pagina: number) {
     const { data } = await api.get<ListaAlunos>("/alunos", {
-      params: { busca: buscaAplicada || undefined, status: filtro === "TODOS" ? undefined : filtro, pagina, porPagina: POR_PAGINA },
+      params: {
+        busca: buscaAplicada || undefined,
+        status: filtro === "TODOS" || filtro === "DOCUMENTO" ? undefined : filtro,
+        documentoPendente: filtro === "DOCUMENTO" ? true : undefined,
+        pagina,
+        porPagina: POR_PAGINA,
+      },
     });
     setLista(data);
     setItens((atuais) => (pagina === 1 ? data.itens : [...atuais, ...data.itens]));
@@ -68,7 +75,11 @@ export default function AlunosScreen() {
 
   return (
     <Tela atualizando={atualizando} onAtualizar={atualizar}>
-      <Cabecalho titulo="Alunos" subtitulo={buscaAplicada ? `${totalGeral} resultado(s) para "${buscaAplicada}"` : `${totalGeral} aluno(s) cadastrado(s)`} />
+      <Cabecalho
+        titulo="Alunos"
+        subtitulo={buscaAplicada ? `${totalGeral} resultado(s) para "${buscaAplicada}"` : `${totalGeral} aluno(s) cadastrado(s)`}
+        acoes={<BotaoIcone icone="document-text-outline" rotulo="Documentos para analisar" onPress={() => navegacao.navigate("Documentos")} />}
+      />
 
       <Campo
         rotulo="Buscar"
@@ -83,6 +94,7 @@ export default function AlunosScreen() {
         <Chips
           opcoes={[
             { valor: "TODOS", rotulo: `Todos (${totalGeral})` },
+            { valor: "DOCUMENTO", rotulo: `Doc. pendente (${lista?.documentosPendentes ?? 0})` },
             { valor: "PENDENTE", rotulo: `Pendentes (${c.PENDENTE})` },
             { valor: "ATIVO", rotulo: `Ativos (${c.ATIVO})` },
             { valor: "INATIVO", rotulo: `Inativos (${c.INATIVO})` },

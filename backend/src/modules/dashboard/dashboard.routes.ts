@@ -12,7 +12,7 @@ dashboardRouter.use(autenticar, exigir("dashboard:ler"));
 
 dashboardRouter.get("/resumo", async (_req, res, next) => {
   try {
-    const [totalAlunos, totalMotoristas, totalOnibus, totalUniversidades, viagensAtivas, onibusEmManutencao] =
+    const [totalAlunos, totalMotoristas, totalOnibus, totalUniversidades, viagensAtivas, onibusEmManutencao, alunosAtivos, alunosPendentes, documentosPendentes] =
       await Promise.all([
         prisma.aluno.count(),
         prisma.motorista.count(),
@@ -20,9 +20,22 @@ dashboardRouter.get("/resumo", async (_req, res, next) => {
         prisma.universidade.count(),
         prisma.viagem.count({ where: { status: "EM_ANDAMENTO" } }),
         prisma.onibus.count({ where: { emManutencao: true } }),
+        prisma.aluno.count({ where: { statusConta: "ATIVO" } }),
+        prisma.aluno.count({ where: { statusConta: "PENDENTE" } }),
+        prisma.documento.count({ where: { status: { in: ["PENDENTE", "EM_ANALISE"] } } }),
       ]);
 
-    res.json({ totalAlunos, totalMotoristas, totalOnibus, totalUniversidades, viagensAtivas, onibusEmManutencao });
+    res.json({
+      totalAlunos,
+      totalMotoristas,
+      totalOnibus,
+      totalUniversidades,
+      viagensAtivas,
+      onibusEmManutencao,
+      alunosAtivos,
+      alunosPendentes,
+      documentosPendentes,
+    });
   } catch (err) {
     next(err);
   }

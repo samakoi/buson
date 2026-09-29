@@ -109,14 +109,25 @@ export default function AlunoHomeScreen() {
   const cabecalho = (
     <>
       <Cabecalho sobrescrito={dataPorExtenso(agora)} titulo={`Olá, ${primeiroNome}`} />
-      {eu?.statusConta === "PENDENTE" && (
-        <Card>
-          <Aviso tipo="info" titulo="Complete seu cadastro" style={{ marginBottom: 0 }}>
-            Envie seus dados para validar a matrícula e garantir vaga nos seus dias. Até lá, você pode pedir vagas avulsas.
+      {eu?.statusConta === "PENDENTE" &&
+        (eu.pendencias.includes("DOCUMENTO") ? (
+          <Card>
+            <Aviso
+              tipo={eu.documento?.status === "REPROVADO" ? "erro" : "info"}
+              titulo={eu.documento?.status === "REPROVADO" ? "Seu documento foi reprovado" : "Valide sua matrícula"}
+              style={{ marginBottom: 0 }}
+            >
+              {eu.documento?.status === "REPROVADO"
+                ? `Motivo: ${eu.documento.motivoReprovacao ?? "não informado"}. Envie um novo comprovante.`
+                : "Envie o comprovante de matrícula para ativar sua conta e garantir vaga nos seus dias. Até lá, você pode pedir vagas avulsas."}
+            </Aviso>
+            <Botao titulo="Enviar comprovante" icone="cloud-upload-outline" variante="secundario" onPress={() => navegacao.navigate("Documentacao")} style={{ marginTop: 12 }} />
+          </Card>
+        ) : (
+          <Aviso tipo="info" titulo={eu.documento?.status === "EM_ANALISE" ? "Documento em análise" : "Documento enviado"}>
+            Você recebe um aviso assim que a administração validar sua matrícula. Até lá, você pode pedir vagas avulsas.
           </Aviso>
-          <Botao titulo="Ir para o Perfil" icone="person-circle-outline" variante="secundario" onPress={() => navegacao.navigate("Perfil")} style={{ marginTop: 12 }} />
-        </Card>
-      )}
+        ))}
       {eu?.statusConta === "INATIVO" && (
         <Aviso tipo="alerta" titulo="Conta inativa">
           Você não pode usar o transporte no momento. Procure a administração.

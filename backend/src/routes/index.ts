@@ -11,6 +11,7 @@ import { notificacaoRouter } from "../modules/notificacoes/notificacao.routes";
 import { alunoRouter } from "../modules/alunos/aluno.routes";
 import { programacaoRouter } from "../modules/programacoes/programacao.routes";
 import { pontoEmbarqueRouter } from "../modules/pontosEmbarque/pontoEmbarque.routes";
+import { documentoRouter } from "../modules/documentos/documento.routes";
 
 export const routes = Router();
 
@@ -39,3 +40,4 @@ routes.use("/notificacoes", notificacaoRouter);
 routes.use("/alunos", alunoRouter);
 routes.use("/programacoes", programacaoRouter);
 routes.use("/pontos-embarque", pontoEmbarqueRouter);
+routes.use("/documentos", documentoRouter);

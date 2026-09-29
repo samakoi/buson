@@ -71,6 +71,15 @@ export const ERROS = {
   DIA_SEM_TRANSPORTE: { status: 400, mensagem: "Não há transporte programado nesta rota em um dos dias escolhidos." },
   DIAS_LOTADOS: { status: 409, mensagem: "Não há mais vagas em um ou mais dias escolhidos. Escolha outro dia." },
 
+  // ---- Documentos do aluno
+  DOCUMENTO_NAO_ENCONTRADO: { status: 404, mensagem: "Documento não encontrado." },
+  ARQUIVO_OBRIGATORIO: { status: 400, mensagem: "Envie o arquivo do documento." },
+  TIPO_ARQUIVO_INVALIDO: { status: 400, mensagem: "Formato não aceito. Envie um PDF ou uma foto (JPG ou PNG)." },
+  ARQUIVO_MUITO_GRANDE: { status: 413, mensagem: "O arquivo passa de 10 MB. Envie um arquivo menor." },
+  DOCUMENTO_AGUARDANDO_ANALISE: { status: 409, mensagem: "Você já tem um documento aguardando análise. Espere o resultado antes de enviar outro." },
+  DOCUMENTO_JA_ANALISADO: { status: 409, mensagem: "Este documento já foi analisado." },
+  LINK_INVALIDO: { status: 403, mensagem: "Link do documento inválido ou expirado. Abra o documento de novo pelo app." },
+
   // ---- Relatórios e datas
   DATA_INVALIDA: { status: 400, mensagem: "Data inválida." },
   PERIODO_INVALIDO: { status: 400, mensagem: "A data final deve ser igual ou posterior à inicial." },

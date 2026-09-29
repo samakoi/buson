@@ -13,6 +13,7 @@ import { formatarTelefone } from "../../utils/formatos";
 import { DIAS_SEMANA_COMPLETOS, formatarDiaBR, diaISO, tempoRelativo } from "../../utils/datas";
 import { acaoAuditoria, mudancaAuditoria, rotuloValorAuditoria, statusConta } from "../../utils/rotulos";
 import type { PilhaAdmin } from "../../navigation/AdminTabs";
+import { DocumentosDoAluno } from "../../features/documentos/DocumentosDoAluno";
 
 export default function PerfilAlunoScreen() {
   const navegacao = useNavigation<NativeStackNavigationProp<PilhaAdmin>>();
@@ -24,7 +25,7 @@ export default function PerfilAlunoScreen() {
   const [motivo, setMotivo] = useState("");
   const [salvando, setSalvando] = useState(false);
 
-  const { carregando, atualizando, atualizar } = useCarregamento(async () => {
+  const { carregando, atualizando, atualizar, recarregar } = useCarregamento(async () => {
     const { data } = await api.get<PerfilAlunoAdmin>(`/alunos/${alunoId}`);
     setAluno(data);
   });
@@ -86,6 +87,8 @@ export default function PerfilAlunoScreen() {
         <ItemLista icone="card-outline" tomIcone="neutro" titulo={aluno.matricula ?? "Não informada"} subtitulo="Matrícula" />
         <ItemLista icone="school-outline" tomIcone="neutro" titulo={aluno.curso ?? "Não informado"} subtitulo="Curso" ultimo />
       </Card>
+
+      <DocumentosDoAluno documentos={aluno.documentos} nome={aluno.usuario.nome} statusConta={aluno.statusConta} aoMudar={recarregar} />
 
       <Secao
         titulo="Dias de uso"
