@@ -77,10 +77,16 @@ export async function checkin(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+const cancelamentoSchema = z.object({
+  motivo: z.enum(["DOENCA", "COMPROMISSO_ACADEMICO", "COMPROMISSO_PESSOAL", "TRABALHO", "TRANSPORTE_PROPRIO", "OUTRO"]).optional(),
+  diaTodo: z.boolean().optional(),
+});
+
 export async function cancelarCheckin(req: Request, res: Response, next: NextFunction) {
   try {
     const alunoId = await getAlunoId(req.usuario!.sub);
-    const resultado = await viagemService.cancelarCheckin(req.params.id, alunoId);
+    const opcoes = cancelamentoSchema.parse(req.body ?? {});
+    const resultado = await viagemService.cancelarCheckin(req.params.id, alunoId, opcoes);
     res.json(resultado);
   } catch (err) {
     next(err);

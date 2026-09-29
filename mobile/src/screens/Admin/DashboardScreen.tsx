@@ -25,7 +25,10 @@ import {
 } from "../../components/ui";
 import { dataPorExtenso, diaISO, formatarDiaBR, formatarDiaCurto, mascararDia, parseDiaBR, somarDias } from "../../utils/datas";
 import { mensagemDeErro } from "../../utils/feedback";
-import { statusViagem } from "../../utils/rotulos";
+import { situacaoFalta, statusViagem } from "../../utils/rotulos";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { PilhaAdmin } from "../../navigation/AdminTabs";
 import { queryClient } from "../../services/queryClient";
 import { chavesAlocacao } from "../../features/alocacao/api";
 import { OcupacaoSemanalCard } from "../../features/alocacao/OcupacaoSemanalCard";
@@ -72,6 +75,7 @@ function periodoDoPreset(preset: Exclude<Preset, "personalizado">) {
 const FALTAS_VISIVEIS = 8;
 
 export default function DashboardScreen() {
+  const navegacao = useNavigation<NativeStackNavigationProp<PilhaAdmin>>();
   const { cores } = useTema();
   const s = useEstilos();
   const [resumo, setResumo] = useState<Resumo | null>(null);
@@ -228,11 +232,13 @@ export default function DashboardScreen() {
           <Card semPadding>
             {faltasVisiveis.map((f, i) => (
               <ItemLista
-                key={`${f.viagemId}-${f.aluno}-${i}`}
+                key={f.faltaId}
                 iniciais={iniciaisDe(f.aluno)}
-                tomIcone="perigo"
+                tomIcone={situacaoFalta[f.situacao].tom}
                 titulo={f.aluno}
                 subtitulo={`${f.universidade} • ${formatarDiaCurto(f.dia)} ${f.horario}`}
+                abaixo={<Pilula texto={situacaoFalta[f.situacao].rotulo} tom={situacaoFalta[f.situacao].tom} />}
+                onPress={() => navegacao.navigate("PerfilAluno", { alunoId: f.alunoId })}
                 ultimo={i === faltasVisiveis.length - 1}
               />
             ))}
@@ -247,6 +253,7 @@ export default function DashboardScreen() {
 
           {faltasPorUni.length > 0 && (
             <>
+              <Botao titulo="Gerenciar faltas e justificativas" icone="alert-circle-outline" variante="secundario" onPress={() => navegacao.navigate("Faltas")} style={{ marginTop: 12 }} />
               <Secao titulo="Faltas por universidade" />
               <Card semPadding>
                 {faltasPorUni.map(([uni, qtd], i) => (

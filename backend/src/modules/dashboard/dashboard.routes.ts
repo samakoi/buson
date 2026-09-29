@@ -139,6 +139,15 @@ dashboardRouter.get("/relatorio", async (req, res, next) => {
             aluno: { select: { id: true, usuario: { select: { nome: true } }, universidade: { select: { nome: true } } } },
           },
         },
+        // Faltas registradas ao encerrar (com a situação da justificativa)
+        faltas: {
+          select: {
+            id: true,
+            status: true,
+            justificativa: true,
+            aluno: { select: { id: true, usuario: { select: { nome: true } }, universidade: { select: { nome: true } } } },
+          },
+        },
       },
       orderBy: [{ data: "asc" }, { horario: "asc" }],
     });
@@ -150,16 +159,36 @@ dashboardRouter.get("/relatorio", async (req, res, next) => {
       porDia.set(d, { dia: d, viagens: 0, confirmados: 0, embarcados: 0, faltas: 0 });
     }
 
-    const totais = { viagens: 0, confirmados: 0, embarcados: 0, faltas: 0, pendentes: 0 };
+    const totais = {
+      viagens: 0,
+      confirmados: 0,
+      embarcados: 0,
+      faltas: 0,
+      pendentes: 0,
+      faltasJustificadas: 0,
+      faltasIndeferidas: 0,
+      faltasAguardandoDecisao: 0,
+      faltasSemJustificativa: 0,
+    };
     const faltasPorUniversidade: Record<string, number> = {};
-    const faltas: Array<{ viagemId: string; dia: string; horario: string; rota: string; aluno: string; universidade: string }> = [];
+    const faltas: Array<{
+      faltaId: string;
+      alunoId: string;
+      viagemId: string;
+      dia: string;
+      horario: string;
+      rota: string;
+      aluno: string;
+      universidade: string;
+      situacao: "SEM_JUSTIFICATIVA" | "AGUARDANDO_DECISAO" | "JUSTIFICADA" | "INDEFERIDA";
+    }> = [];
 
     const resumoViagens = viagens.map((v) => {
       const d = formatarDia(v.data);
       const encerrada = v.status === "ENCERRADA";
       const embarcados = v.checkins.filter((c) => c.embarcado).length;
       const naoEmbarcados = v.checkins.filter((c) => !c.embarcado);
-      const faltasDaViagem = encerrada ? naoEmbarcados.length : 0;
+      const faltasDaViagem = v.faltas.length;
 
       const doDia = porDia.get(d)!;
       doDia.viagens += 1;
@@ -173,12 +202,26 @@ dashboardRouter.get("/relatorio", async (req, res, next) => {
       totais.faltas += faltasDaViagem;
       if (!encerrada) totais.pendentes += naoEmbarcados.length;
 
-      if (encerrada) {
-        for (const c of naoEmbarcados) {
-          const universidade = c.aluno.universidade.nome;
-          faltasPorUniversidade[universidade] = (faltasPorUniversidade[universidade] ?? 0) + 1;
-          faltas.push({ viagemId: v.id, dia: d, horario: v.horario, rota: v.rota.nome, aluno: c.aluno.usuario.nome, universidade });
-        }
+      for (const f of v.faltas) {
+        const universidade = f.aluno.universidade.nome;
+        faltasPorUniversidade[universidade] = (faltasPorUniversidade[universidade] ?? 0) + 1;
+        const situacao =
+          f.status === "REGISTRADA" ? (f.justificativa ? "AGUARDANDO_DECISAO" : "SEM_JUSTIFICATIVA") : f.status;
+        if (situacao === "JUSTIFICADA") totais.faltasJustificadas += 1;
+        else if (situacao === "INDEFERIDA") totais.faltasIndeferidas += 1;
+        else if (situacao === "AGUARDANDO_DECISAO") totais.faltasAguardandoDecisao += 1;
+        else totais.faltasSemJustificativa += 1;
+        faltas.push({
+          faltaId: f.id,
+          alunoId: f.aluno.id,
+          viagemId: v.id,
+          dia: d,
+          horario: v.horario,
+          rota: v.rota.nome,
+          aluno: f.aluno.usuario.nome,
+          universidade,
+          situacao,
+        });
       }
 
       return {

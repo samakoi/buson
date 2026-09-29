@@ -2,6 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import { z } from "zod";
 import { autenticar, exigir } from "../../middlewares/auth";
+import { enviarArquivo } from "../../utils/enviarArquivo";
 import * as documentoService from "./documento.service";
 
 export const documentoRouter = Router();
@@ -20,15 +21,7 @@ const arquivoSchema = z.object({ expira: z.coerce.number().int(), assinatura: z.
 documentoRouter.get("/:id/arquivo", async (req, res, next) => {
   try {
     const { expira, assinatura } = arquivoSchema.parse(req.query);
-    const arquivo = await documentoService.abrirArquivo(req.params.id, expira, assinatura);
-    res.setHeader("Content-Type", arquivo.mimeType);
-    res.setHeader("Content-Length", String(arquivo.tamanho));
-    res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(arquivo.nomeOriginal)}`);
-    res.setHeader("Cache-Control", "private, no-store");
-    // A imagem é exibida pelo app web (outra origem) e o PDF pelo visualizador do navegador
-    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    res.removeHeader("Content-Security-Policy");
-    arquivo.conteudo.on("error", next).pipe(res);
+    enviarArquivo(res, next, await documentoService.abrirArquivo(req.params.id, expira, assinatura));
   } catch (err) {
     next(err);
   }

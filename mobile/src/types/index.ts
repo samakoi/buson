@@ -90,6 +90,8 @@ export interface Viagem {
     embarcadoEm?: string | null;
     posicaoFila: number | null;
     pontoEmbarque: { id: string; nome: string } | null;
+    /** Vaga liberada antes da saída: motivo informado (ou FALTOU_NA_IDA, pelo sistema) */
+    motivoAusencia: MotivoAusencia | null;
   } | null;
 }
 
@@ -215,6 +217,57 @@ export interface FilaDocumentos {
   contagens: Record<StatusDocumento, number>;
 }
 
+export type StatusFalta = "REGISTRADA" | "JUSTIFICADA" | "INDEFERIDA";
+/** Situação para as telas: REGISTRADA se divide em "sem justificativa" e "aguardando decisão" */
+export type SituacaoFalta = "SEM_JUSTIFICATIVA" | "AGUARDANDO_DECISAO" | "JUSTIFICADA" | "INDEFERIDA";
+export type MotivoAusencia = "DOENCA" | "COMPROMISSO_ACADEMICO" | "COMPROMISSO_PESSOAL" | "TRABALHO" | "TRANSPORTE_PROPRIO" | "OUTRO" | "FALTOU_NA_IDA";
+
+export interface ViagemResumida {
+  id: string;
+  data: string;
+  horario: string;
+  sentido: SentidoViagem;
+  rota: { nome: string };
+}
+
+export interface Falta {
+  id: string;
+  status: StatusFalta;
+  prazoJustificativa: string;
+  justificativa: string | null;
+  justificadaEm: string | null;
+  anexoNome: string | null;
+  anexoMimeType: string | null;
+  anexoTamanho: number | null;
+  decididoEm: string | null;
+  observacaoDecisao: string | null;
+  criadoEm: string;
+  decididoPor: { nome: string } | null;
+  viagem: ViagemResumida;
+}
+
+export interface AusenciaAvisada {
+  id: string;
+  motivoAusencia: MotivoAusencia;
+  canceladoEm: string | null;
+  viagem: ViagemResumida;
+}
+
+/** GET /faltas/me */
+export interface HistoricoFaltas {
+  faltas: Falta[];
+  ausenciasAvisadas: AusenciaAvisada[];
+}
+
+/** GET /faltas (admin) */
+export interface FilaFaltas {
+  itens: (Falta & { aluno: { id: string; matricula: string | null; usuario: { nome: string }; universidade: { nome: string } } })[];
+  total: number;
+  pagina: number;
+  porPagina: number;
+  contagens: Record<SituacaoFalta, number>;
+}
+
 /** GET /alunos/me */
 export interface MeusDados extends AlunoResumo {
   pendencias: string[];
@@ -236,6 +289,8 @@ export interface EventoAuditoria {
 export interface PerfilAlunoAdmin extends AlunoResumo {
   dias: DiaAlocado[];
   documentos: Documento[];
+  faltas: Falta[];
+  ausenciasAvisadas: AusenciaAvisada[];
   historico: EventoAuditoria[];
 }
 
@@ -257,5 +312,15 @@ export interface Relatorio {
   porDia: { dia: string; viagens: number; confirmados: number; embarcados: number; faltas: number }[];
   faltasPorUniversidade: Record<string, number>;
   viagens: { id: string; dia: string; horario: string; rota: string; placa: string; status: StatusViagem; confirmados: number; embarcados: number; faltas: number }[];
-  faltas: { viagemId: string; dia: string; horario: string; rota: string; aluno: string; universidade: string }[];
+  faltas: {
+    faltaId: string;
+    alunoId: string;
+    viagemId: string;
+    dia: string;
+    horario: string;
+    rota: string;
+    aluno: string;
+    universidade: string;
+    situacao: SituacaoFalta;
+  }[];
 }

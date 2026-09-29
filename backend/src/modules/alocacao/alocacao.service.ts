@@ -4,7 +4,7 @@ import { AppError } from "../../errors/AppError";
 import { diaMes, inicioDoDia, lerDiasSemana, NOMES_DIAS, nomesDosDias } from "../../utils/datas";
 import { registrarAuditoria } from "../auditoria/auditoria.service";
 import { notificarAluno } from "../notificacoes/notificacao.service";
-import { contarOcupados, promoverProximoDaEspera, travarViagens } from "../viagens/viagem.service";
+import { contarOcupados, promoverProximoDaEspera, travarViagens } from "../viagens/vagas";
 
 /**
  * Alocação do aluno por dia da semana (Regras 1, 3 e 5):

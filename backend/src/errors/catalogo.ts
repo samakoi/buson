@@ -80,6 +80,13 @@ export const ERROS = {
   DOCUMENTO_JA_ANALISADO: { status: 409, mensagem: "Este documento já foi analisado." },
   LINK_INVALIDO: { status: 403, mensagem: "Link do documento inválido ou expirado. Abra o documento de novo pelo app." },
 
+  // ---- Faltas
+  FALTA_NAO_ENCONTRADA: { status: 404, mensagem: "Falta não encontrada." },
+  FALTA_JA_DECIDIDA: { status: 409, mensagem: "Esta falta já foi analisada pela administração." },
+  JUSTIFICATIVA_JA_ENVIADA: { status: 409, mensagem: "Você já enviou a justificativa desta falta. Aguarde a análise." },
+  PRAZO_JUSTIFICATIVA_ENCERRADO: { status: 409, mensagem: "O prazo para justificar esta falta terminou. Procure a administração do transporte." },
+  ANEXO_NAO_ENCONTRADO: { status: 404, mensagem: "Esta falta não tem anexo." },
+
   // ---- Relatórios e datas
   DATA_INVALIDA: { status: 400, mensagem: "Data inválida." },
   PERIODO_INVALIDO: { status: 400, mensagem: "A data final deve ser igual ou posterior à inicial." },

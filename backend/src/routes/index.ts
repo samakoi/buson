@@ -12,6 +12,7 @@ import { alunoRouter } from "../modules/alunos/aluno.routes";
 import { programacaoRouter } from "../modules/programacoes/programacao.routes";
 import { pontoEmbarqueRouter } from "../modules/pontosEmbarque/pontoEmbarque.routes";
 import { documentoRouter } from "../modules/documentos/documento.routes";
+import { faltaRouter } from "../modules/faltas/falta.routes";
 
 export const routes = Router();
 
@@ -41,3 +42,4 @@ routes.use("/alunos", alunoRouter);
 routes.use("/programacoes", programacaoRouter);
 routes.use("/pontos-embarque", pontoEmbarqueRouter);
 routes.use("/documentos", documentoRouter);
+routes.use("/faltas", faltaRouter);

@@ -1,25 +1,12 @@
-import { Platform } from "react-native";
-import * as WebBrowser from "expo-web-browser";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, API_URL } from "../../services/api";
+import { api } from "../../services/api";
 import { Documento, FilaDocumentos, StatusDocumento, TipoDocumento } from "../../types";
+import { abrirPorLink, anexarArquivo, ArquivoEscolhido, opcoesMultipart } from "./escolherArquivo";
 
 export const chavesDocumento = {
   meus: ["documentos", "meus"] as const,
   fila: (status?: StatusDocumento, busca?: string) => ["documentos", "fila", status ?? "todos", busca ?? ""] as const,
 };
-
-/** Arquivo escolhido na câmera, na galeria ou nos arquivos do aparelho. */
-export interface ArquivoEscolhido {
-  uri: string;
-  nome: string;
-  mimeType: string;
-  tamanho: number | null;
-  /** Só no navegador: o File do input */
-  file?: File;
-}
-
-export const TAMANHO_MAXIMO = 10 * 1024 * 1024;
 
 export function useMeusDocumentos() {
   return useQuery({
@@ -35,18 +22,8 @@ export function useEnviarDocumento() {
     mutationFn: async ({ arquivo, tipo }: { arquivo: ArquivoEscolhido; tipo: TipoDocumento }) => {
       const form = new FormData();
       form.append("tipo", tipo);
-      if (Platform.OS === "web") {
-        const conteudo = arquivo.file ?? (await (await fetch(arquivo.uri)).blob());
-        form.append("arquivo", conteudo, arquivo.nome);
-      } else {
-        // O FormData do React Native aceita { uri, name, type } para enviar um arquivo local
-        form.append("arquivo", { uri: arquivo.uri, name: arquivo.nome, type: arquivo.mimeType } as unknown as Blob);
-      }
-      const { data } = await api.post<Documento>("/documentos", form, {
-        headers: Platform.OS === "web" ? undefined : { "Content-Type": "multipart/form-data" },
-        transformRequest: (d) => d, // não deixa o axios transformar o FormData em JSON
-        timeout: 120_000,
-      });
+      await anexarArquivo(form, "arquivo", arquivo);
+      const { data } = await api.post<Documento>("/documentos", form, opcoesMultipart);
       return data;
     },
     onSuccess: () => {
@@ -60,28 +37,8 @@ export function useEnviarDocumento() {
  * Abre o arquivo por um link de 5 minutos (o navegador não envia o login).
  * Quando o admin abre um documento pendente, ele passa a "Em análise".
  */
-export async function abrirDocumento(documentoId: string) {
-  // No navegador a aba precisa abrir no próprio toque (senão vira pop-up bloqueado)
-  const aba = Platform.OS === "web" ? window.open("", "_blank") : null;
-  try {
-    const { data } = await api.post<{ caminho: string; mimeType: string }>(`/documentos/${documentoId}/link`);
-    const url = API_URL + data.caminho;
-    if (Platform.OS !== "web") await WebBrowser.openBrowserAsync(url);
-    else if (aba) {
-      aba.opener = null;
-      aba.location.href = url;
-    } else window.location.assign(url);
-    return data;
-  } catch (err) {
-    aba?.close();
-    throw err;
-  }
-}
-
-/** Link temporário para mostrar a imagem dentro do app. */
-export async function linkDoDocumento(documentoId: string) {
-  const { data } = await api.post<{ caminho: string; mimeType: string; expiraEm: string }>(`/documentos/${documentoId}/link`);
-  return { ...data, url: API_URL + data.caminho };
+export function abrirDocumento(documentoId: string) {
+  return abrirPorLink(async () => (await api.post<{ caminho: string }>(`/documentos/${documentoId}/link`)).data.caminho);
 }
 
 // ---- Administração

@@ -11,9 +11,11 @@ import { Botao, Cabecalho, Campo, Card, Carregando, EstadoVazio, Folha, ItemList
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { formatarTelefone } from "../../utils/formatos";
 import { DIAS_SEMANA_COMPLETOS, formatarDiaBR, diaISO, tempoRelativo } from "../../utils/datas";
-import { acaoAuditoria, mudancaAuditoria, rotuloValorAuditoria, statusConta } from "../../utils/rotulos";
+import { acaoAuditoria, motivoAusencia, mudancaAuditoria, rotuloValorAuditoria, situacaoDaFalta, situacaoFalta, statusConta } from "../../utils/rotulos";
 import type { PilhaAdmin } from "../../navigation/AdminTabs";
 import { DocumentosDoAluno } from "../../features/documentos/DocumentosDoAluno";
+import { DecisaoFaltaFolha } from "../../features/faltas/DecisaoFaltaFolha";
+import { tituloViagem } from "../../features/faltas/api";
 
 export default function PerfilAlunoScreen() {
   const navegacao = useNavigation<NativeStackNavigationProp<PilhaAdmin>>();
@@ -22,6 +24,7 @@ export default function PerfilAlunoScreen() {
   const s = useEstilos();
   const [aluno, setAluno] = useState<PerfilAlunoAdmin | null>(null);
   const [inativarAberto, setInativarAberto] = useState(false);
+  const [faltaAberta, setFaltaAberta] = useState<string | null>(null);
   const [motivo, setMotivo] = useState("");
   const [salvando, setSalvando] = useState(false);
 
@@ -118,10 +121,46 @@ export default function PerfilAlunoScreen() {
         )}
       </Card>
 
+      <Secao titulo={`Faltas${aluno.faltas.length ? ` (${aluno.faltas.length})` : ""}`} />
+      <Card semPadding>
+        {aluno.faltas.map((f, i) => {
+          const st = situacaoFalta[situacaoDaFalta(f)];
+          return (
+            <ItemLista
+              key={f.id}
+              icone={f.anexoNome ? "attach" : st.icone}
+              tomIcone={st.tom}
+              titulo={tituloViagem(f.viagem)}
+              subtitulo={[f.viagem.rota.nome, f.justificativa ? `“${f.justificativa}”` : null].filter(Boolean).join("\n")}
+              abaixo={<Pilula texto={st.rotulo} tom={st.tom} />}
+              onPress={() => setFaltaAberta(f.id)}
+              ultimo={i === aluno.faltas.length - 1 && aluno.ausenciasAvisadas.length === 0}
+            />
+          );
+        })}
+        {aluno.ausenciasAvisadas.slice(0, 5).map((a, i, arr) => (
+          <ItemLista
+            key={a.id}
+            icone="calendar-clear-outline"
+            tomIcone="neutro"
+            titulo={tituloViagem(a.viagem)}
+            subtitulo={a.motivoAusencia === "FALTOU_NA_IDA" ? motivoAusencia[a.motivoAusencia] : `Ausência avisada: ${motivoAusencia[a.motivoAusencia]}`}
+            ultimo={i === arr.length - 1}
+          />
+        ))}
+        {aluno.faltas.length === 0 && aluno.ausenciasAvisadas.length === 0 && <EstadoVazio icone="checkmark-done-outline" titulo="Nenhuma falta" />}
+      </Card>
+      <DecisaoFaltaFolha
+        falta={aluno.faltas.find((f) => f.id === faltaAberta) ?? null}
+        nomeAluno={aluno.usuario.nome}
+        onFechar={() => setFaltaAberta(null)}
+        aoDecidir={recarregar}
+      />
+
       <Secao titulo="Histórico" />
       <Card semPadding>
         {aluno.historico.map((h, i) => {
-          const d = h.detalhes as { de?: string; para?: string; motivo?: string | null } | null;
+          const d = h.detalhes as { de?: string; para?: string; motivo?: string | null; viagem?: string } | null;
           const mudanca = d?.de && d?.para ? `${rotuloValorAuditoria(d.de)} → ${rotuloValorAuditoria(d.para)}` : mudancaAuditoria(h);
           return (
             <ItemLista
@@ -129,7 +168,9 @@ export default function PerfilAlunoScreen() {
               icone="time-outline"
               tomIcone="neutro"
               titulo={acaoAuditoria[h.acao] ?? h.acao}
-              subtitulo={[mudanca, d?.motivo, `${h.usuario ? h.usuario.nome : "Sistema"} • ${tempoRelativo(h.criadoEm)}`].filter(Boolean).join("\n")}
+              subtitulo={[mudanca, d?.viagem ? `Falta na ${d.viagem}` : null, d?.motivo, `${h.usuario ? h.usuario.nome : "Sistema"} • ${tempoRelativo(h.criadoEm)}`]
+                .filter(Boolean)
+                .join("\n")}
               ultimo={i === aluno.historico.length - 1}
             />
           );

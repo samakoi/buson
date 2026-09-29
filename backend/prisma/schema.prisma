@@ -23,6 +23,24 @@ enum StatusCheckin {
   CANCELADO
 }
 
+enum StatusFalta {
+  REGISTRADA // registrada ao encerrar a viagem; pode ter justificativa aguardando decisão
+  JUSTIFICADA
+  INDEFERIDA
+}
+
+/// Motivo informado ao liberar a vaga antes da saída ("ausência avisada", não é falta)
+enum MotivoAusencia {
+  DOENCA
+  COMPROMISSO_ACADEMICO
+  COMPROMISSO_PESSOAL
+  TRABALHO
+  TRANSPORTE_PROPRIO
+  OUTRO
+  /// Liberada pelo sistema: o aluno faltou na ida do mesmo dia
+  FALTOU_NA_IDA
+}
+
 enum SentidoViagem {
   IDA // leva os alunos às instituições
   VOLTA // busca os alunos nas instituições
@@ -84,6 +102,7 @@ model Usuario {
   notificacoes         Notificacao[]
   auditorias           Auditoria[]
   documentosAnalisados Documento[]    @relation("DocumentoAnalisadoPor")
+  faltasDecididas      Falta[]        @relation("FaltaDecididaPor")
   refreshTokens        RefreshToken[]
 
   @@map("usuarios")
@@ -119,6 +138,7 @@ model Aluno {
   documentos Documento[]
   embarques  Embarque[]
   alocacoes  AlocacaoAluno[]
+  faltas     Falta[]
 
   @@map("alunos")
 }
@@ -278,25 +298,29 @@ model Viagem {
   checkins        Checkin[]
   sessoesEmbarque BoardingSession[]
   embarques       Embarque[]
+  faltas          Falta[]
 
   @@unique([programacaoId, sentido, data])
   @@map("viagens")
 }
 
 model Checkin {
-  id              String         @id @default(uuid())
+  id              String          @id @default(uuid())
   viagemId        String
-  viagem          Viagem         @relation(fields: [viagemId], references: [id], onDelete: Cascade)
+  viagem          Viagem          @relation(fields: [viagemId], references: [id], onDelete: Cascade)
   alunoId         String
-  aluno           Aluno          @relation(fields: [alunoId], references: [id], onDelete: Cascade)
-  status          StatusCheckin  @default(CONFIRMADO)
-  embarcado       Boolean        @default(false)
+  aluno           Aluno           @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  status          StatusCheckin   @default(CONFIRMADO)
+  embarcado       Boolean         @default(false)
   /// Onde o aluno embarca (vem da alocação do dia)
   pontoEmbarqueId String?
-  pontoEmbarque   PontoEmbarque? @relation(fields: [pontoEmbarqueId], references: [id], onDelete: SetNull)
+  pontoEmbarque   PontoEmbarque?  @relation(fields: [pontoEmbarqueId], references: [id], onDelete: SetNull)
+  /// Vaga liberada antes da saída: o motivo informado (ausência avisada — não é falta)
+  motivoAusencia  MotivoAusencia?
+  canceladoEm     DateTime?
   posicaoFila     Int?
-  criadoEm        DateTime       @default(now())
-  atualizadoEm    DateTime       @updatedAt
+  criadoEm        DateTime        @default(now())
+  atualizadoEm    DateTime        @updatedAt
 
   @@unique([viagemId, alunoId])
   @@map("checkins")
@@ -313,6 +337,36 @@ model Notificacao {
 
   @@index([usuarioId, lida])
   @@map("notificacoes")
+}
+
+/// Falta: aluno com vaga que não embarcou numa viagem encerrada (uma por aluno por viagem)
+model Falta {
+  id                 String      @id @default(uuid())
+  alunoId            String
+  aluno              Aluno       @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  viagemId           String
+  viagem             Viagem      @relation(fields: [viagemId], references: [id], onDelete: Cascade)
+  status             StatusFalta @default(REGISTRADA)
+  /// Até quando o próprio aluno pode justificar (depois, só a administração)
+  prazoJustificativa DateTime
+  justificativa      String?     @db.VarChar(500)
+  justificadaEm      DateTime?
+  /// Anexo opcional (atestado etc.): chave no armazenamento + metadados
+  anexoArquivo       String?
+  anexoNome          String?
+  anexoMimeType      String?
+  anexoTamanho       Int?
+  decididoPorId      String?
+  decididoPor        Usuario?    @relation("FaltaDecididaPor", fields: [decididoPorId], references: [id], onDelete: SetNull)
+  decididoEm         DateTime?
+  /// Motivo do indeferimento ou observação ao justificar
+  observacaoDecisao  String?     @db.VarChar(300)
+  criadoEm           DateTime    @default(now())
+
+  @@unique([viagemId, alunoId])
+  @@index([alunoId, criadoEm])
+  @@index([status])
+  @@map("faltas")
 }
 
 /// Comprovante de matrícula enviado pelo aluno (Fase 2)

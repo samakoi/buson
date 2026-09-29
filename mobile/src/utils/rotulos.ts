@@ -1,6 +1,6 @@
 import type { NomeIcone } from "../components/icones";
 import type { Tom } from "../theme/tokens";
-import type { CategoriaNotificacao, StatusConta, StatusDocumento, StatusViagem } from "../types";
+import type { CategoriaNotificacao, Falta, MotivoAusencia, SituacaoFalta, StatusConta, StatusDocumento, StatusViagem } from "../types";
 
 /** Rótulos únicos de status — use sempre estes em vez de escrever o texto na tela. */
 export const statusViagem: Record<StatusViagem, { rotulo: string; tom: Tom; icone: NomeIcone }> = {
@@ -32,11 +32,36 @@ export const statusDocumento: Record<StatusDocumento, { rotulo: string; tom: Tom
 
 export const tipoDocumento = { DECLARACAO: "Declaração de matrícula", COMPROVANTE: "Comprovante de matrícula", OUTRO: "Outro documento" } as const;
 
+export const situacaoFalta: Record<SituacaoFalta, { rotulo: string; tom: Tom; icone: NomeIcone }> = {
+  SEM_JUSTIFICATIVA: { rotulo: "Sem justificativa", tom: "perigo", icone: "alert-circle-outline" },
+  AGUARDANDO_DECISAO: { rotulo: "Justificativa em análise", tom: "alerta", icone: "hourglass-outline" },
+  JUSTIFICADA: { rotulo: "Justificada", tom: "sucesso", icone: "checkmark-circle" },
+  INDEFERIDA: { rotulo: "Indeferida", tom: "neutro", icone: "close-circle-outline" },
+};
+
+/** A situação que a tela mostra a partir do status da falta. */
+export function situacaoDaFalta(f: Pick<Falta, "status" | "justificativa">): SituacaoFalta {
+  if (f.status !== "REGISTRADA") return f.status;
+  return f.justificativa ? "AGUARDANDO_DECISAO" : "SEM_JUSTIFICATIVA";
+}
+
+export const motivoAusencia: Record<MotivoAusencia, string> = {
+  DOENCA: "Doença",
+  COMPROMISSO_ACADEMICO: "Compromisso acadêmico",
+  COMPROMISSO_PESSOAL: "Compromisso pessoal",
+  TRABALHO: "Trabalho",
+  TRANSPORTE_PROPRIO: "Vou por conta própria",
+  OUTRO: "Outro motivo",
+  FALTOU_NA_IDA: "Vaga liberada: faltou na ida",
+};
+
 /** Converte valores gravados na auditoria (ex.: "ATIVO") no texto da tela. */
 export function rotuloValorAuditoria(valor: unknown): string {
   if (typeof valor !== "string") return String(valor ?? "");
   if (valor in statusConta) return statusConta[valor as StatusConta].rotulo;
   if (valor in statusDocumento) return statusDocumento[valor as StatusDocumento].rotulo;
+  if (valor === "REGISTRADA") return "Registrada";
+  if (valor in situacaoFalta) return situacaoFalta[valor as SituacaoFalta].rotulo;
   return valor;
 }
 
@@ -63,6 +88,9 @@ export const acaoAuditoria: Record<string, string> = {
   DOCUMENTO_EM_ANALISE: "Documento em análise",
   DOCUMENTO_APROVADO: "Documento aprovado",
   DOCUMENTO_REPROVADO: "Documento reprovado",
+  FALTA_JUSTIFICATIVA_ENVIADA: "Justificativa de falta enviada",
+  FALTA_JUSTIFICADA: "Falta justificada",
+  FALTA_INDEFERIDA: "Justificativa de falta indeferida",
 };
 
 type DiaAuditado = { dia: string; rota?: string; ponto?: string | null };
@@ -73,6 +101,9 @@ export function mudancaAuditoria(h: { valorAnterior: Record<string, unknown> | n
   const depois = h.valorNovo ?? {};
   if ("statusConta" in antes || "statusConta" in depois) {
     return `${rotuloValorAuditoria(antes.statusConta)} → ${rotuloValorAuditoria(depois.statusConta)}`;
+  }
+  if ("falta" in depois) {
+    return `${rotuloValorAuditoria(antes.falta)} → ${rotuloValorAuditoria(depois.falta)}`;
   }
   if ("documento" in depois) {
     return "documento" in antes ? `${rotuloValorAuditoria(antes.documento)} → ${rotuloValorAuditoria(depois.documento)}` : rotuloValorAuditoria(depois.documento);

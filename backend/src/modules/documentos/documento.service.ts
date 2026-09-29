@@ -1,12 +1,12 @@
-import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { Prisma, StatusDocumento, TipoDocumento } from "@prisma/client";
 import { prisma } from "../../config/prisma";
-import { env } from "../../config/env";
 import { AppError } from "../../errors/AppError";
 import { temPermissao } from "../../auth/permissoes";
 import { JwtPayload } from "../../utils/jwt";
 import { armazenamento } from "../../storage/armazenamento";
+import { detectarFormato, nomeSeguro, TAMANHO_MAXIMO } from "../../storage/formatos";
+import { assinarLink, verificarLink } from "../../utils/linkAssinado";
 import { registrarAuditoria } from "../auditoria/auditoria.service";
 import { notificarAdmins, notificarAluno } from "../notificacoes/notificacao.service";
 import { OPCOES_TX } from "../alocacao/alocacao.service";
@@ -20,20 +20,9 @@ import { documentoPublico } from "./documento.select";
  * O arquivo fica no armazenamento (fora da pasta pública); o banco guarda só os metadados.
  */
 
-export const TAMANHO_MAXIMO = 10 * 1024 * 1024;
+export { TAMANHO_MAXIMO };
+
 const AGUARDANDO: StatusDocumento[] = ["PENDENTE", "EM_ANALISE"];
-const LINK_SEGUNDOS = 5 * 60;
-
-/** Tipos aceitos, reconhecidos pelos primeiros bytes do arquivo (não pela extensão). */
-const FORMATOS = [
-  { mimeType: "application/pdf", extensao: "pdf", assinatura: [0x25, 0x50, 0x44, 0x46] }, // %PDF
-  { mimeType: "image/png", extensao: "png", assinatura: [0x89, 0x50, 0x4e, 0x47] },
-  { mimeType: "image/jpeg", extensao: "jpg", assinatura: [0xff, 0xd8, 0xff] },
-] as const;
-
-function detectarFormato(conteudo: Buffer) {
-  return FORMATOS.find((f) => f.assinatura.every((byte, i) => conteudo[i] === byte)) ?? null;
-}
 
 async function alunoDoUsuario(usuarioId: string) {
   const aluno = await prisma.aluno.findUnique({ where: { usuarioId }, select: { id: true, statusConta: true, usuario: { select: { nome: true } } } });
@@ -41,11 +30,6 @@ async function alunoDoUsuario(usuarioId: string) {
   return aluno;
 }
 
-/** Nome enviado pelo celular, sem pastas e com tamanho limitado. */
-function nomeSeguro(nome: string | undefined, extensao: string) {
-  const base = path.basename(nome || "").replace(/[\u0000-\u001f]/g, "").trim();
-  return (base || `documento.${extensao}`).slice(0, 180);
-}
 
 export async function enviar(usuarioId: string, arquivo: Express.Multer.File | undefined, tipo: TipoDocumento) {
   const aluno = await alunoDoUsuario(usuarioId);
@@ -140,10 +124,6 @@ export async function listar(f: FiltroDocumentos) {
 
 // ---------------------------------------------------------------- Link temporário
 
-function assinatura(documentoId: string, expira: number) {
-  return createHmac("sha256", env.jwtSecret).update(`documento:${documentoId}:${expira}`).digest("base64url");
-}
-
 /**
  * Link de 5 minutos para abrir o arquivo no navegador/visualizador (que não mandam o
  * token de login). O dono ou a administração pedem o link; abrir um documento
@@ -175,20 +155,17 @@ export async function gerarLink(documentoId: string, usuario: JwtPayload) {
     });
   }
 
-  const expira = Math.floor(Date.now() / 1000) + LINK_SEGUNDOS;
+  const link = assinarLink("documento", documento.id);
   return {
-    caminho: `/documentos/${documento.id}/arquivo?expira=${expira}&assinatura=${assinatura(documento.id, expira)}`,
-    expiraEm: new Date(expira * 1000).toISOString(),
+    caminho: `/documentos/${documento.id}/arquivo?${link.query}`,
+    expiraEm: link.expiraEm,
     mimeType: documento.mimeType,
     nomeOriginal: documento.nomeOriginal,
   };
 }
 
 export async function abrirArquivo(documentoId: string, expira: number, recebida: string) {
-  const esperada = Buffer.from(assinatura(documentoId, expira));
-  const enviada = Buffer.from(recebida);
-  const valida = enviada.length === esperada.length && timingSafeEqual(enviada, esperada);
-  if (!valida || expira < Date.now() / 1000) throw new AppError("LINK_INVALIDO");
+  verificarLink("documento", documentoId, expira, recebida);
 
   const documento = await prisma.documento.findUnique({ where: { id: documentoId }, select: { arquivo: true, mimeType: true, nomeOriginal: true } });
   if (!documento) throw new AppError("DOCUMENTO_NAO_ENCONTRADO");

@@ -11,6 +11,7 @@ import CadastrosScreen from "../screens/Admin/CadastrosScreen";
 import AvisosScreen from "../screens/Comum/AvisosScreen";
 import MeusDiasScreen from "../features/alocacao/MeusDiasScreen";
 import DocumentosScreen from "../features/documentos/DocumentosScreen";
+import FaltasScreen from "../features/faltas/FaltasScreen";
 
 export type AbasAdmin = { Dashboard: undefined; Alunos: undefined; Viagens: undefined; Cadastros: undefined; Avisos: undefined };
 export type PilhaAdmin = {
@@ -18,6 +19,7 @@ export type PilhaAdmin = {
   PerfilAluno: { alunoId: string };
   DiasAluno: { alunoId: string; nome: string };
   Documentos: undefined;
+  Faltas: undefined;
 };
 
 const Tab = createBottomTabNavigator<AbasAdmin>();
@@ -51,6 +53,7 @@ export default function AdminNavegacao() {
       <Pilha.Screen name="PerfilAluno" component={PerfilAlunoScreen} />
       <Pilha.Screen name="DiasAluno" component={MeusDiasScreen} />
       <Pilha.Screen name="Documentos" component={DocumentosScreen} />
+      <Pilha.Screen name="Faltas" component={FaltasScreen} />
     </Pilha.Navigator>
   );
 }

@@ -1,11 +1,16 @@
-import { Prisma, SentidoViagem, StatusViagem } from "@prisma/client";
+import { MotivoAusencia, Prisma, SentidoViagem, StatusViagem } from "@prisma/client";
 import { prisma } from "../../config/prisma";
 import { AppError } from "../../errors/AppError";
 import { JwtPayload } from "../../utils/jwt";
-import { comHorario, diaMes, formatarDia, inicioDoDia, intervaloDeDias, intervaloDeHoje, parseDia } from "../../utils/datas";
+import { comHorario, diaMes, formatarDia, inicioDoDia, intervaloDeHoje, parseDia } from "../../utils/datas";
 import { notificarAluno, notificarAlunos } from "../notificacoes/notificacao.service";
 import { registrarAuditoria } from "../auditoria/auditoria.service";
 import { encerrarSessoes } from "../embarque/embarque.service";
+import { OCUPA_VAGA, contarOcupados, promoverProximoDaEspera, travarViagens, viagemIrma } from "./vagas";
+import { registrarFaltasAoEncerrar } from "../faltas/falta.service";
+import { OPCOES_TX } from "../alocacao/alocacao.service";
+
+export { OCUPA_VAGA, contarOcupados, promoverProximoDaEspera, travarViagens };
 
 /**
  * Regras de negócio implementadas aqui (ver Bus_On_Documentacao_Completa.docx, seção 3):
@@ -17,9 +22,6 @@ import { encerrarSessoes } from "../embarque/embarque.service";
  *    no dia como PROGRAMADO (vaga garantida). O aluno confirma a presença do dia (ida e
  *    volta) e as vagas que sobram ficam para check-ins avulsos, com lista de espera.
  */
-
-/** Status que ocupam uma vaga no ônibus. */
-export const OCUPA_VAGA = ["PROGRAMADO", "CONFIRMADO"] as const;
 
 type Tx = Prisma.TransactionClient;
 
@@ -111,7 +113,7 @@ export async function listarViagens(usuario: JwtPayload, filtro: FiltroViagensAd
       ...viagemInclude,
       checkins: {
         where: { alunoId: aluno.id },
-        select: { status: true, embarcado: true, criadoEm: true, pontoEmbarque: { select: { id: true, nome: true } } },
+        select: { status: true, embarcado: true, criadoEm: true, motivoAusencia: true, pontoEmbarque: { select: { id: true, nome: true } } },
       },
       embarques: { where: { alunoId: aluno.id }, select: { dataHora: true, metodo: true } },
     },
@@ -141,6 +143,7 @@ export async function listarViagens(usuario: JwtPayload, filtro: FiltroViagensAd
               embarcadoEm: embarques[0]?.dataHora ?? null,
               posicaoFila,
               pontoEmbarque: meu.pontoEmbarque,
+              motivoAusencia: meu.motivoAusencia,
             }
           : null,
       };
@@ -253,27 +256,6 @@ async function marcarDataCancelada(tx: Tx, programacaoId: string, sentido: Senti
   await tx.programacao.update({ where: { id: programacaoId }, data: { datasCanceladas: datas } });
 }
 
-/** Trava várias viagens sempre na mesma ordem (por id), para não haver deadlock. */
-export async function travarViagens(tx: Tx, viagemIds: string[]) {
-  const ids = [...new Set(viagemIds)].sort();
-  if (ids.length > 0) await tx.$queryRaw`SELECT id FROM viagens WHERE id IN (${Prisma.join(ids)}) ORDER BY id FOR UPDATE`;
-}
-
-export async function contarOcupados(tx: Tx, viagemId: string) {
-  return tx.checkin.count({ where: { viagemId, status: { in: [...OCUPA_VAGA] } } });
-}
-
-/** Regra 3.2 — Lista de espera inteligente: uma vaga abriu, o primeiro da fila é confirmado. */
-export async function promoverProximoDaEspera(tx: Tx, viagemId: string) {
-  const proximo = await tx.checkin.findFirst({
-    where: { viagemId, status: "ESPERA" },
-    orderBy: { criadoEm: "asc" },
-  });
-  if (!proximo) return;
-  await tx.checkin.update({ where: { id: proximo.id }, data: { status: "CONFIRMADO" } });
-  await notificarAluno(tx, proximo.alunoId, { mensagem: "Boas notícias! Sua vaga foi confirmada automaticamente.", categoria: "TRANSPORTE" });
-}
-
 /** Exclui viagens que ainda não começaram, avisando quem tinha vaga ou estava na espera. */
 export async function excluirViagensComAviso(tx: Tx, viagemIds: string[], motivo: string) {
   if (viagemIds.length === 0) return;
@@ -295,21 +277,6 @@ export async function excluirViagensComAviso(tx: Tx, viagemIds: string[], motivo
     });
   }
   await tx.viagem.deleteMany({ where: { id: { in: viagens.map((v) => v.id) } } });
-}
-
-/** A outra viagem (ida ↔ volta) da mesma programação no mesmo dia, se ainda não começou. */
-async function viagemIrma(tx: Tx, viagemId: string) {
-  const base = await tx.viagem.findUnique({ where: { id: viagemId }, select: { programacaoId: true, sentido: true, data: true } });
-  if (!base?.programacaoId) return null;
-  return tx.viagem.findFirst({
-    where: {
-      programacaoId: base.programacaoId,
-      sentido: base.sentido === "IDA" ? "VOLTA" : "IDA",
-      data: intervaloDeDias(base.data),
-      status: "AGUARDANDO",
-    },
-    select: { id: true },
-  });
 }
 
 /**
@@ -372,8 +339,21 @@ export async function fazerCheckin(viagemId: string, alunoId: string) {
   });
 }
 
-export async function cancelarCheckin(viagemId: string, alunoId: string) {
+export interface OpcoesCancelamento {
+  /** Motivo de quem libera a vaga antes da saída: vira "ausência avisada" (não é falta) */
+  motivo?: MotivoAusencia;
+  /** Liberar também a outra viagem do dia (ida ↔ volta), se o aluno tiver vaga nela */
+  diaTodo?: boolean;
+}
+
+/**
+ * Libera a vaga (ou sai da lista de espera) antes da saída. Com motivo, fica registrado
+ * como ausência avisada — avisar antes não conta como falta.
+ */
+export async function cancelarCheckin(viagemId: string, alunoId: string, opcoes: OpcoesCancelamento = {}) {
   return prisma.$transaction(async (tx) => {
+    const irma = opcoes.diaTodo ? await viagemIrma(tx, viagemId) : null;
+    await travarViagens(tx, [viagemId, ...(irma ? [irma.id] : [])]);
     const viagem = await travarViagem(tx, viagemId);
     if (viagem.status !== "AGUARDANDO") {
       throw new AppError("CHECKIN_FECHADO");
@@ -386,19 +366,34 @@ export async function cancelarCheckin(viagemId: string, alunoId: string) {
       throw new AppError("CHECKIN_NAO_ENCONTRADO");
     }
 
+    const tinhaVaga = checkin.status === "CONFIRMADO" || checkin.status === "PROGRAMADO";
     await tx.checkin.update({
       where: { id: checkin.id },
-      data: { status: "CANCELADO" },
+      data: { status: "CANCELADO", canceladoEm: new Date(), motivoAusencia: tinhaVaga ? (opcoes.motivo ?? null) : null },
     });
-    await notificarAluno(tx, alunoId, { mensagem: "Sua vaga foi liberada.", categoria: "TRANSPORTE" });
-
     // Regra 3.2 — Lista de espera inteligente: promove o próximo da fila
-    if (checkin.status === "CONFIRMADO" || checkin.status === "PROGRAMADO") {
-      await promoverProximoDaEspera(tx, viagemId);
+    if (tinhaVaga) await promoverProximoDaEspera(tx, viagemId);
+
+    let liberouIrma = false;
+    if (irma) {
+      const naIrma = await tx.checkin.findUnique({ where: { viagemId_alunoId: { viagemId: irma.id, alunoId } } });
+      if (naIrma && naIrma.status !== "CANCELADO") {
+        const vagaNaIrma = naIrma.status === "CONFIRMADO" || naIrma.status === "PROGRAMADO";
+        await tx.checkin.update({
+          where: { id: naIrma.id },
+          data: { status: "CANCELADO", canceladoEm: new Date(), motivoAusencia: vagaNaIrma ? (opcoes.motivo ?? null) : null },
+        });
+        if (vagaNaIrma) await promoverProximoDaEspera(tx, irma.id);
+        liberouIrma = true;
+      }
     }
 
-    return { ok: true };
-  });
+    await notificarAluno(tx, alunoId, {
+      mensagem: liberouIrma ? "Suas vagas de ida e volta de hoje foram liberadas." : "Sua vaga foi liberada.",
+      categoria: "TRANSPORTE",
+    });
+    return { ok: true, liberouIrma };
+  }, OPCOES_TX);
 }
 
 export async function listarPassageiros(viagemId: string, usuario: JwtPayload) {
@@ -475,14 +470,20 @@ const erroTransicaoInvalida = {
 } as const;
 
 async function alterarStatusViagem(viagemId: string, motoristaId: string, de: StatusViagem, para: "EM_ANDAMENTO" | "ENCERRADA") {
-  const viagem = await buscarViagemDoMotorista(viagemId, motoristaId);
-  if (viagem.status !== de) throw new AppError(erroTransicaoInvalida[para]);
+  await buscarViagemDoMotorista(viagemId, motoristaId);
   return prisma.$transaction(async (tx) => {
-    const atualizada = await tx.viagem.update({ where: { id: viagemId }, data: { status: para } });
-    // Viagem encerrada: o QR de embarque deixa de valer na hora
-    if (para === "ENCERRADA") await encerrarSessoes(tx, viagemId);
-    return atualizada;
-  });
+    // Só muda se ainda estiver no status esperado (dois toques em "Encerrar" não registram faltas duas vezes)
+    const { count } = await tx.viagem.updateMany({ where: { id: viagemId, status: de }, data: { status: para } });
+    if (count === 0) throw new AppError(erroTransicaoInvalida[para]);
+    let faltasRegistradas = 0;
+    if (para === "ENCERRADA") {
+      // Viagem encerrada: o QR de embarque deixa de valer e quem tinha vaga e não embarcou leva falta
+      await encerrarSessoes(tx, viagemId);
+      faltasRegistradas = await registrarFaltasAoEncerrar(tx, viagemId);
+    }
+    const atualizada = await tx.viagem.findUniqueOrThrow({ where: { id: viagemId } });
+    return { ...atualizada, faltasRegistradas };
+  }, OPCOES_TX);
 }
 
 export async function atualizarLocalizacao(viagemId: string, motoristaId: string, latitude: number, longitude: number) {

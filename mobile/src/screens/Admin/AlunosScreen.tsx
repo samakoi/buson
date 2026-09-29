@@ -78,7 +78,12 @@ export default function AlunosScreen() {
       <Cabecalho
         titulo="Alunos"
         subtitulo={buscaAplicada ? `${totalGeral} resultado(s) para "${buscaAplicada}"` : `${totalGeral} aluno(s) cadastrado(s)`}
-        acoes={<BotaoIcone icone="document-text-outline" rotulo="Documentos para analisar" onPress={() => navegacao.navigate("Documentos")} />}
+        acoes={
+          <View style={{ flexDirection: "row" }}>
+            <BotaoIcone icone="alert-circle-outline" rotulo="Faltas" onPress={() => navegacao.navigate("Faltas")} />
+            <BotaoIcone icone="document-text-outline" rotulo="Documentos para analisar" onPress={() => navegacao.navigate("Documentos")} />
+          </View>
+        }
       />
 
       <Campo

@@ -15,6 +15,7 @@ import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { dataPorExtenso, diaISO, formatarDuracao, minutosAte } from "../../utils/datas";
 import { statusViagem } from "../../utils/rotulos";
 import type { AbasAluno, PilhaAluno } from "../../navigation/AlunoTabs";
+import { LiberarVagaFolha } from "../../features/faltas/LiberarVagaFolha";
 
 /** Atualiza a cada minuto para a contagem "sai em…" andar sozinha. */
 function useAgora() {
@@ -39,6 +40,7 @@ export default function AlunoHomeScreen() {
   const [eu, setEu] = useState<MeusDados | null>(null);
   const minhaUniversidade = eu?.universidade.nome ?? null;
   const [processando, setProcessando] = useState(false);
+  const [liberando, setLiberando] = useState(false);
 
   // Atualiza sozinho: o aluno vê quando o ônibus sai ou quando é promovido da espera
   const { carregando, atualizando, atualizar, recarregar } = useCarregamento(
@@ -80,16 +82,12 @@ export default function AlunoHomeScreen() {
 
   async function cancelarPresenca() {
     if (!viagem) return;
-    const programado = viagem.meuCheckin?.status === "PROGRAMADO";
-    const ok = await confirmar(
-      programado ? "Não vou nesta viagem" : "Cancelar check-in",
-      viagem.meuCheckin?.status === "ESPERA"
-        ? "Você sairá da lista de espera."
-        : programado
-          ? "Sua vaga de hoje nesta viagem será liberada para outro aluno. Seus dias fixos continuam valendo nas próximas semanas."
-          : "Sua vaga será liberada para o próximo da lista de espera.",
-      { textoConfirmar: programado ? "Liberar minha vaga" : "Cancelar check-in", destrutivo: true }
-    );
+    // Quem tem vaga informa o motivo (ausência avisada); quem está na espera só sai da fila
+    if (viagem.meuCheckin?.status !== "ESPERA") return setLiberando(true);
+    const ok = await confirmar("Sair da lista de espera", "Você sairá da lista de espera desta viagem.", {
+      textoConfirmar: "Sair da espera",
+      destrutivo: true,
+    });
     if (!ok) return;
     setProcessando(true);
     try {
@@ -132,6 +130,14 @@ export default function AlunoHomeScreen() {
         <Aviso tipo="alerta" titulo="Conta inativa">
           Você não pode usar o transporte no momento. Procure a administração.
         </Aviso>
+      )}
+      {eu?.pendencias.includes("FALTA_A_JUSTIFICAR") && (
+        <Card>
+          <Aviso tipo="alerta" titulo="Você tem falta para justificar" style={{ marginBottom: 0 }}>
+            Você tem 7 dias depois da viagem para explicar o motivo e anexar um atestado, se tiver.
+          </Aviso>
+          <Botao titulo="Ver minhas faltas" icone="alert-circle-outline" variante="secundario" onPress={() => navegacao.navigate("MinhasFaltas")} style={{ marginTop: 12 }} />
+        </Card>
       )}
       {eu?.pendencias.includes("DIAS_DE_USO") && (
         <Card>
@@ -184,7 +190,11 @@ export default function AlunoHomeScreen() {
         ? { texto: "Vaga garantida — confirme sua presença", icone: "calendar" }
       : meu?.status === "ESPERA"
         ? { texto: `Você é o ${meu.posicaoFila}º da lista de espera`, icone: "time" }
-        : viagem.status === "AGUARDANDO"
+        : meu?.motivoAusencia === "FALTOU_NA_IDA" && viagem.status === "AGUARDANDO"
+          ? { texto: "Sua vaga na volta foi liberada porque você faltou na ida", icone: "swap-horizontal" }
+          : meu?.status === "CANCELADO" && meu.motivoAusencia && viagem.status === "AGUARDANDO"
+          ? { texto: "Você avisou que não vai nesta viagem", icone: "calendar-clear-outline" }
+          : viagem.status === "AGUARDANDO"
           ? { texto: "Você ainda não confirmou presença", icone: "ellipse-outline" }
           : { texto: "Você não fez check-in nesta viagem", icone: "remove-circle-outline" };
 
@@ -195,7 +205,7 @@ export default function AlunoHomeScreen() {
   } else if (viagem.status === "AGUARDANDO" && !ativo) {
     acao = (
       <Botao
-        titulo={lotado ? "Entrar na lista de espera" : "Confirmar presença"}
+        titulo={lotado ? "Entrar na lista de espera" : meu?.motivoAusencia ? "Pedir a vaga de novo" : "Confirmar presença"}
         icone={lotado ? "time-outline" : "checkmark-circle"}
         variante="claro"
         onPress={confirmarPresenca}
@@ -287,13 +297,24 @@ export default function AlunoHomeScreen() {
 
       {viagem.status === "AGUARDANDO" && ativo && (
         <Botao
-          titulo={programado ? "Não vou nesta viagem" : "Cancelar check-in"}
+          titulo={meu?.status === "ESPERA" ? "Sair da lista de espera" : "Não vou nesta viagem"}
           icone="close-circle-outline"
           variante="perigoFantasma"
           onPress={cancelarPresenca}
           carregando={processando}
         />
       )}
+      <LiberarVagaFolha
+        viagem={viagem}
+        visivel={liberando}
+        onFechar={() => setLiberando(false)}
+        aoLiberar={async (liberouIrma) => {
+          setLiberando(false);
+          avisar("Vaga liberada", liberouIrma ? "Suas vagas de ida e volta de hoje foram liberadas. Obrigado por avisar!" : "Obrigado por avisar! Sua vaga foi para outro aluno.");
+          await recarregar();
+          atualizarAvisos();
+        }}
+      />
       {viagem.status === "EM_ANDAMENTO" && !ativo && (
         <Texto variante="pequeno" cor="textoSuave" alinhar="center">
           A viagem já começou — o check-in está fechado.

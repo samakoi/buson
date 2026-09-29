@@ -3,7 +3,7 @@ import { prisma } from "../../config/prisma";
 import { env } from "../../config/env";
 import { logger } from "../../config/logger";
 import { AppError } from "../../errors/AppError";
-import { comHorario, diaMes, formatarDia, inicioDoDia, intervaloDeDias, lerDiasSemana, NOMES_DIAS, somarDias } from "../../utils/datas";
+import { comHorario, diaMes, inicioDoDia, intervaloDeDias, lerDiasSemana, NOMES_DIAS, somarDias } from "../../utils/datas";
 import { diferenca, registrarAuditoria } from "../auditoria/auditoria.service";
 import { OPCOES_TX, ocupacaoPorDia, revisarAlocacoes } from "../alocacao/alocacao.service";
 import { chaveDataCancelada, excluirViagensComAviso, OCUPA_VAGA, travarViagens } from "../viagens/viagem.service";

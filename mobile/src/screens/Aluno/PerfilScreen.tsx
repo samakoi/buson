@@ -36,6 +36,7 @@ export default function PerfilScreen() {
   const dadosCompletos = !dados.pendencias.includes("DADOS_ACADEMICOS");
   const semDias = dados.pendencias.includes("DIAS_DE_USO");
   const faltaDocumento = dados.pendencias.includes("DOCUMENTO");
+  const faltaAJustificar = dados.pendencias.includes("FALTA_A_JUSTIFICAR");
   const doc = dados.documento ? statusDocumento[dados.documento.status] : null;
   const ativa = dados.statusConta === "ATIVO";
   const seta = <Ionicons name="chevron-forward" size={18} color={cores.textoFraco} />;
@@ -115,6 +116,15 @@ export default function PerfilScreen() {
           abaixo={ativa && semDias ? <Pilula texto="Pendente" tom="alerta" /> : undefined}
           direita={seta}
           onPress={() => navegacao.navigate("MeusDias")}
+        />
+        <ItemLista
+          icone="alert-circle-outline"
+          tomIcone={faltaAJustificar ? "alerta" : "neutro"}
+          titulo="Minhas faltas"
+          subtitulo={faltaAJustificar ? "Você tem falta para justificar" : "Faltas, justificativas e ausências avisadas"}
+          abaixo={faltaAJustificar ? <Pilula texto="Justificar" tom="alerta" /> : undefined}
+          direita={seta}
+          onPress={() => navegacao.navigate("MinhasFaltas")}
           apagado={!ativa}
           ultimo
         />

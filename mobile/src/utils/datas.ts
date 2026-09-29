@@ -90,3 +90,8 @@ export function listarDias(dias: number[]): string {
   const nomes = [...new Set(dias)].sort((a, b) => a - b).map((d) => DIAS_SEMANA[d]);
   return nomes.length > 1 ? `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}` : nomes.join("");
 }
+
+/** Data/hora ISO da API → "29/09" (no fuso do aparelho) */
+export function diaMes(dataIso: string): string {
+  return formatarDiaBR(diaISO(new Date(dataIso))).slice(0, 5);
+}

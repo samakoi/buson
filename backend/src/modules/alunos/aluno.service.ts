@@ -5,6 +5,7 @@ import { historico, registrarAuditoria } from "../auditoria/auditoria.service";
 import { notificarAluno } from "../notificacoes/notificacao.service";
 import { OPCOES_TX, revalidarDiasAoAtivar, revisarAlocacoes, sincronizarCheckins } from "../alocacao/alocacao.service";
 import { documentoPublico } from "../documentos/documento.select";
+import { historicoDoAluno } from "../faltas/falta.service";
 
 const usuarioPublico = { select: { id: true, nome: true, email: true } } as const;
 
@@ -71,16 +72,17 @@ export async function listar(f: FiltroAlunos) {
 export async function detalhar(alunoId: string) {
   const aluno = await prisma.aluno.findUnique({ where: { id: alunoId }, select: alunoResumo });
   if (!aluno) throw new AppError("ALUNO_NAO_ENCONTRADO");
-  const [dias, documentos, registros] = await Promise.all([
+  const [dias, documentos, faltas, registros] = await Promise.all([
     prisma.alocacaoAluno.findMany({
       where: { alunoId, ativo: true },
       select: { diaSemana: true, rota: { select: { id: true, nome: true } }, pontoEmbarque: { select: { id: true, nome: true } } },
       orderBy: { diaSemana: "asc" },
     }),
     prisma.documento.findMany({ where: { alunoId }, select: documentoPublico, orderBy: { criadoEm: "desc" } }),
+    historicoDoAluno(alunoId),
     historico("Aluno", alunoId),
   ]);
-  return { ...aluno, dias, documentos, historico: registros };
+  return { ...aluno, dias, documentos, faltas: faltas.faltas, ausenciasAvisadas: faltas.ausenciasAvisadas, historico: registros };
 }
 
 /** Admin ativa/inativa (ou volta para pendente) a conta do aluno. */
@@ -138,6 +140,11 @@ export async function meusDados(usuarioId: string) {
   });
   // Conta pendente sem documento (ou com o último reprovado): falta enviar o comprovante
   if (aluno.statusConta === "PENDENTE" && (!documento || documento.status === "REPROVADO")) pendencias.push("DOCUMENTO");
+  // Falta ainda dentro do prazo e sem justificativa
+  const faltasAJustificar = await prisma.falta.count({
+    where: { alunoId: aluno.id, status: "REGISTRADA", justificativa: null, prazoJustificativa: { gte: new Date() } },
+  });
+  if (faltasAJustificar > 0) pendencias.push("FALTA_A_JUSTIFICAR");
   // Conta ativa sem dias fixos: o app sugere escolher os dias de transporte
   if (aluno.statusConta === "ATIVO" && (await prisma.alocacaoAluno.count({ where: { alunoId: aluno.id, ativo: true } })) === 0) {
     pendencias.push("DIAS_DE_USO");
