@@ -5,10 +5,11 @@ import { useTema } from "../../theme/TemaProvider";
 import { Aviso, Botao, BotaoIcone, Campo, Card, Carregando, Chips, EstadoVazio, Folha, ItemLista, Pilula, Rotulo } from "../../components/ui";
 import { avisar, codigoDeErro, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { BarraSecao } from "../../screens/Admin/cadastros/BarraSecao";
+import { CampoCoordenadas, escreverCoordenadas, lerCoordenadas } from "../gps/CampoCoordenadas";
 import { useExcluirPonto, usePontosEmbarque, useSalvarPonto } from "./api";
 
-type Formulario = { id?: string; nome: string; endereco: string; ativo: boolean };
-const vazio: Formulario = { nome: "", endereco: "", ativo: true };
+type Formulario = { id?: string; nome: string; endereco: string; coordenadas: string; ativo: boolean };
+const vazio: Formulario = { nome: "", endereco: "", coordenadas: "", ativo: true };
 
 /** Pontos de embarque: onde os alunos esperam o ônibus na ida (praças, bairros, paradas). */
 export default function PontosCadastro() {
@@ -21,7 +22,7 @@ export default function PontosCadastro() {
 
   function abrir(p?: PontoEmbarque) {
     setErro(null);
-    setForm(p ? { id: p.id, nome: p.nome, endereco: p.endereco ?? "", ativo: p.ativo } : vazio);
+    setForm(p ? { id: p.id, nome: p.nome, endereco: p.endereco ?? "", coordenadas: escreverCoordenadas(p), ativo: p.ativo } : vazio);
   }
 
   async function confirmarFormulario() {
@@ -38,7 +39,16 @@ export default function PontosCadastro() {
     }
     setErro(null);
     try {
-      await salvar.mutateAsync({ id: form.id, nome: form.nome.trim(), endereco: form.endereco.trim() || null, ...(form.id && { ativo: form.ativo }) });
+      const coordenadas = lerCoordenadas(form.coordenadas);
+      if (form.coordenadas.trim() && !coordenadas) return setErro("Localização inválida. Use: latitude, longitude.");
+      await salvar.mutateAsync({
+        id: form.id,
+        nome: form.nome.trim(),
+        endereco: form.endereco.trim() || null,
+        latitude: coordenadas?.latitude ?? null,
+        longitude: coordenadas?.longitude ?? null,
+        ...(form.id && { ativo: form.ativo }),
+      });
       setForm(null);
     } catch (err) {
       setErro(mensagemDeErro(err, "Não foi possível salvar o ponto."));
@@ -73,7 +83,7 @@ export default function PontosCadastro() {
               icone="location-outline"
               tomIcone={p.ativo ? "info" : "neutro"}
               titulo={p.nome}
-              subtitulo={[p.endereco, rotas ? `em ${rotas} rota(s)` : "fora das rotas"].filter(Boolean).join(" • ")}
+              subtitulo={[p.endereco, rotas ? `em ${rotas} rota(s)` : "fora das rotas", p.latitude == null ? "sem localização no mapa" : null].filter(Boolean).join(" • ")}
               abaixo={!p.ativo ? <Pilula texto="Inativo" tom="neutro" /> : undefined}
               apagado={!p.ativo}
               ultimo={i === pontos.length - 1}
@@ -107,6 +117,7 @@ export default function PontosCadastro() {
               onChangeText={(endereco) => setForm({ ...form, endereco })}
               placeholder="Ex.: Av. Getúlio Vargas, em frente ao banco"
             />
+            <CampoCoordenadas valor={form.coordenadas} onChange={(coordenadas) => setForm({ ...form, coordenadas })} />
             {form.id && (
               <>
                 <Rotulo>Situação</Rotulo>

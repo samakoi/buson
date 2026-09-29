@@ -32,12 +32,48 @@ export interface Onibus {
 export interface Universidade {
   id: string;
   nome: string;
+  endereco?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+export interface PosicaoOnibus {
+  latitude: number;
+  longitude: number;
+  velocidade: number | null;
+  direcao: number | null;
+  precisao: number | null;
+  registradoEm: string;
+}
+
+/** GET /viagens/:id/localizacao */
+export interface AcompanhamentoViagem {
+  viagem: { id: string; status: StatusViagem; sentido: SentidoViagem; horario: string; rota: string; placa: string };
+  posicao: PosicaoOnibus | null;
+  atualizadoHaSegundos: number | null;
+  paradas: { tipo: "PONTO" | "INSTITUICAO"; id: string; nome: string; latitude: number; longitude: number }[];
+  meuDestino: { tipo: "PONTO" | "INSTITUICAO"; nome: string; latitude: number; longitude: number; distanciaMetros: number | null } | null;
+}
+
+/** GET /viagens/ao-vivo (admin) */
+export interface ViagemAoVivo {
+  id: string;
+  sentido: SentidoViagem;
+  horario: string;
+  rota: string;
+  placa: string;
+  motorista: string;
+  embarcados: number;
+  posicao: PosicaoOnibus | null;
+  atualizadoHaSegundos: number | null;
 }
 
 export interface PontoEmbarque {
   id: string;
   nome: string;
   endereco: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   ativo: boolean;
   _count?: { rotas: number };
 }
@@ -75,8 +111,6 @@ export interface Viagem {
   sentido: SentidoViagem;
   /** Gerada pela programação semanal (null = criada avulsa) */
   programacaoId: string | null;
-  latitude?: number;
-  longitude?: number;
   rota: { nome: string };
   onibus: Onibus;
   motorista?: { usuario: { nome: string } };

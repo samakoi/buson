@@ -10,7 +10,10 @@ import { Aviso, BarraProgresso, Botao, Cabecalho, Card, Carregando, EstadoVazio,
 import { avisar, mensagemDeErro } from "../../utils/feedback";
 import { statusViagem } from "../../utils/rotulos";
 import type { AbasMotorista } from "../../navigation/MotoristaTabs";
-import { useEncerrarViagem } from "../../features/viagens/api";
+import { chavesViagem, useEncerrarViagem } from "../../features/viagens/api";
+import { StatusGps } from "../../features/gps/StatusGps";
+import { pararRastreamento } from "../../features/gps/rastreador";
+import { queryClient } from "../../services/queryClient";
 
 export default function PainelScreen() {
   const navegacao = useNavigation<BottomTabNavigationProp<AbasMotorista>>();
@@ -33,6 +36,8 @@ export default function PainelScreen() {
     setProcessando(true);
     try {
       await api.post(`/viagens/${viagem.id}/iniciar`);
+      // As abas do motorista ligam o GPS assim que a viagem aparece em andamento
+      queryClient.invalidateQueries({ queryKey: chavesViagem.atual });
       await recarregar();
     } catch (err) {
       avisar("Não foi possível iniciar", mensagemDeErro(err, "Tente novamente."));
@@ -42,7 +47,10 @@ export default function PainelScreen() {
   }
 
   // Mesma confirmação e regra da tela do QR (evita duas versões do "encerrar")
-  const { encerrar: confirmarEncerramento, encerrando } = useEncerrarViagem(() => recarregar());
+  const { encerrar: confirmarEncerramento, encerrando } = useEncerrarViagem(() => {
+    void pararRastreamento();
+    recarregar();
+  });
   const encerrar = () => viagem && confirmarEncerramento(viagem);
 
 
@@ -122,6 +130,7 @@ export default function PainelScreen() {
         <Estatistica rotulo="Lista de espera" valor={r.espera} icone="time-outline" />
       </GradeEstatisticas>
 
+      {viagem.status === "EM_ANDAMENTO" && <StatusGps viagemId={viagem.id} />}
       {viagem.status === "EM_ANDAMENTO" && (
         <Botao titulo="Mostrar QR de embarque" icone="qr-code" variante="secundario" tamanho="grande" onPress={() => navegacao.navigate("Embarque")} />
       )}

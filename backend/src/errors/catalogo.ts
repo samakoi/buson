@@ -87,6 +87,9 @@ export const ERROS = {
   PRAZO_JUSTIFICATIVA_ENCERRADO: { status: 409, mensagem: "O prazo para justificar esta falta terminou. Procure a administração do transporte." },
   ANEXO_NAO_ENCONTRADO: { status: 404, mensagem: "Esta falta não tem anexo." },
 
+  // ---- GPS
+  ACOMPANHAMENTO_NAO_PERMITIDO: { status: 403, mensagem: "Só quem tem vaga nesta viagem pode acompanhar o ônibus." },
+
   // ---- Push
   PUSH_TOKEN_INVALIDO: { status: 400, mensagem: "Token de notificação inválido." },
 

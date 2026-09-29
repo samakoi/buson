@@ -43,6 +43,8 @@ const esquema = z
       .regex(/^(([01]\d|2[0-3]):[0-5]\d)?$/, "use HH:MM ou deixe vazio")
       .default("20:00"),
     LEMBRETES_INTERVALO_MS: z.coerce.number().int().min(500).default(60 * 1000),
+    // GPS: por quantos dias guardar as posições dos ônibus (LGPD)
+    GPS_RETENCAO_DIAS: z.coerce.number().int().min(1).max(3650).default(90),
   })
   .superRefine((v, ctx) => {
     if (v.NODE_ENV === "production") {
@@ -83,6 +85,7 @@ export const env = {
     recibosIntervaloMs: v.RECIBOS_INTERVALO_MS,
     recibosEsperaMs: v.RECIBOS_ESPERA_MS,
   },
+  gpsRetencaoDias: v.GPS_RETENCAO_DIAS,
   lembretes: {
     saidaMinutos: v.LEMBRETE_SAIDA_MINUTOS,
     vesperaHorario: v.LEMBRETE_VESPERA_HORARIO || null,

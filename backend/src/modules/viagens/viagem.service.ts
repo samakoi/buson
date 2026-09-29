@@ -486,13 +486,6 @@ async function alterarStatusViagem(viagemId: string, motoristaId: string, de: St
   }, OPCOES_TX);
 }
 
-export async function atualizarLocalizacao(viagemId: string, motoristaId: string, latitude: number, longitude: number) {
-  const viagem = await buscarViagemDoMotorista(viagemId, motoristaId);
-  if (viagem.status !== "EM_ANDAMENTO") {
-    throw new AppError("VIAGEM_NAO_INICIADA");
-  }
-  return prisma.viagem.update({ where: { id: viagemId }, data: { latitude, longitude } });
-}
 
 async function buscarViagemDoMotorista(viagemId: string, motoristaId: string) {
   const viagem = await prisma.viagem.findUnique({ where: { id: viagemId } });

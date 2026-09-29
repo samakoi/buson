@@ -54,7 +54,17 @@ export function usePontosEmbarque(todos = false) {
 export function useSalvarPonto() {
   const cliente = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...dados }: { id?: string; nome?: string; endereco?: string | null; ativo?: boolean }) =>
+    mutationFn: async ({
+      id,
+      ...dados
+    }: {
+      id?: string;
+      nome?: string;
+      endereco?: string | null;
+      ativo?: boolean;
+      latitude?: number | null;
+      longitude?: number | null;
+    }) =>
       id ? (await api.patch(`/pontos-embarque/${id}`, dados)).data : (await api.post("/pontos-embarque", dados)).data,
     onSuccess: () => cliente.invalidateQueries({ queryKey: ["pontos-embarque"] }),
   });

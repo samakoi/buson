@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma";
 import * as viagemService from "./viagem.service";
+import * as localizacaoService from "../gps/localizacao.service";
 import { AppError } from "../../errors/AppError";
 
 async function getAlunoId(usuarioId: string) {
@@ -131,14 +132,55 @@ export async function encerrar(req: Request, res: Response, next: NextFunction) 
   }
 }
 
-const localizacaoSchema = z.object({ latitude: z.number(), longitude: z.number() });
+// ---- GPS (Fase 6)
+
+const leituraSchema = z.object({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  velocidade: z.number().min(0).max(100).nullable().optional(), // m/s (até 360 km/h)
+  direcao: z.number().min(0).max(360).nullable().optional(),
+  precisao: z.number().min(0).nullable().optional(),
+  registradoEm: z.coerce.date(),
+});
+
+/** Lote de leituras do GPS do motorista (ou uma leitura só, no formato antigo). */
+const localizacaoSchema = z.union([
+  z.object({ pontos: z.array(leituraSchema).min(1).max(200) }).strict(),
+  z
+    .object({ latitude: leituraSchema.shape.latitude, longitude: leituraSchema.shape.longitude })
+    .strict()
+    .transform((l) => ({ pontos: [{ ...l, registradoEm: new Date() }] })),
+]);
 
 export async function localizacao(req: Request, res: Response, next: NextFunction) {
   try {
     const motoristaId = await getMotoristaId(req.usuario!.sub);
-    const { latitude, longitude } = localizacaoSchema.parse(req.body);
-    const resultado = await viagemService.atualizarLocalizacao(req.params.id, motoristaId, latitude, longitude);
-    res.json(resultado);
+    const { pontos } = localizacaoSchema.parse(req.body);
+    res.json(await localizacaoService.registrar(req.params.id, motoristaId, pontos));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function posicaoAtual(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await localizacaoService.posicaoAtual(req.params.id, req.usuario!));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function trajeto(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await localizacaoService.trajeto(req.params.id));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function aoVivo(_req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await localizacaoService.aoVivo());
   } catch (err) {
     next(err);
   }

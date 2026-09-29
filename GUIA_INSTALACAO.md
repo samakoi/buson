@@ -314,6 +314,27 @@ chegam.
 
 ---
 
+## 6.2 GPS dos ônibus e mapa
+
+- **Motorista:** ao iniciar a viagem, o app pede a localização e compartilha a posição até
+  encerrar. No **APK**, peça ao motorista para escolher **"Permitir o tempo todo"** — assim
+  o GPS continua com a tela apagada (aparece a notificação fixa "Compartilhando a
+  localização do ônibus"). No Expo Go e no navegador ele envia só com o app aberto.
+- **Aluno:** na tela Início, com a viagem em andamento, toque em **"Ver onde está o
+  ônibus"**. Para mostrar a distância até o ponto/instituição, cadastre a localização em
+  *Cadastros › Pontos* e *Cadastros › Universidades* (botão "Usar minha localização atual"
+  no local, ou cole "latitude, longitude" do Google Maps).
+- **Admin:** no Dashboard, "Ver ônibus no mapa (ao vivo)" mostra os ônibus em viagem e o
+  trajeto de cada um.
+- **Mapa:** OpenStreetMap, gratuito e sem chave. Se o uso crescer muito, troque o
+  servidor de mapas com `EXPO_PUBLIC_MAPA_TILES` (URL no formato `.../{z}/{x}/{y}.png`)
+  respeitando os termos do provedor.
+- **Privacidade:** as posições ficam guardadas por `GPS_RETENCAO_DIAS` (padrão 90) no
+  `backend/.env` e depois são apagadas automaticamente. O aluno só vê o ônibus da viagem
+  em que tem vaga, e só enquanto ela está em andamento.
+
+---
+
 ## 7. O que já está implementado
 
 - Autenticação com JWT (login + cadastro de aluno pelo app + refresh token automático)

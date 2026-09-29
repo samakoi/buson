@@ -317,6 +317,9 @@ export default function AlunoHomeScreen() {
           atualizarAvisos();
         }}
       />
+      {viagem.status === "EM_ANDAMENTO" && comVaga && (
+        <Botao titulo="Ver onde está o ônibus" icone="map-outline" variante="secundario" onPress={() => navegacao.navigate("OndeEstaOnibus", { viagemId: viagem.id })} />
+      )}
       {viagem.status === "EM_ANDAMENTO" && !ativo && (
         <Texto variante="pequeno" cor="textoSuave" alinhar="center">
           A viagem já começou — o check-in está fechado.

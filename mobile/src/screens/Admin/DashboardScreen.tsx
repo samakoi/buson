@@ -308,6 +308,9 @@ export default function DashboardScreen() {
         <Estatistica compacta rotulo="Em manutenção" valor={resumo.onibusEmManutencao} tom={resumo.onibusEmManutencao > 0 ? "alerta" : "neutro"} />
         <Estatistica compacta rotulo="Viagens ativas" valor={resumo.viagensAtivas} tom={resumo.viagensAtivas > 0 ? "sucesso" : "neutro"} />
       </GradeEstatisticas>
+      {resumo.viagensAtivas > 0 && (
+        <Botao titulo="Ver ônibus no mapa (ao vivo)" icone="map-outline" variante="secundario" onPress={() => navegacao.navigate("AoVivo")} style={{ marginTop: 12 }} />
+      )}
 
       {Object.keys(ocupacao).length > 0 && (
         <Card semPadding>

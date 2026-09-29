@@ -135,10 +135,12 @@ model Usuario {
 }
 
 model Universidade {
-  id       String   @id @default(uuid())
-  nome     String   @unique
-  endereco String?
-  criadoEm DateTime @default(now())
+  id        String   @id @default(uuid())
+  nome      String   @unique
+  endereco  String?
+  latitude  Float?
+  longitude Float?
+  criadoEm  DateTime @default(now())
 
   alunos     Aluno[]
   pontosRota PontoRota[]
@@ -317,14 +319,13 @@ model Viagem {
   /// Viagem gerada pela programação semanal (null = criada avulsa pelo admin)
   programacaoId String?
   programacao   Programacao?  @relation(fields: [programacaoId], references: [id], onDelete: SetNull)
-  latitude      Float?
-  longitude     Float?
   criadoEm      DateTime      @default(now())
 
   checkins          Checkin[]
   sessoesEmbarque   BoardingSession[]
   embarques         Embarque[]
   faltas            Falta[]
+  localizacoes      LocalizacaoViagem[]
   /// Lembretes já enviados (evita repetir)
   lembreteVesperaEm DateTime?
   lembreteSaidaEm   DateTime?
@@ -484,6 +485,29 @@ model Auditoria {
 
   @@index([entidade, entidadeId])
   @@map("auditorias")
+}
+
+/// Posição do ônibus enviada pelo GPS do motorista durante a viagem (Fase 6).
+/// Guardada por GPS_RETENCAO_DIAS e depois apagada.
+model LocalizacaoViagem {
+  id           String   @id @default(uuid())
+  viagemId     String
+  viagem       Viagem   @relation(fields: [viagemId], references: [id], onDelete: Cascade)
+  latitude     Float
+  longitude    Float
+  /// m/s
+  velocidade   Float?
+  /// graus (0 = norte)
+  direcao      Float?
+  /// raio de incerteza em metros
+  precisao     Float?
+  /// horário da leitura no celular
+  registradoEm DateTime
+  recebidoEm   DateTime @default(now())
+
+  @@index([viagemId, registradoEm])
+  @@index([registradoEm])
+  @@map("localizacoes_viagem")
 }
 
 /// Aparelho que recebe push (um usuário pode ter vários). Só tokens do Expo Push.

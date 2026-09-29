@@ -4,6 +4,7 @@ import { env } from "../../config/env";
 import { AppError } from "../../errors/AppError";
 import { gerarRefreshToken as gerarTokenAleatorio, hashToken } from "../../utils/jwt";
 import { registrarAuditoria } from "../auditoria/auditoria.service";
+import { posicaoRecente } from "../gps/localizacao.service";
 
 /**
  * Embarque pelo QR do motorista.
@@ -82,8 +83,10 @@ export async function escanear(viagemId: string, usuarioId: string, token: strin
       if (!checkin || (checkin.status !== "CONFIRMADO" && checkin.status !== "PROGRAMADO")) throw new AppError("SEM_VAGA_CONFIRMADA");
       if (checkin.embarcado) throw new AppError("EMBARQUE_JA_CONFIRMADO");
 
+      // Onde embarcou = última posição do ônibus (o aluno não precisa ligar o GPS)
+      const onde = await posicaoRecente(tx, viagemId);
       const registro = await tx.embarque.create({
-        data: { viagemId, alunoId: aluno.id, metodo: "QR_MOTORISTA", sessaoId: sessao.id },
+        data: { viagemId, alunoId: aluno.id, metodo: "QR_MOTORISTA", sessaoId: sessao.id, latitude: onde?.latitude, longitude: onde?.longitude },
       });
       await tx.checkin.update({ where: { id: checkin.id }, data: { embarcado: true, status: "CONFIRMADO" } });
       return registro;
@@ -114,8 +117,9 @@ export async function registrarManual(viagemId: string, motoristaId: string, mot
       if (!checkin || (checkin.status !== "CONFIRMADO" && checkin.status !== "PROGRAMADO")) throw new AppError("SEM_VAGA_CONFIRMADA");
       if (checkin.embarcado) throw new AppError("EMBARQUE_JA_CONFIRMADO");
 
+      const onde = await posicaoRecente(tx, viagemId);
       const embarque = await tx.embarque.create({
-        data: { viagemId, alunoId, metodo: "MANUAL", registradoPorId: motoristaUsuarioId },
+        data: { viagemId, alunoId, metodo: "MANUAL", registradoPorId: motoristaUsuarioId, latitude: onde?.latitude, longitude: onde?.longitude },
       });
       await tx.checkin.update({ where: { id: checkin.id }, data: { embarcado: true, status: "CONFIRMADO" } });
       await registrarAuditoria(tx, {

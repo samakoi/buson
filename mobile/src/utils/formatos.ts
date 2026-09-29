@@ -18,3 +18,16 @@ export function formatarTamanho(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1).replace(".", ",")} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1).replace(".", ",")} MB`;
 }
+
+/** 350 → "350 m"; 2340 → "2,3 km" */
+export function formatarDistancia(metros: number): string {
+  if (metros < 1000) return `${Math.round(metros / 10) * 10} m`;
+  return `${(metros / 1000).toFixed(1).replace(".", ",")} km`;
+}
+
+/** 45 → "há 45 s"; 190 → "há 3 min" */
+export function haQuantoTempo(segundos: number): string {
+  if (segundos < 60) return `há ${segundos} s`;
+  const min = Math.round(segundos / 60);
+  return min < 60 ? `há ${min} min` : `há ${Math.round(min / 60)} h`;
+}

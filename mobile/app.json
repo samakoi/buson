@@ -62,6 +62,17 @@
           "color": "#1E5AA8",
           "defaultChannel": "avisos"
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "O Bus On usa a localização do celular do motorista durante a viagem para os alunos acompanharem o ônibus.",
+          "locationWhenInUsePermission": "O Bus On usa a localização para mostrar o ônibus no mapa e registrar as coordenadas dos pontos.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "isIosBackgroundLocationEnabled": true,
+          "androidForegroundServiceIcon": "./assets/icone-notificacao.png"
+        }
       ]
     ]
   }

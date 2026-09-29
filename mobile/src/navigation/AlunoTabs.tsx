@@ -12,9 +12,17 @@ import AvisosScreen from "../screens/Comum/AvisosScreen";
 import MeusDiasScreen from "../features/alocacao/MeusDiasScreen";
 import DocumentacaoScreen from "../features/documentos/DocumentacaoScreen";
 import MinhasFaltasScreen from "../features/faltas/MinhasFaltasScreen";
+import OndeEstaOnibusScreen from "../features/gps/OndeEstaOnibusScreen";
 
 export type AbasAluno = { Início: undefined; Embarcar: undefined; Ônibus: undefined; Avisos: undefined; Perfil: undefined };
-export type PilhaAluno = { Abas: undefined; DadosAcademicos: undefined; MeusDias: undefined; Documentacao: undefined; MinhasFaltas: undefined };
+export type PilhaAluno = {
+  Abas: undefined;
+  DadosAcademicos: undefined;
+  MeusDias: undefined;
+  Documentacao: undefined;
+  MinhasFaltas: undefined;
+  OndeEstaOnibus: { viagemId: string };
+};
 
 const Tab = createBottomTabNavigator<AbasAluno>();
 const Pilha = createNativeStackNavigator<PilhaAluno>();
@@ -49,6 +57,7 @@ export default function AlunoNavegacao() {
       <Pilha.Screen name="MeusDias" component={MeusDiasScreen} />
       <Pilha.Screen name="Documentacao" component={DocumentacaoScreen} />
       <Pilha.Screen name="MinhasFaltas" component={MinhasFaltasScreen} />
+      <Pilha.Screen name="OndeEstaOnibus" component={OndeEstaOnibusScreen} />
     </Pilha.Navigator>
   );
 }

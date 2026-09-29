@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma";
 import { autenticar, exigir } from "../../middlewares/auth";
-import { registrarAuditoria } from "../auditoria/auditoria.service";
+import { diferenca, registrarAuditoria } from "../auditoria/auditoria.service";
 
 export const universidadeRouter = Router();
 
@@ -19,6 +19,9 @@ universidadeRouter.get("/", async (_req, res, next) => {
 const schema = z.object({
   nome: z.string().trim().min(2, "Informe o nome da universidade."),
   endereco: z.string().trim().optional(),
+  // Coordenadas da parada (mapa e distância do ônibus)
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
 });
 
 universidadeRouter.post("/", autenticar, exigir("instituicoes:gerenciar"), async (req, res, next) => {
@@ -30,6 +33,24 @@ universidadeRouter.post("/", autenticar, exigir("instituicoes:gerenciar"), async
       return criada;
     });
     res.status(201).json(universidade);
+  } catch (err) {
+    next(err);
+  }
+});
+
+universidadeRouter.patch("/:id", autenticar, exigir("instituicoes:gerenciar"), async (req, res, next) => {
+  try {
+    const dados = schema.partial().parse(req.body);
+    const universidade = await prisma.$transaction(async (tx) => {
+      const antes = await tx.universidade.findUniqueOrThrow({ where: { id: req.params.id } });
+      const atualizada = await tx.universidade.update({ where: { id: antes.id }, data: dados });
+      const { valorAnterior, valorNovo, mudou } = diferenca(antes, dados);
+      if (mudou) {
+        await registrarAuditoria(tx, { usuarioId: req.usuario!.sub, acao: "INSTITUICAO_ALTERADA", entidade: "Universidade", entidadeId: antes.id, valorAnterior, valorNovo });
+      }
+      return atualizada;
+    });
+    res.json(universidade);
   } catch (err) {
     next(err);
   }

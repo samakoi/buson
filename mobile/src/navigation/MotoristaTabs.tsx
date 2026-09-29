@@ -7,6 +7,8 @@ import QrMotoristaScreen from "../features/embarque/QrMotoristaScreen";
 import PassageirosScreen from "../screens/Motorista/PassageirosScreen";
 import RotaScreen from "../screens/Motorista/RotaScreen";
 import AvisosScreen from "../screens/Comum/AvisosScreen";
+import { useViagemAtual } from "../features/viagens/api";
+import { useGpsDaViagem } from "../features/gps/StatusGps";
 
 export type AbasMotorista = { Painel: undefined; Embarque: undefined; Passageiros: undefined; Rota: undefined; Avisos: undefined };
 
@@ -15,6 +17,9 @@ const Tab = createBottomTabNavigator<AbasMotorista>();
 export default function MotoristaTabs() {
   const opcoes = useOpcoesAbas();
   const { naoLidas } = useNotificacoes();
+  // GPS ligado enquanto a viagem estiver em andamento, em qualquer aba
+  const { data: viagem } = useViagemAtual({ atualizarACada: 30_000 });
+  useGpsDaViagem(viagem);
   return (
     <Tab.Navigator screenOptions={opcoes}>
       <Tab.Screen name="Painel" component={PainelScreen} options={{ tabBarIcon: iconeAba("speedometer", "speedometer-outline") }} />

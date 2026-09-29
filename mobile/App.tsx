@@ -1,4 +1,6 @@
 import React from "react";
+// Registra a tarefa de GPS em segundo plano antes de tudo (o Android a chama com o app fechado)
+import "./src/features/gps/rastreador";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClientProvider } from "@tanstack/react-query";
