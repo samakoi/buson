@@ -278,6 +278,42 @@ mobile/
 
 ---
 
+## 6.1 Push no celular (EAS + Firebase)
+
+Os avisos do app (vaga, lembrete de viagem, documento, faltas…) também são enviados ao
+celular pelo **Expo Push**. A API já faz tudo sozinha (fila em segundo plano, vários
+aparelhos por usuário, tokens inválidos descartados); falta só ligar o app às suas contas.
+
+> O push **não funciona no Expo Go do Android**, no emulador nem no navegador — nesses
+> casos os avisos ficam na aba Avisos. Ele funciona no **APK** gerado pelo EAS.
+
+1. **Projeto EAS** (na pasta `mobile`, com a sua conta Expo):
+   ```bash
+   npx eas-cli login
+   npx eas-cli init
+   ```
+   O `eas init` grava o `projectId` no `app.json` (`expo.extra.eas.projectId`) — é ele
+   que o app usa para pedir o token de push.
+2. **Firebase (Android)** — em https://console.firebase.google.com:
+   - crie um projeto e adicione um app **Android** com o pacote `com.buson.app`;
+   - baixe o `google-services.json`, coloque em `mobile/` e adicione no `app.json`:
+     `"android": { "googleServicesFile": "./google-services.json", ... }`;
+   - em *Configurações do projeto › Contas de serviço*, clique em **Gerar nova chave
+     privada**. Guarde esse JSON fora do projeto (**nunca** no git).
+3. **Enviar a chave para o EAS**: `npx eas-cli credentials` › Android › production ›
+   Google Service Account › *Manage your Google Service Account Key for Push
+   Notifications (FCM V1)* › *Upload a new service account key*.
+4. **Gerar o APK**: ajuste `EXPO_PUBLIC_API_URL` no `mobile/eas.json` para o endereço
+   público da API e rode `npx eas-cli build -p android --profile preview`.
+5. **API**: no `backend/.env`, mantenha `PUSH_MODO=expo`. Os lembretes usam
+   `LEMBRETE_VESPERA_HORARIO` (padrão 20:00) e `LEMBRETE_SAIDA_MINUTOS` (padrão 60).
+
+No app, cada usuário escolhe em **Avisos › ⚙** se quer receber no celular os lembretes e
+os avisos de vaga/lista de espera. Cadastro, documentos, faltas e viagem cancelada sempre
+chegam.
+
+---
+
 ## 7. O que já está implementado
 
 - Autenticação com JWT (login + cadastro de aluno pelo app + refresh token automático)

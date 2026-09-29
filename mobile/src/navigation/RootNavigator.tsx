@@ -11,6 +11,7 @@ import CadastroScreen from "../screens/Auth/CadastroScreen";
 import AlunoTabs from "./AlunoTabs";
 import MotoristaTabs from "./MotoristaTabs";
 import AdminTabs from "./AdminTabs";
+import { navegacaoRef } from "../features/push/abrirAviso";
 
 function FluxoDeEntrada() {
   const [tela, setTela] = useState<"login" | "cadastro">("login");
@@ -57,7 +58,7 @@ export default function RootNavigator() {
   if (carregando) return <Carregando />;
 
   return (
-    <NavigationContainer theme={temaNavegacao}>
+    <NavigationContainer ref={navegacaoRef} theme={temaNavegacao}>
       {!usuario ? (
         <FluxoDeEntrada />
       ) : (

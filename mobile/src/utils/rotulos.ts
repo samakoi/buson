@@ -75,6 +75,7 @@ export const categoriaAviso: Record<CategoriaNotificacao, { icone: NomeIcone; to
   TRANSPORTE: { icone: "bus-outline", tom: "info" },
   LIBERACAO: { icone: "school-outline", tom: "sucesso" },
   ROTA: { icone: "navigate-outline", tom: "info" },
+  VIAGEM: { icone: "warning-outline", tom: "alerta" },
 };
 
 /** Texto legível das ações registradas na auditoria. */

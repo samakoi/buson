@@ -3,7 +3,8 @@ import { View } from "react-native";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 import { useNotificacoes } from "../../contexts/NotificacoesContext";
 import { useTema } from "../../theme/TemaProvider";
-import { Cabecalho, Card, EstadoVazio, ItemLista, Secao, Tela } from "../../components/ui";
+import { BotaoIcone, Cabecalho, Card, EstadoVazio, ItemLista, Secao, Tela } from "../../components/ui";
+import { ConviteAvisosNoCelular, PreferenciasAvisos } from "../../features/push/AvisosNoCelular";
 import { diaISO, tempoRelativo } from "../../utils/datas";
 import { Notificacao, Papel } from "../../types";
 import { categoriaAviso } from "../../utils/rotulos";
@@ -27,6 +28,7 @@ export default function AvisosScreen() {
   const { usuario } = useSessao();
   const focada = useIsFocused();
   const [atualizando, setAtualizando] = useState(false);
+  const [preferencias, setPreferencias] = useState(false);
   // Guarda quais estavam não lidas ao abrir a tela, para destacá-las mesmo depois de marcar como lidas
   const [destacadas, setDestacadas] = useState<Set<string>>(new Set());
 
@@ -55,7 +57,13 @@ export default function AvisosScreen() {
 
   return (
     <Tela atualizando={atualizando} onAtualizar={puxarParaAtualizar}>
-      <Cabecalho titulo="Avisos" subtitulo={subtituloPorPapel[usuario?.papel ?? "ALUNO"]} />
+      <Cabecalho
+        titulo="Avisos"
+        subtitulo={subtituloPorPapel[usuario?.papel ?? "ALUNO"]}
+        acoes={<BotaoIcone icone="settings-outline" rotulo="Avisos no celular" onPress={() => setPreferencias(true)} />}
+      />
+      <ConviteAvisosNoCelular />
+      <PreferenciasAvisos visivel={preferencias} onFechar={() => setPreferencias(false)} />
 
       {grupos.length === 0 && (
         <Card>

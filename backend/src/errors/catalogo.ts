@@ -87,6 +87,9 @@ export const ERROS = {
   PRAZO_JUSTIFICATIVA_ENCERRADO: { status: 409, mensagem: "O prazo para justificar esta falta terminou. Procure a administração do transporte." },
   ANEXO_NAO_ENCONTRADO: { status: 404, mensagem: "Esta falta não tem anexo." },
 
+  // ---- Push
+  PUSH_TOKEN_INVALIDO: { status: 400, mensagem: "Token de notificação inválido." },
+
   // ---- Relatórios e datas
   DATA_INVALIDA: { status: 400, mensagem: "Data inválida." },
   PERIODO_INVALIDO: { status: 400, mensagem: "A data final deve ser igual ou posterior à inicial." },

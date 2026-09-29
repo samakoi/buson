@@ -1,7 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
+import * as Notifications from "expo-notifications";
 import { api } from "../services/api";
-import { Notificacao } from "../types";
+import { CategoriaNotificacao, Notificacao, Papel } from "../types";
+import { registrarSeJaPermitido } from "../features/push/push";
+import { abrirTelaDoAviso } from "../features/push/abrirAviso";
+
+// Toques já tratados (o mesmo toque pode chegar pelo ouvinte e pela "última resposta")
+const toquesTratados = new Set<string>();
 
 interface NotificacoesData {
   itens: Notificacao[];
@@ -14,7 +20,7 @@ const NotificacoesContext = createContext<NotificacoesData>({} as NotificacoesDa
 
 const INTERVALO_MS = 30_000;
 
-/** Mantém os avisos do aluno (e o contador do badge) atualizados em segundo plano. */
+/** Mantém os avisos (e o contador do badge) atualizados e liga o push do celular. */
 export function NotificacoesProvider({ children }: { children: React.ReactNode }) {
   const [itens, setItens] = useState<Notificacao[]>([]);
   const [naoLidas, setNaoLidas] = useState(0);
@@ -34,6 +40,28 @@ export function NotificacoesProvider({ children }: { children: React.ReactNode }
     await api.post("/notificacoes/lidas");
     setNaoLidas(0);
   }, [naoLidas]);
+
+  // Push no celular: registra o aparelho, atualiza ao chegar aviso e abre a tela certa ao tocar
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    registrarSeJaPermitido();
+    const abrir = (resposta: Notifications.NotificationResponse) => {
+      const id = resposta.notification.request.identifier;
+      if (toquesTratados.has(id)) return;
+      toquesTratados.add(id);
+      const dados = resposta.notification.request.content.data as { categoria?: CategoriaNotificacao; papel?: Papel };
+      if (dados?.categoria && dados.papel) abrirTelaDoAviso(dados.categoria, dados.papel);
+      atualizar();
+    };
+    // App aberto pelo toque no aviso (estava fechado)
+    Notifications.getLastNotificationResponseAsync().then((r) => r && abrir(r)).catch(() => undefined);
+    const chegou = Notifications.addNotificationReceivedListener(() => atualizar());
+    const tocou = Notifications.addNotificationResponseReceivedListener(abrir);
+    return () => {
+      chegou.remove();
+      tocou.remove();
+    };
+  }, [atualizar]);
 
   useEffect(() => {
     atualizar();

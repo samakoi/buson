@@ -80,6 +80,29 @@ enum CategoriaNotificacao {
   TRANSPORTE
   LIBERACAO
   ROTA
+  VIAGEM // viagem cancelada/alterada, ônibus em manutenção (sempre enviado)
+}
+
+/// Situação do envio por push de cada aviso (fila processada em segundo plano)
+enum StatusPush {
+  PENDENTE
+  ENVIANDO
+  ENVIADO
+  SEM_DISPOSITIVO // usuário sem aparelho registrado
+  DESLIGADO // categoria desligada nas preferências do usuário
+  FALHOU // esgotou as tentativas
+  IGNORADO // aviso antigo (anterior ao push) ou vencido
+}
+
+enum PlataformaPush {
+  ANDROID
+  IOS
+}
+
+enum StatusEnvioPush {
+  ENVIADO // aceito pelo serviço de push (tem ticket)
+  ENTREGUE // recibo confirmou a entrega ao Google/Apple
+  ERRO
 }
 
 enum StatusViagem {
@@ -101,9 +124,12 @@ model Usuario {
   motorista            Motorista?
   notificacoes         Notificacao[]
   auditorias           Auditoria[]
-  documentosAnalisados Documento[]    @relation("DocumentoAnalisadoPor")
-  faltasDecididas      Falta[]        @relation("FaltaDecididaPor")
+  documentosAnalisados Documento[]       @relation("DocumentoAnalisadoPor")
+  faltasDecididas      Falta[]           @relation("FaltaDecididaPor")
   refreshTokens        RefreshToken[]
+  dispositivosPush     DispositivoPush[]
+  /// Categorias de aviso que o usuário não quer receber no celular (continuam na aba Avisos)
+  pushDesligado        Json?
 
   @@map("usuarios")
 }
@@ -295,10 +321,13 @@ model Viagem {
   longitude     Float?
   criadoEm      DateTime      @default(now())
 
-  checkins        Checkin[]
-  sessoesEmbarque BoardingSession[]
-  embarques       Embarque[]
-  faltas          Falta[]
+  checkins          Checkin[]
+  sessoesEmbarque   BoardingSession[]
+  embarques         Embarque[]
+  faltas            Falta[]
+  /// Lembretes já enviados (evita repetir)
+  lembreteVesperaEm DateTime?
+  lembreteSaidaEm   DateTime?
 
   @@unique([programacaoId, sentido, data])
   @@map("viagens")
@@ -327,15 +356,21 @@ model Checkin {
 }
 
 model Notificacao {
-  id        String               @id @default(uuid())
-  usuarioId String
-  usuario   Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  categoria CategoriaNotificacao @default(GERAL)
-  mensagem  String               @db.VarChar(500)
-  lida      Boolean              @default(false)
-  criadoEm  DateTime             @default(now())
+  id             String               @id @default(uuid())
+  usuarioId      String
+  usuario        Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  categoria      CategoriaNotificacao @default(GERAL)
+  mensagem       String               @db.VarChar(500)
+  lida           Boolean              @default(false)
+  criadoEm       DateTime             @default(now())
+  pushStatus     StatusPush           @default(PENDENTE)
+  pushTentativas Int                  @default(0)
+  pushEnviadoEm  DateTime?
+
+  envios EnvioPush[]
 
   @@index([usuarioId, lida])
+  @@index([pushStatus, criadoEm])
   @@map("notificacoes")
 }
 
@@ -449,6 +484,43 @@ model Auditoria {
 
   @@index([entidade, entidadeId])
   @@map("auditorias")
+}
+
+/// Aparelho que recebe push (um usuário pode ter vários). Só tokens do Expo Push.
+model DispositivoPush {
+  id                String         @id @default(uuid())
+  usuarioId         String
+  usuario           Usuario        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  token             String         @unique @db.VarChar(255)
+  plataforma        PlataformaPush
+  /// Mesmo identificador da sessão (refresh token): sair do aparelho desativa o push dele
+  deviceId          String?        @db.VarChar(100)
+  ativo             Boolean        @default(true)
+  motivoDesativacao String?        @db.VarChar(100)
+  criadoEm          DateTime       @default(now())
+  ultimoUsoEm       DateTime       @default(now())
+
+  envios EnvioPush[]
+
+  @@index([usuarioId, ativo])
+  @@map("dispositivos_push")
+}
+
+/// Um envio de um aviso para um aparelho (ticket do Expo e, depois, o recibo)
+model EnvioPush {
+  id            String          @id @default(uuid())
+  notificacaoId String
+  notificacao   Notificacao     @relation(fields: [notificacaoId], references: [id], onDelete: Cascade)
+  dispositivoId String
+  dispositivo   DispositivoPush @relation(fields: [dispositivoId], references: [id], onDelete: Cascade)
+  ticketId      String?         @db.VarChar(100)
+  status        StatusEnvioPush
+  erro          String?         @db.VarChar(200)
+  criadoEm      DateTime        @default(now())
+  verificadoEm  DateTime?
+
+  @@index([status, verificadoEm])
+  @@map("envios_push")
 }
 
 /// Sessão de um dispositivo (refresh token com rotação e revogação).

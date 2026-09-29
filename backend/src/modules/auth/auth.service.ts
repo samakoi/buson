@@ -4,6 +4,7 @@ import { hashPassword, comparePassword } from "../../utils/password";
 import { gerarRefreshToken, hashToken, signAccessToken } from "../../utils/jwt";
 import { env } from "../../config/env";
 import { AppError } from "../../errors/AppError";
+import { desativarDoAparelho, desativarTodos } from "../push/push.service";
 import { registrarAuditoria } from "../auditoria/auditoria.service";
 import { notificarAdmins } from "../notificacoes/notificacao.service";
 
@@ -108,6 +109,7 @@ async function derrubarSessoesDoDispositivo(usuarioId: string, deviceId: string 
     where: { usuarioId, deviceId, revogadoEm: null },
     data: { revogadoEm: new Date() },
   });
+  await desativarDoAparelho(usuarioId, deviceId, "Sessão encerrada por segurança");
 }
 
 /**
@@ -159,10 +161,13 @@ export async function renovar(refreshToken: string, ctx: ContextoSessao = {}) {
 
 /** Sair deste dispositivo: revoga a sessão do refresh token informado. */
 export async function logout(refreshToken: string) {
+  const sessao = await prisma.refreshToken.findUnique({ where: { tokenHash: hashToken(refreshToken) }, select: { usuarioId: true, deviceId: true } });
   await prisma.refreshToken.updateMany({
     where: { tokenHash: hashToken(refreshToken), revogadoEm: null },
     data: { revogadoEm: new Date() },
   });
+  // Saiu do aparelho: ele para de receber push
+  if (sessao) await desativarDoAparelho(sessao.usuarioId, sessao.deviceId, "Saiu do aparelho");
 }
 
 /** Sair de todos os dispositivos. */
@@ -171,6 +176,7 @@ export async function logoutTodos(usuarioId: string) {
     where: { usuarioId, revogadoEm: null },
     data: { revogadoEm: new Date() },
   });
+  await desativarTodos(usuarioId, "Saiu de todos os aparelhos");
   return { sessoesEncerradas: count };
 }
 
@@ -189,4 +195,6 @@ export async function revogarSessao(usuarioId: string, sessaoId: string) {
     data: { revogadoEm: new Date() },
   });
   if (count === 0) throw new AppError("SESSAO_NAO_ENCONTRADA");
+  const sessao = await prisma.refreshToken.findUniqueOrThrow({ where: { id: sessaoId }, select: { deviceId: true } });
+  await desativarDoAparelho(usuarioId, sessao.deviceId, "Sessão encerrada em outro aparelho");
 }

@@ -113,7 +113,7 @@ onibusRouter.patch("/:id/manutencao", async (req, res, next) => {
     const mensagem = emManutencao
       ? `O ônibus ${onibus.placa} da sua viagem entrou em manutenção${onibus.observacaoManutencao ? `: ${onibus.observacaoManutencao}` : "."}`
       : `O ônibus ${onibus.placa} da sua viagem saiu da manutenção e voltou a operar.`;
-    await notificarAlunos(prisma, afetados.map((c) => c.alunoId), { mensagem, categoria: "TRANSPORTE" });
+    await notificarAlunos(prisma, afetados.map((c) => c.alunoId), { mensagem, categoria: "VIAGEM" });
 
     res.json(onibus);
   } catch (err) {

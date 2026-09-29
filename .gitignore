@@ -19,3 +19,6 @@ backend/uploads/
 Thumbs.db
 .vscode/
 .idea/
+
+# Chaves de serviço do Firebase (push): nunca no repositório
+*firebase-adminsdk*.json

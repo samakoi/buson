@@ -165,7 +165,7 @@ export interface OcupacaoSemanal {
   rotas: { rota: string; dias: OcupacaoDia[] }[];
 }
 
-export type CategoriaNotificacao = "GERAL" | "CADASTRO" | "DOCUMENTO" | "LEMBRETE" | "DIAS" | "FALTA" | "TRANSPORTE" | "LIBERACAO" | "ROTA";
+export type CategoriaNotificacao = "GERAL" | "CADASTRO" | "DOCUMENTO" | "LEMBRETE" | "DIAS" | "FALTA" | "TRANSPORTE" | "LIBERACAO" | "ROTA" | "VIAGEM";
 
 export interface Notificacao {
   id: string;

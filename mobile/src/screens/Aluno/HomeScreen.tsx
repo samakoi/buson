@@ -16,6 +16,7 @@ import { dataPorExtenso, diaISO, formatarDuracao, minutosAte } from "../../utils
 import { statusViagem } from "../../utils/rotulos";
 import type { AbasAluno, PilhaAluno } from "../../navigation/AlunoTabs";
 import { LiberarVagaFolha } from "../../features/faltas/LiberarVagaFolha";
+import { ConviteAvisosNoCelular } from "../../features/push/AvisosNoCelular";
 
 /** Atualiza a cada minuto para a contagem "sai em…" andar sozinha. */
 function useAgora() {
@@ -131,6 +132,7 @@ export default function AlunoHomeScreen() {
           Você não pode usar o transporte no momento. Procure a administração.
         </Aviso>
       )}
+      <ConviteAvisosNoCelular />
       {eu?.pendencias.includes("FALTA_A_JUSTIFICAR") && (
         <Card>
           <Aviso tipo="alerta" titulo="Você tem falta para justificar" style={{ marginBottom: 0 }}>

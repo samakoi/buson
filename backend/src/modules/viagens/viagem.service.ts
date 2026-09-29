@@ -216,7 +216,7 @@ export async function excluirViagem(viagemId: string, adminId: string) {
     const [ano, mes, dia] = formatarDia(viagem.data).split("-");
     await notificarAlunos(tx, ativos.map((c) => c.alunoId), {
       mensagem: `A viagem de ${dia}/${mes}/${ano} às ${viagem.horario} foi cancelada pela administração.`,
-      categoria: "TRANSPORTE",
+      categoria: "VIAGEM",
     });
     const rota = await tx.rota.findUnique({ where: { id: viagem.rotaId }, select: { nome: true } });
     await tx.viagem.delete({ where: { id: viagemId } });
@@ -273,7 +273,7 @@ export async function excluirViagensComAviso(tx: Tx, viagemIds: string[], motivo
   for (const v of viagens) {
     await notificarAlunos(tx, v.checkins.map((c) => c.alunoId), {
       mensagem: `A viagem de ${v.sentido === "VOLTA" ? "volta" : "ida"} de ${diaMes(v.data)} às ${v.horario} foi cancelada: ${motivo}`,
-      categoria: "TRANSPORTE",
+      categoria: "VIAGEM",
     });
   }
   await tx.viagem.deleteMany({ where: { id: { in: viagens.map((v) => v.id) } } });

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="200 200 624 648" width="96" height="96">
+  <!--
+    Ícone das notificações no Android — fonte editável.
+    O Android exige silhueta branca sobre fundo transparente (cores viram um quadrado cinza).
+    Mesmo ônibus de icone.svg: as partes internas (para-brisa, faróis, grade) viram recortes.
+  -->
+  <defs>
+    <mask id="recortes">
+      <rect x="200" y="200" width="624" height="648" fill="#fff"/>
+      <rect x="336" y="332" width="352" height="212" rx="32" fill="#000"/>
+      <rect x="360" y="262" width="304" height="40" rx="20" fill="#000"/>
+      <circle cx="390" cy="640" r="36" fill="#000"/>
+      <circle cx="634" cy="640" r="36" fill="#000"/>
+      <rect x="466" y="618" width="92" height="18" rx="9" fill="#000"/>
+      <rect x="466" y="648" width="92" height="18" rx="9" fill="#000"/>
+      <rect x="318" y="706" width="388" height="30" rx="15" fill="#000"/>
+    </mask>
+  </defs>
+  <g fill="#FFFFFF" mask="url(#recortes)">
+    <rect x="236" y="352" width="36" height="112" rx="18"/>
+    <rect x="752" y="352" width="36" height="112" rx="18"/>
+    <rect x="262" y="372" width="40" height="18" rx="9"/>
+    <rect x="722" y="372" width="40" height="18" rx="9"/>
+    <rect x="292" y="224" width="440" height="528" rx="76"/>
+    <rect x="338" y="752" width="88" height="64" rx="24"/>
+    <rect x="598" y="752" width="88" height="64" rx="24"/>
+  </g>
+</svg>

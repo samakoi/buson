@@ -28,6 +28,21 @@ const esquema = z
     BOARDING_QR_MINUTOS: z.coerce.number().int().min(1).max(24 * 60).default(60),
     // Quantos dias à frente a programação semanal gera viagens (0 = desliga o agendador)
     DIAS_GERACAO_VIAGENS: z.coerce.number().int().min(0).max(31).default(7),
+    // Push: "expo" envia pelo Expo Push; "teste" usa um carteiro falso (testes); "desligado" não envia
+    PUSH_MODO: z.enum(["expo", "teste", "desligado"]).default("expo"),
+    // Opcional: só se "Enhanced security for push notifications" estiver ligado no projeto Expo
+    EXPO_ACCESS_TOKEN: z.string().optional(),
+    PUSH_INTERVALO_MS: z.coerce.number().int().min(200).default(5000),
+    RECIBOS_INTERVALO_MS: z.coerce.number().int().min(500).default(15 * 60 * 1000),
+    // O Expo recomenda conferir os recibos ~15 min depois do envio
+    RECIBOS_ESPERA_MS: z.coerce.number().int().min(0).default(15 * 60 * 1000),
+    // Lembretes: X minutos antes da saída (0 desliga) e na véspera, no horário HH:MM (vazio desliga)
+    LEMBRETE_SAIDA_MINUTOS: z.coerce.number().int().min(0).max(24 * 60).default(60),
+    LEMBRETE_VESPERA_HORARIO: z
+      .string()
+      .regex(/^(([01]\d|2[0-3]):[0-5]\d)?$/, "use HH:MM ou deixe vazio")
+      .default("20:00"),
+    LEMBRETES_INTERVALO_MS: z.coerce.number().int().min(500).default(60 * 1000),
   })
   .superRefine((v, ctx) => {
     if (v.NODE_ENV === "production") {
@@ -61,5 +76,17 @@ export const env = {
   rateLimit: { login: v.RATE_LIMIT_LOGIN_MAX, cadastro: v.RATE_LIMIT_CADASTRO_MAX, refresh: v.RATE_LIMIT_REFRESH_MAX },
   qrEmbarqueMinutos: v.BOARDING_QR_MINUTOS,
   diasGeracaoViagens: v.DIAS_GERACAO_VIAGENS,
+  push: {
+    modo: v.PUSH_MODO,
+    accessToken: v.EXPO_ACCESS_TOKEN,
+    intervaloMs: v.PUSH_INTERVALO_MS,
+    recibosIntervaloMs: v.RECIBOS_INTERVALO_MS,
+    recibosEsperaMs: v.RECIBOS_ESPERA_MS,
+  },
+  lembretes: {
+    saidaMinutos: v.LEMBRETE_SAIDA_MINUTOS,
+    vesperaHorario: v.LEMBRETE_VESPERA_HORARIO || null,
+    intervaloMs: v.LEMBRETES_INTERVALO_MS,
+  },
   uploadsDir: v.UPLOADS_DIR ? path.resolve(v.UPLOADS_DIR) : path.resolve(__dirname, "../../uploads"),
 };

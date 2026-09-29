@@ -54,6 +54,14 @@
           "cameraPermission": "O Bus On usa a câmera para ler o QR Code de embarque e para fotografar seu comprovante de matrícula.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icone-notificacao.png",
+          "color": "#1E5AA8",
+          "defaultChannel": "avisos"
+        }
       ]
     ]
   }
