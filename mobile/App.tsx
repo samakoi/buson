@@ -7,8 +7,12 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { TemaProvider } from "./src/theme/TemaProvider";
 import { queryClient } from "./src/services/queryClient";
 import RootNavigator from "./src/navigation/RootNavigator";
+import { envolverApp, iniciarMonitoramento } from "./src/services/monitoramento";
 
-export default function App() {
+// Sentry (só com EXPO_PUBLIC_SENTRY_DSN no build)
+iniciarMonitoramento();
+
+function App() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
@@ -21,3 +25,5 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+export default envolverApp(App);

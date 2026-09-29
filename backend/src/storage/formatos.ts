@@ -16,6 +16,8 @@ export function detectarFormato(conteudo: Buffer) {
 
 /** Nome enviado pelo celular, sem pastas e com tamanho limitado. */
 export function nomeSeguro(nome: string | undefined, extensao: string, padrao = "documento") {
+  // Remove caracteres de controle (quebras de linha etc.) de propósito
+  // eslint-disable-next-line no-control-regex
   const base = path.basename(nome || "").replace(/[\u0000-\u001f]/g, "").trim();
   return (base || `${padrao}.${extensao}`).slice(0, 180);
 }

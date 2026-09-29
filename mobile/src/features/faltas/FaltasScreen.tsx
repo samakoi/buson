@@ -72,7 +72,7 @@ export default function FaltasScreen() {
         </Card>
       )}
 
-      <DecisaoFaltaFolha falta={selecionada} nomeAluno={selecionada?.aluno.usuario.nome ?? ""} onFechar={() => setAberta(null)} />
+      <DecisaoFaltaFolha key={selecionada?.id ?? "nenhuma"} falta={selecionada} nomeAluno={selecionada?.aluno.usuario.nome ?? ""} onFechar={() => setAberta(null)} />
     </Tela>
   );
 }

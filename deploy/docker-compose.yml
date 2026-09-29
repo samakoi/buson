@@ -1,0 +1,131 @@
+# Bus On em produção/staging (Docker). Não use à mão: os scripts desta pasta passam
+# o nome do projeto e o arquivo de ambiente certos. Ex.: .\deploy\atualizar.ps1 -Ambiente producao
+#   Projeto "buson-producao" → deploy/.env.producao  (API em 127.0.0.1:4000)
+#   Projeto "buson-staging"  → deploy/.env.staging   (API em 127.0.0.1:4001)
+# Cada ambiente tem o próprio MySQL, volumes, backups e túnel: nada é compartilhado.
+
+x-logs: &logs
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: bus_on
+      MYSQL_USER: buson # a API usa este usuário (só enxerga o banco bus_on), nunca o root
+      MYSQL_PASSWORD: ${MYSQL_SENHA:?defina MYSQL_SENHA}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_SENHA_ROOT:?defina MYSQL_SENHA_ROOT}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    # Sem "ports": o banco não fica acessível fora do Docker
+    volumes:
+      - mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    logging: *logs
+
+  api:
+    build:
+      context: ../backend
+      args:
+        APP_VERSAO: ${APP_VERSAO:-dev}
+    image: buson-api:${APP_VERSAO:-dev}
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    # Só as variáveis que a API usa (as chaves do R2 e a senha root ficam de fora)
+    environment:
+      NODE_ENV: ${NODE_ENV:?defina NODE_ENV}
+      PORT: 3333
+      DATABASE_URL: mysql://buson:${MYSQL_SENHA}@mysql:3306/bus_on
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      REFRESH_TOKEN_DIAS: ${REFRESH_TOKEN_DIAS:-30}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      TRUST_PROXY: ${TRUST_PROXY:-1}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      RATE_LIMIT_LOGIN_MAX: ${RATE_LIMIT_LOGIN_MAX:-10}
+      RATE_LIMIT_CADASTRO_MAX: ${RATE_LIMIT_CADASTRO_MAX:-5}
+      RATE_LIMIT_REFRESH_MAX: ${RATE_LIMIT_REFRESH_MAX:-60}
+      BOARDING_QR_MINUTOS: ${BOARDING_QR_MINUTOS:-60}
+      DIAS_GERACAO_VIAGENS: ${DIAS_GERACAO_VIAGENS:-7}
+      PUSH_MODO: ${PUSH_MODO:-expo}
+      EXPO_ACCESS_TOKEN: ${EXPO_ACCESS_TOKEN:-}
+      LEMBRETE_SAIDA_MINUTOS: ${LEMBRETE_SAIDA_MINUTOS:-60}
+      LEMBRETE_VESPERA_HORARIO: ${LEMBRETE_VESPERA_HORARIO:-20:00}
+      GPS_RETENCAO_DIAS: ${GPS_RETENCAO_DIAS:-90}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      TZ: ${TZ:-America/Fortaleza}
+    volumes:
+      - uploads:/app/uploads
+    # Só a própria máquina acessa; a internet chega pelo Cloudflare Tunnel
+    ports:
+      - "127.0.0.1:${PORTA_LOCAL:?defina PORTA_LOCAL}:3333"
+    logging: *logs
+
+  # Backup diário (banco + documentos) às BACKUP_HORARIO, com cópia no Cloudflare R2
+  backup:
+    image: buson-api:${APP_VERSAO:-dev}
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: ["node", "dist/backup/agendador.js"]
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      DATABASE_URL: mysql://buson:${MYSQL_SENHA}@mysql:3306/bus_on
+      BACKUP_HORARIO: ${BACKUP_HORARIO:-03:00}
+      BACKUP_DIAS_LOCAL: ${BACKUP_DIAS_LOCAL:-14}
+      BACKUP_DIAS_NUVEM: ${BACKUP_DIAS_NUVEM:-30}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      R2_BUCKET: ${R2_BUCKET:-}
+      R2_ENDPOINT: ${R2_ENDPOINT:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      TZ: ${TZ:-America/Fortaleza}
+    volumes:
+      - uploads:/app/uploads:ro
+      - ${PASTA_BACKUPS:?defina PASTA_BACKUPS}:/backups
+    logging: *logs
+
+  # Restauração (só roda pelo restaurar.ps1): precisa escrever nos documentos
+  restaurar:
+    image: buson-api:${APP_VERSAO:-dev}
+    profiles: ["manutencao"]
+    user: root
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql://buson:${MYSQL_SENHA}@mysql:3306/bus_on
+    volumes:
+      - uploads:/app/uploads
+      - ${PASTA_BACKUPS}:/backups:ro
+    command: ["node", "dist/backup/restaurar.js"]
+
+  # Cloudflare Tunnel: publica a API no seu domínio sem abrir portas no roteador.
+  # Liga sozinho quando TUNNEL_TOKEN está definido (o atualizar.ps1 ativa o perfil).
+  # No painel do túnel, o "Service" do hostname público é: http://api:3333
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunel"]
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      - api
+    logging: *logs
+
+volumes:
+  mysql:
+  uploads:

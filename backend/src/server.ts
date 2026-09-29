@@ -1,3 +1,5 @@
+// Primeiro: o Sentry instrumenta o que for carregado depois
+import "./instrumentacao";
 import { app } from "./app";
 import { env } from "./config/env";
 import { logger } from "./config/logger";

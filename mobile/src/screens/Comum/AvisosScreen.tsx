@@ -38,8 +38,10 @@ export default function AvisosScreen() {
   // as abas continuam montadas em segundo plano depois da primeira visita.
   useEffect(() => {
     if (focada && naoLidas > 0) {
-      setDestacadas(new Set(itens.filter((i) => !i.lida).map((i) => i.id)));
-      marcarTodasComoLidas().catch(() => undefined);
+      const novas = new Set(itens.filter((i) => !i.lida).map((i) => i.id));
+      marcarTodasComoLidas()
+        .then(() => setDestacadas(novas))
+        .catch(() => undefined);
     }
   }, [focada, naoLidas, itens, marcarTodasComoLidas]);
 

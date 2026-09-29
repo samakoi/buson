@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { View } from "react-native";
 import { MotivoAusencia, Viagem } from "../../types";
 import { Aviso, Botao, Chips, Folha, Rotulo, Texto } from "../../components/ui";
@@ -11,6 +11,7 @@ const MOTIVOS: Motivo[] = ["DOENCA", "COMPROMISSO_ACADEMICO", "COMPROMISSO_PESSO
 
 /**
  * "Não vou nesta viagem": o aluno libera a vaga antes da saída informando o motivo.
+ * Monte só quando for abrir (o formulário começa limpo a cada vez).
  * Avisar antes não conta como falta — fica como "ausência avisada".
  */
 export function LiberarVagaFolha({
@@ -30,14 +31,6 @@ export function LiberarVagaFolha({
   const [diaTodo, setDiaTodo] = useState<"sim" | "nao">("sim");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
-
-  useEffect(() => {
-    if (visivel) {
-      setMotivo(null);
-      setDiaTodo("sim");
-      setErro(null);
-    }
-  }, [visivel]);
 
   async function confirmar() {
     if (!motivo) return setErro("Escolha o motivo.");

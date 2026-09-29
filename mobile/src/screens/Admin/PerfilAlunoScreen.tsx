@@ -151,6 +151,7 @@ export default function PerfilAlunoScreen() {
         {aluno.faltas.length === 0 && aluno.ausenciasAvisadas.length === 0 && <EstadoVazio icone="checkmark-done-outline" titulo="Nenhuma falta" />}
       </Card>
       <DecisaoFaltaFolha
+        key={faltaAberta ?? "nenhuma"}
         falta={aluno.faltas.find((f) => f.id === faltaAberta) ?? null}
         nomeAluno={aluno.usuario.nome}
         onFechar={() => setFaltaAberta(null)}

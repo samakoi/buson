@@ -335,6 +335,23 @@ chegam.
 
 ---
 
+## 6.3 Testes automáticos e qualidade
+
+Na pasta `backend`, com o MySQL do passo 2 rodando:
+
+```bash
+npm run build
+MYSQL_CONTAINER=bus_on_mysql npm run test:e2e   # 10 suítes contra o banco bus_on_test
+npm run lint
+npm run typecheck
+```
+
+Os testes usam um banco próprio (`bus_on_test`, recriado a cada execução) e **se recusam a
+rodar** em bancos cujo nome não termine em `_test`. No app (`mobile`), use `npm run lint`,
+`npm run typecheck` e `npx expo-doctor`. O GitHub roda tudo isso sozinho a cada push (seção 10.11).
+
+---
+
 ## 7. O que já está implementado
 
 - Autenticação com JWT (login + cadastro de aluno pelo app + refresh token automático)
@@ -349,17 +366,19 @@ chegam.
 - Admin: criação/exclusão de viagens e cadastro de ônibus, motoristas,
   universidades e rotas
 - Dashboard com relatório de presença e faltas, filtro por período e gráfico diário
+- Programação semanal por rota: as viagens de ida e volta são geradas sozinhas, com
+  capacidade controlada por dia e pontos de embarque
+- Alunos escolhem os dias de uso; documentação da matrícula analisada pelo admin
+- Faltas registradas ao encerrar a ida, com justificativa, anexo e decisão do admin
+- Push no celular e lembretes de viagem (seção 6.1)
+- GPS do ônibus em tempo real, com mapa para o aluno e para o admin (seção 6.2)
+- Testes E2E, CI no GitHub, Sentry, deploy em Docker com backup e volta automática (seção 10)
 
 ## 8. O que ainda precisa ser construído (próximos passos)
 
-- Recuperação de senha, edição de perfil e histórico completo do aluno
-- Envio de localização em tempo real do motorista (`expo-location`) + mapa
-  real no app do aluno (`react-native-maps`)
-- Notificações push de verdade (Expo Notifications) — hoje os avisos só
-  aparecem com o app aberto
+- Recuperação de senha por e-mail
 - Exportar o relatório de faltas (CSV/PDF)
-- Testes automatizados e pipeline de CI/CD
-- Deploy da API (Railway, Render, AWS, etc.) e build do app para as lojas
+- Publicação na Play Store (hoje o app é distribuído como APK; veja a seção 6.1)
 
 ---
 
@@ -378,12 +397,208 @@ cria a viagem de hoje sem duplicar os outros dados).
 da sua máquina, e se o celular está na mesma rede Wi-Fi.
 
 **Erro de CORS**
-→ A API já libera CORS para todas as origens (`cors()` sem restrição) — em
-produção, restrinja isso à URL real do seu app.
+→ Só acontece no navegador (Expo web). Coloque a origem em `CORS_ORIGINS` no
+`backend/.env` (ex.: `http://localhost:8081`). O app no celular não usa CORS.
 
 **Porta 3333 ou 3306 já em uso**
 → Altere `PORT` no `.env` do backend, ou a porta mapeada no `docker-compose.yml`
 (lembre de atualizar `DATABASE_URL` também).
+
+---
+
+## 10. Produção e staging nesta máquina (Docker + Cloudflare)
+
+A API roda em Docker nesta máquina e chega à internet pelo **Cloudflare Tunnel** (HTTPS,
+sem abrir portas no roteador). Produção e staging ficam totalmente separados: cada um tem
+o próprio MySQL, documentos, backups, túnel e segredos.
+
+```
+Celular ──HTTPS──▶ Cloudflare ──túnel──▶ cloudflared ──▶ api (Node) ──▶ mysql
+                                                          │
+                                         backup diário ───┴──▶ pasta local + Cloudflare R2
+```
+
+| | Produção | Staging |
+|---|---|---|
+| Pasta do servidor | `C:\buson\producao` | `C:\buson\staging` |
+| Arquivo de ambiente | `deploy\.env.producao` | `deploy\.env.staging` |
+| API na própria máquina | `http://127.0.0.1:4000` | `http://127.0.0.1:4001` |
+| Endereço público (exemplo) | `https://api.SEUDOMINIO` | `https://api-staging.SEUDOMINIO` |
+
+### 10.1 Pré-requisitos
+
+- **Docker Desktop**, com *Start Docker Desktop when you sign in* ligado (Settings › General).
+- **Git**.
+- A máquina precisa ficar ligada: desative a suspensão em *Configurações › Sistema › Energia*.
+- O domínio precisa estar no Cloudflare (DNS gerenciado por ele).
+
+Os scripts ficam em `deploy\`. Rode-os no PowerShell com
+`powershell -ExecutionPolicy Bypass -File <script> ...`, que libera só aquela execução e não
+muda nenhuma configuração do Windows.
+
+### 10.2 Uma cópia do repositório só para o servidor
+
+Não use a pasta de desenvolvimento: o script de atualização troca o commit da pasta.
+
+```bash
+git clone https://github.com/samakoi/buson.git C:\buson\producao
+git clone https://github.com/samakoi/buson.git C:\buson\staging
+```
+
+Nunca edite arquivos nessas pastas. Se houver alguma alteração local, o `atualizar.ps1` se recusa a rodar.
+
+### 10.3 Segredos do ambiente
+
+```bash
+cd C:\buson\producao
+powershell -ExecutionPolicy Bypass -File .\deploy\gerar-segredos.ps1 -Ambiente producao
+notepad .\deploy\.env.producao
+```
+
+O script cria o arquivo com o `JWT_SECRET` e as senhas do MySQL já aleatórias. Staging gera
+outros valores, sem nada compartilhado. Complete as seções 10.4 a 10.6 no arquivo
+e **guarde uma cópia dele num gerenciador de senhas**. O arquivo nunca vai para o git
+(o `.gitignore` bloqueia).
+
+### 10.4 Cloudflare Tunnel (acesso pela internet)
+
+1. No Cloudflare, abra *Zero Trust › Networks › Tunnels › Create a tunnel* e escolha *Cloudflared*.
+   Dê o nome `buson-producao`.
+2. Na tela de instalação, copie **só o token**, o texto longo depois de `--token`, e cole em
+   `TUNNEL_TOKEN=` no `.env.producao`. Não precisa instalar nada: o container `cloudflared`
+   já está no compose.
+3. Em *Public Hostname*, adicione:
+   - *Subdomain* `api`, com o seu domínio;
+   - *Service type* `HTTP`;
+   - *URL* `api:3333`.
+4. Para staging, repita com outro túnel (`buson-staging`), o hostname `api-staging` e o mesmo
+   serviço `api:3333`, e cole o token no `.env.staging`.
+
+Mantenha `TRUST_PROXY=1`, para o limite de tentativas de login enxergar o IP real, e
+`CORS_ORIGINS` vazio: o app Android não precisa de CORS.
+
+### 10.5 Cloudflare R2 (cópia dos backups fora da máquina)
+
+1. No Cloudflare, abra *R2 › Create bucket* e crie o `buson-backups`. Um bucket serve para os
+   dois ambientes: cada um grava na sua pasta, `production/` ou `staging/`.
+2. Em *R2 › Manage R2 API Tokens › Create API token*, escolha a permissão *Object Read & Write*,
+   só para o bucket `buson-backups`.
+3. Preencha no arquivo de ambiente os campos `R2_ACCOUNT_ID` (o Account ID do painel do R2),
+   `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` e `R2_BUCKET=buson-backups`.
+
+### 10.6 Sentry (erros) e UptimeRobot (fora do ar)
+
+- **Sentry** (https://sentry.io): crie dois projetos.
+  - **API** (plataforma *Node.js*): cole o DSN dele em `SENTRY_DSN` no arquivo de ambiente.
+  - **App** (plataforma *React Native*): em expo.dev › projeto › *Environment variables*, crie
+    `EXPO_PUBLIC_SENTRY_DSN` com o DSN do app (visibilidade *Plain text*) para `preview` e
+    `production`.
+
+  Nenhum dos dois envia dados pessoais: sem cabeçalhos, senhas, corpos de requisição nem tela
+  gravada.
+- **UptimeRobot** (https://uptimerobot.com): crie um monitor *HTTP(s)* para
+  `https://api.SEUDOMINIO/api/v1/saude` a cada 5 minutos, com alerta por e-mail ou Telegram. Esse
+  endereço só responde "ok" se a API **e** o banco estiverem funcionando.
+
+### 10.7 Primeira instalação
+
+```bash
+cd C:\buson\producao
+powershell -ExecutionPolicy Bypass -File .\deploy\atualizar.ps1 -Ambiente producao
+powershell -ExecutionPolicy Bypass -File .\deploy\criar-admin.ps1 -Ambiente producao
+```
+
+O `criar-admin` pede nome, e-mail e senha. A senha não aparece na tela e precisa ter
+no mínimo 10 caracteres. O seed de demonstração (senha 123456) **não roda** em produção nem em staging.
+Depois, abra `https://api.SEUDOMINIO/api/v1/saude` no navegador. Para gerar o APK apontando
+para esse endereço, veja a seção 6.1.
+
+### 10.8 Atualizar uma versão
+
+O caminho de uma mudança até a produção:
+
+1. PR no GitHub com o CI verde.
+2. Staging: `atualizar.ps1 -Ambiente staging -Ref origin/<branch>`. Teste no app.
+3. Merge no `main`.
+4. Produção: `atualizar.ps1 -Ambiente producao`, que usa `origin/main` por padrão.
+
+O que o `atualizar.ps1` faz, em ordem:
+
+1. **Backup** do banco e dos documentos.
+2. Baixa o código e monta a imagem `buson-api:<commit>`.
+3. Aplica as **migrations** enquanto a versão antiga continua no ar.
+4. Sobe a nova versão e confere `/api/v1/saude`.
+5. **Se a nova versão não responder em 2 minutos, volta sozinho para a anterior.**
+
+Cada execução fica registrada em `deploy\historico-<ambiente>.log`. Para voltar a uma versão
+antiga à mão, use `-Ref <commit>`, com o código de 12 letras que aparece no histórico.
+
+> Migrations que apagam colunas ou tabelas não têm volta automática. Nesse caso, restaure o
+> backup feito no início da atualização (seção 10.9).
+
+### 10.9 Backup e restauração
+
+- **Automático:** todo dia às `BACKUP_HORARIO` (padrão 03:00), o container `backup` faz:
+  - o dump do banco (`banco-<ambiente>-<data>.sql.gz`);
+  - o pacote dos documentos (`documentos-<ambiente>-<data>.tar.gz`).
+
+  Ficam 14 dias na `PASTA_BACKUPS` e 30 dias no R2. Se o backup falhar, o erro chega ao Sentry.
+- **Na hora:** `backup-agora.ps1 -Ambiente producao`.
+- **Restaurar:**
+  ```bash
+  powershell -ExecutionPolicy Bypass -File .\deploy\restaurar.ps1 -Ambiente producao
+  powershell -ExecutionPolicy Bypass -File .\deploy\restaurar.ps1 -Ambiente producao -Banco <banco-...sql.gz> -Documentos <documentos-...tar.gz>
+  ```
+  A primeira linha só lista os backups. A segunda restaura, e antes disso:
+  - pede para você digitar o nome do ambiente;
+  - faz um backup de segurança do estado atual.
+
+  Para usar um arquivo do R2, baixe-o pelo painel e coloque-o na `PASTA_BACKUPS` do ambiente.
+- **Teste a restauração uma vez por mês no staging:** copie os arquivos de produção para a
+  pasta de backups do staging e restaure lá. Backup que nunca foi restaurado não é garantia.
+
+### 10.10 Logs e manutenção
+
+```bash
+docker logs -f --tail 100 buson-producao-api-1      # logs da API (JSON, com requestId)
+docker logs --tail 50 buson-producao-backup-1       # último backup
+docker compose ls                                   # ambientes rodando
+```
+
+Os logs de cada container são rotacionados: até 5 arquivos de 10 MB. O `atualizar.ps1` guarda as
+imagens mais recentes e apaga as mais antigas.
+
+### 10.11 GitHub: CI e proteção do main
+
+- Cada push e cada PR rodam o **CI** (`.github/workflows/ci.yml`):
+  - tipos, lint, build e os 10 testes E2E da API, contra um MySQL próprio do CI;
+  - `npm audit`;
+  - tipos, lint e `expo-doctor` do app;
+  - montagem da imagem Docker.
+
+  O **CodeQL** procura falhas de segurança no código, e o **Dependabot** abre PRs semanais de
+  atualização. As dependências do Expo ficam de fora do Dependabot: atualize-as com
+  `npx expo install --fix`.
+- Proteja o `main` em *Settings › Branches › Add branch ruleset*:
+  - exigir pull request;
+  - exigir que passem os checks *API (tipos, lint, testes E2E)*, *App (tipos, lint, expo-doctor)*,
+    *Imagem Docker da API* e *CodeQL*;
+  - bloquear force push e exclusão.
+- Em *Settings › Code security*, ligue *Dependabot alerts*, *Secret scanning* e *Push protection*.
+  Todos são gratuitos em repositório público.
+
+### 10.12 Checklist de segurança
+
+- [ ] `.env.producao` e `.env.staging` fora do git, com cópia num gerenciador de senhas.
+- [ ] Segredos diferentes em produção e staging (cada `gerar-segredos` gera os seus).
+- [ ] MySQL sem porta exposta, e a API usando o usuário `buson`, nunca o `root`.
+- [ ] API ouvindo só em `127.0.0.1`. A internet chega só pelo túnel, em HTTPS.
+- [ ] `TRUST_PROXY=1` e `CORS_ORIGINS` vazio (ou só o domínio de um site oficial).
+- [ ] Primeiro admin criado com o `criar-admin` e senha forte. Nenhum usuário de demonstração.
+- [ ] BitLocker ligado no disco, porque documentos e posições de GPS são dados pessoais (LGPD).
+- [ ] Windows e Docker Desktop atualizados.
+- [ ] UptimeRobot e Sentry avisando por e-mail.
+- [ ] Restauração testada no staging no último mês.
 
 ---
 

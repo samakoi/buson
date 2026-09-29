@@ -4,6 +4,7 @@ import { MulterError } from "multer";
 import { ZodError } from "zod";
 import { AppError } from "../errors/AppError";
 import { CodigoErro, ERROS } from "../errors/catalogo";
+import { registrarErro } from "../instrumentacao";
 
 // Mantido para compatibilidade de import; o AppError agora vive em errors/
 export { AppError };
@@ -52,5 +53,6 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
   }
   // Inesperado: registra com o requestId e devolve mensagem genérica
   req.log?.error({ err }, "erro inesperado");
+  registrarErro(err, { requestId: String(req.id), rota: `${req.method} ${req.route?.path ?? req.path}`, usuarioId: req.usuario?.sub });
   return responder(req, res, 500, "ERRO_INTERNO", ERROS.ERRO_INTERNO.mensagem);
 }

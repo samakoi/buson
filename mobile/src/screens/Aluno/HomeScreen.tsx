@@ -306,9 +306,10 @@ export default function AlunoHomeScreen() {
           carregando={processando}
         />
       )}
+      {liberando && (
       <LiberarVagaFolha
         viagem={viagem}
-        visivel={liberando}
+        visivel
         onFechar={() => setLiberando(false)}
         aoLiberar={async (liberouIrma) => {
           setLiberando(false);
@@ -317,6 +318,7 @@ export default function AlunoHomeScreen() {
           atualizarAvisos();
         }}
       />
+      )}
       {viagem.status === "EM_ANDAMENTO" && comVaga && (
         <Botao titulo="Ver onde está o ônibus" icone="map-outline" variante="secundario" onPress={() => navegacao.navigate("OndeEstaOnibus", { viagemId: viagem.id })} />
       )}

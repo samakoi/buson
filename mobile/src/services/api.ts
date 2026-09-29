@@ -18,6 +18,8 @@ export const STORAGE_KEYS = {
   usuario: "@busOn:usuario",
 } as const;
 
+// axios.create é a API documentada do axios (o aviso do eslint-plugin-import não se aplica)
+// eslint-disable-next-line import/no-named-as-default-member
 export const api = axios.create({ baseURL: API_URL });
 
 api.interceptors.request.use(async (config) => {

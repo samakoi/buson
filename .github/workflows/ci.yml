@@ -1,0 +1,88 @@
+# Confere cada push e pull request: tipos, lint, build e os testes E2E da API.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: API (tipos, lint, testes E2E)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: senha-do-ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+    env:
+      # Banco só do CI (nome terminado em _test, como o executor exige)
+      DATABASE_URL: mysql://root:senha-do-ci@127.0.0.1:3306/bus_on_test
+      DATABASE_URL_TESTE: mysql://root:senha-do-ci@127.0.0.1:3306/bus_on_test
+      JWT_SECRET: segredo-apenas-para-o-ci-com-mais-de-32-caracteres
+      TZ: America/Fortaleza
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npx prisma validate
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run build
+      - name: Testes E2E
+        run: npm run test:e2e
+      - name: Vulnerabilidades (dependências de produção)
+        run: npm audit --omit=dev --audit-level=high
+
+  mobile:
+    name: App (tipos, lint, expo-doctor)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npx expo-doctor
+
+  docker:
+    name: Imagem Docker da API
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Monta a imagem (sem publicar)
+        run: docker build --build-arg APP_VERSAO=ci -t buson-api:ci backend
+      - name: Confere o compose de produção
+        working-directory: deploy
+        run: |
+          cp .env.example .env.ci
+          sed -i 's/__GERAR__/valor-apenas-para-validar-o-compose-123/' .env.ci
+          docker compose --env-file .env.ci config --quiet

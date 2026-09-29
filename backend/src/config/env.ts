@@ -45,14 +45,20 @@ const esquema = z
     LEMBRETES_INTERVALO_MS: z.coerce.number().int().min(500).default(60 * 1000),
     // GPS: por quantos dias guardar as posições dos ônibus (LGPD)
     GPS_RETENCAO_DIAS: z.coerce.number().int().min(1).max(3650).default(90),
+    // Monitoramento de erros (opcional): chave pública do projeto no Sentry
+    SENTRY_DSN: z.string().url().or(z.literal("")).optional(),
   })
   .superRefine((v, ctx) => {
-    if (v.NODE_ENV === "production") {
+    // Staging segue as mesmas regras da produção (é o ensaio dela)
+    if (v.NODE_ENV === "production" || v.NODE_ENV === "staging") {
       if (v.JWT_SECRET.length < 32 || /troque|exemplo|secret/i.test(v.JWT_SECRET)) {
-        ctx.addIssue({ code: "custom", path: ["JWT_SECRET"], message: "em produção use um segredo aleatório com 32+ caracteres" });
+        ctx.addIssue({ code: "custom", path: ["JWT_SECRET"], message: "em produção/staging use um segredo aleatório com 32+ caracteres" });
       }
       if (v.CORS_ORIGINS.trim() === "*") {
-        ctx.addIssue({ code: "custom", path: ["CORS_ORIGINS"], message: "em produção liste as origens permitidas (não use *)" });
+        ctx.addIssue({ code: "custom", path: ["CORS_ORIGINS"], message: "em produção/staging liste as origens permitidas (não use *)" });
+      }
+      if (v.PUSH_MODO === "teste") {
+        ctx.addIssue({ code: "custom", path: ["PUSH_MODO"], message: "o modo teste é só para os testes automáticos (use expo ou desligado)" });
       }
     }
   });
@@ -74,7 +80,8 @@ export const env = {
   refreshTokenDias: v.REFRESH_TOKEN_DIAS,
   corsOrigins: v.CORS_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean),
   trustProxy: v.TRUST_PROXY,
-  logLevel: v.NODE_ENV === "test" ? "silent" : v.LOG_LEVEL,
+  // Testes ficam em silêncio, a não ser que LOG_LEVEL seja informado (os E2E conferem os logs)
+  logLevel: v.NODE_ENV === "test" && !process.env.LOG_LEVEL ? "silent" : v.LOG_LEVEL,
   rateLimit: { login: v.RATE_LIMIT_LOGIN_MAX, cadastro: v.RATE_LIMIT_CADASTRO_MAX, refresh: v.RATE_LIMIT_REFRESH_MAX },
   qrEmbarqueMinutos: v.BOARDING_QR_MINUTOS,
   diasGeracaoViagens: v.DIAS_GERACAO_VIAGENS,

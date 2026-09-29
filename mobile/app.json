@@ -73,7 +73,8 @@
           "isIosBackgroundLocationEnabled": true,
           "androidForegroundServiceIcon": "./assets/icone-notificacao.png"
         }
-      ]
+      ],
+      "@sentry/react-native"
     ]
   }
 }

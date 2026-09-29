@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { View } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Aviso, Botao, Cabecalho, Card, Carregando, Chips, EstadoVazio, Rotulo, Tela, Texto } from "../../components/ui";
 import { avisar, mensagemDeErro } from "../../utils/feedback";
 import { listarDias } from "../../utils/datas";
 import { useTema } from "../../theme/TemaProvider";
+import { DiasDoAluno } from "../../types";
 import { DiaEscolhido, useDias, useSalvarDias } from "./api";
 import { SeletorDias } from "./SeletorDias";
 
@@ -21,41 +22,10 @@ export default function MeusDiasScreen() {
   const navegacao = useNavigation();
   const params = useRoute().params as ParamsDias;
   const alunoId = params?.alunoId;
-  const doAdmin = !!alunoId;
-  const { espaco } = useTema();
-
+  const titulo = alunoId ? "Dias de uso" : "Meus dias";
   const { data, isLoading, error, refetch, isRefetching } = useDias(alunoId);
-  const salvar = useSalvarDias(alunoId);
-
-  const [escolhas, setEscolhas] = useState<Escolhas>(new Map());
-  const [pontos, setPontos] = useState<Record<string, string | null>>({});
-  const [rotaAtiva, setRotaAtiva] = useState<string | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
-
-  // Estado inicial = dias salvos (e de novo depois de salvar)
-  const salvos = useMemo(() => {
-    const e: Escolhas = new Map();
-    const p: Record<string, string | null> = {};
-    for (const d of data?.dias ?? []) {
-      e.set(d.diaSemana, d.rota.id);
-      p[d.rota.id] = d.pontoEmbarque?.id ?? null;
-    }
-    return { escolhas: e, pontos: p };
-  }, [data?.dias]);
-
-  useEffect(() => {
-    setEscolhas(new Map(salvos.escolhas));
-    setPontos({ ...salvos.pontos });
-  }, [salvos]);
-
-  useEffect(() => {
-    if (!data || (rotaAtiva && data.opcoes.some((o) => o.rota.id === rotaAtiva))) return;
-    setRotaAtiva(data.dias[0]?.rota.id ?? data.opcoes[0]?.rota.id ?? null);
-  }, [data, rotaAtiva]);
 
   if (isLoading) return <Carregando />;
-
-  const titulo = doAdmin ? "Dias de uso" : "Meus dias";
   const voltar = () => navegacao.goBack();
 
   if (error || !data) {
@@ -67,6 +37,61 @@ export default function MeusDiasScreen() {
       </Tela>
     );
   }
+
+  // A chave recria o formulário quando os dias salvos mudam (depois de salvar ou recarregar)
+  return (
+    <FormularioDias
+      key={JSON.stringify(data.dias)}
+      data={data}
+      params={params}
+      titulo={titulo}
+      voltar={voltar}
+      atualizando={isRefetching}
+      atualizar={() => refetch()}
+    />
+  );
+}
+
+function FormularioDias({
+  data,
+  params,
+  titulo,
+  voltar,
+  atualizando,
+  atualizar,
+}: {
+  data: DiasDoAluno;
+  params: ParamsDias;
+  titulo: string;
+  voltar: () => void;
+  atualizando: boolean;
+  atualizar: () => void;
+}) {
+  const alunoId = params?.alunoId;
+  const doAdmin = !!alunoId;
+  const { espaco } = useTema();
+  const salvar = useSalvarDias(alunoId);
+
+  // Estado inicial = dias salvos
+  const salvos = useMemo(() => {
+    const e: Escolhas = new Map();
+    const p: Record<string, string | null> = {};
+    for (const d of data.dias) {
+      e.set(d.diaSemana, d.rota.id);
+      p[d.rota.id] = d.pontoEmbarque?.id ?? null;
+    }
+    return { escolhas: e, pontos: p };
+  }, [data.dias]);
+
+  const [escolhas, setEscolhas] = useState<Escolhas>(() => new Map(salvos.escolhas));
+  const [pontos, setPontos] = useState<Record<string, string | null>>(() => ({ ...salvos.pontos }));
+  const [rotaEscolhida, setRotaAtiva] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  // Rota na tela: a escolhida (se ainda existir) ou a dos dias salvos / a primeira opção
+  const rotaAtiva =
+    rotaEscolhida && data.opcoes.some((o) => o.rota.id === rotaEscolhida)
+      ? rotaEscolhida
+      : (data.dias[0]?.rota.id ?? data.opcoes[0]?.rota.id ?? null);
 
   const ativa = data.statusConta === "ATIVO";
   const opcao = data.opcoes.find((o) => o.rota.id === rotaAtiva) ?? null;
@@ -114,7 +139,7 @@ export default function MeusDiasScreen() {
   const outrasRotas = [...new Set(escolhas.values())].filter((r) => r !== rotaAtiva);
 
   return (
-    <Tela atualizando={isRefetching} onAtualizar={() => refetch()}>
+    <Tela atualizando={atualizando} onAtualizar={atualizar}>
       <Cabecalho titulo={titulo} subtitulo={params?.nome ?? data.universidade.nome} onVoltar={voltar} />
 
       {data.statusConta === "PENDENTE" && (

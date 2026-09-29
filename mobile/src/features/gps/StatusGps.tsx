@@ -28,7 +28,7 @@ export function useGpsDaViagem(viagem: Pick<Viagem, "id" | "status"> | null | un
 }
 
 function useSegundos(desde: number | null) {
-  const [agora, setAgora] = useState(Date.now());
+  const [agora, setAgora] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setAgora(Date.now()), 5000);
     return () => clearInterval(id);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { View } from "react-native";
 import { Falta } from "../../types";
 import { useTema } from "../../theme/TemaProvider";
@@ -11,7 +11,10 @@ import { abrirAnexoDaFalta, descreverViagem, useDecidirFalta } from "./api";
 
 const MOTIVOS_INDEFERIR = ["Justificativa sem comprovação", "Atestado ilegível ou sem data", "Motivo não justifica a falta"];
 
-/** Admin: detalhes da falta, anexo e decisão (justificar ou indeferir com motivo). */
+/**
+ * Admin: detalhes da falta, anexo e decisão (justificar ou indeferir com motivo).
+ * Use com key={falta?.id}: trocar de falta recomeça o formulário.
+ */
 export function DecisaoFaltaFolha({
   falta,
   nomeAluno,
@@ -31,12 +34,6 @@ export function DecisaoFaltaFolha({
     onFechar();
     aoDecidir?.();
   });
-
-  useEffect(() => {
-    setModo("ver");
-    setTexto("");
-    setErro(null);
-  }, [falta?.id]);
 
   if (!falta) return null;
   const st = situacaoFalta[situacaoDaFalta(falta)];

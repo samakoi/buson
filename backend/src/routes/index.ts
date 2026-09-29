@@ -24,7 +24,7 @@ routes.get("/", (_req, res) => {
 routes.get("/saude", async (_req, res, next) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    res.json({ api: "ok", banco: "ok", horario: new Date().toISOString() });
+    res.json({ api: "ok", banco: "ok", versao: process.env.APP_VERSAO || "dev", horario: new Date().toISOString() });
   } catch (err) {
     next(err);
   }

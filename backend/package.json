@@ -10,10 +10,17 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node prisma/seed.ts",
+    "criar-admin": "ts-node src/scripts/criarAdmin.ts",
+    "backup": "node dist/backup/agendador.js --agora",
+    "test:e2e": "node test/e2e/executar.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1142.0",
     "@prisma/client": "^5.19.1",
+    "@sentry/node": "^11.1.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -25,19 +32,23 @@
     "multer": "^2.4.0",
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
+    "prisma": "^5.22.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/multer": "^2.2.0",
     "@types/node": "^20.14.15",
-    "prisma": "^5.22.0",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^8.71.0"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

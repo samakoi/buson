@@ -20,20 +20,26 @@ const NotificacoesContext = createContext<NotificacoesData>({} as NotificacoesDa
 
 const INTERVALO_MS = 30_000;
 
+type ListaAvisos = { itens: Notificacao[]; naoLidas: number };
+const buscarAvisos = async () => (await api.get<ListaAvisos>("/notificacoes")).data;
+
 /** Mantém os avisos (e o contador do badge) atualizados e liga o push do celular. */
 export function NotificacoesProvider({ children }: { children: React.ReactNode }) {
   const [itens, setItens] = useState<Notificacao[]>([]);
   const [naoLidas, setNaoLidas] = useState(0);
 
+  const aplicar = useCallback((dados: ListaAvisos) => {
+    setItens(dados.itens);
+    setNaoLidas(dados.naoLidas);
+  }, []);
+
   const atualizar = useCallback(async () => {
     try {
-      const { data } = await api.get<{ itens: Notificacao[]; naoLidas: number }>("/notificacoes");
-      setItens(data.itens);
-      setNaoLidas(data.naoLidas);
+      aplicar(await buscarAvisos());
     } catch (err) {
       console.warn("Falha ao carregar avisos", err);
     }
-  }, []);
+  }, [aplicar]);
 
   const marcarTodasComoLidas = useCallback(async () => {
     if (naoLidas === 0) return;
@@ -64,7 +70,9 @@ export function NotificacoesProvider({ children }: { children: React.ReactNode }
   }, [atualizar]);
 
   useEffect(() => {
-    atualizar();
+    buscarAvisos()
+      .then(aplicar)
+      .catch((err) => console.warn("Falha ao carregar avisos", err));
     const id = setInterval(atualizar, INTERVALO_MS);
     // Ao voltar para o app, busca na hora em vez de esperar o próximo ciclo
     const sub = AppState.addEventListener("change", (estado) => {
@@ -74,7 +82,7 @@ export function NotificacoesProvider({ children }: { children: React.ReactNode }
       clearInterval(id);
       sub.remove();
     };
-  }, [atualizar]);
+  }, [atualizar, aplicar]);
 
   return (
     <NotificacoesContext.Provider value={{ itens, naoLidas, atualizar, marcarTodasComoLidas }}>

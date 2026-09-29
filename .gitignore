@@ -13,6 +13,9 @@ web-build/
 # Arquivos enviados pelos usuários (documentos, fotos)
 backend/uploads/
 
+# Backups do banco e dos documentos (deploy/): ficam só na máquina e no R2
+backups/
+
 # Sistema / editores
 *.log
 .DS_Store

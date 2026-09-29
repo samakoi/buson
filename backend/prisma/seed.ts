@@ -4,6 +4,11 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
+  // Dados de DEMONSTRAÇÃO (senha 123456): nunca em produção. O primeiro admin de
+  // produção é criado com "npm run criar-admin".
+  if (process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging") {
+    throw new Error("O seed de demonstração não roda em produção/staging. Use: npm run criar-admin");
+  }
   console.log("Semeando banco de dados do Bus On...");
 
   const senhaHash = await bcrypt.hash("123456", 10);
