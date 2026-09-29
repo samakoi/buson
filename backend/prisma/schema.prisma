@@ -18,8 +18,14 @@ enum Papel {
 
 enum StatusCheckin {
   CONFIRMADO
+  PROGRAMADO // aluno alocado no dia; ainda não confirmou a presença (a vaga já é dele)
   ESPERA
   CANCELADO
+}
+
+enum SentidoViagem {
+  IDA // leva os alunos às instituições
+  VOLTA // busca os alunos nas instituições
 }
 
 enum StatusConta {
@@ -65,20 +71,20 @@ enum StatusViagem {
 }
 
 model Usuario {
-  id         String   @id @default(uuid())
-  nome       String
-  email      String   @unique
-  senhaHash  String
-  papel      Papel
-  criadoEm   DateTime @default(now())
+  id           String   @id @default(uuid())
+  nome         String
+  email        String   @unique
+  senhaHash    String
+  papel        Papel
+  criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
 
-  aluno      Aluno?
-  motorista  Motorista?
-  notificacoes Notificacao[]
-  auditorias   Auditoria[]
-  documentosAnalisados Documento[] @relation("DocumentoAnalisadoPor")
-  refreshTokens RefreshToken[]
+  aluno                Aluno?
+  motorista            Motorista?
+  notificacoes         Notificacao[]
+  auditorias           Auditoria[]
+  documentosAnalisados Documento[]    @relation("DocumentoAnalisadoPor")
+  refreshTokens        RefreshToken[]
 
   @@map("usuarios")
 }
@@ -89,44 +95,46 @@ model Universidade {
   endereco String?
   criadoEm DateTime @default(now())
 
-  alunos      Aluno[]
-  pontosRota  PontoRota[]
+  alunos     Aluno[]
+  pontosRota PontoRota[]
 
   @@map("universidades")
 }
 
 model Aluno {
-  id             String   @id @default(uuid())
-  usuarioId      String   @unique
-  usuario        Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  id             String       @id @default(uuid())
+  usuarioId      String       @unique
+  usuario        Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   universidadeId String
   universidade   Universidade @relation(fields: [universidadeId], references: [id])
-  qrCode         String   @unique @default(uuid())
-  matricula      String?  @unique
+  qrCode         String       @unique @default(uuid())
+  matricula      String?      @unique
   curso          String?
   telefone       String?
   fotoArquivo    String?
-  statusConta    StatusConta @default(PENDENTE)
-  criadoEm       DateTime @default(now())
+  statusConta    StatusConta  @default(PENDENTE)
+  criadoEm       DateTime     @default(now())
 
-  checkins       Checkin[]
-  documentos     Documento[]
-  embarques      Embarque[]
+  checkins   Checkin[]
+  documentos Documento[]
+  embarques  Embarque[]
+  alocacoes  AlocacaoAluno[]
 
   @@map("alunos")
 }
 
 model Onibus {
-  id         String   @id @default(uuid())
-  placa      String   @unique
-  capacidade Int      @default(30)
-  emManutencao         Boolean @default(false)
+  id                   String   @id @default(uuid())
+  placa                String   @unique
+  capacidade           Int      @default(30)
+  emManutencao         Boolean  @default(false)
   observacaoManutencao String? // ex.: "Troca de pneus, volta na sexta"
-  criadoEm   DateTime @default(now())
+  criadoEm             DateTime @default(now())
 
-  motoristas Motorista[]
-  viagens    Viagem[]
+  motoristas      Motorista[]
+  viagens         Viagem[]
   sessoesEmbarque BoardingSession[]
+  programacoes    Programacao[]
 
   @@map("onibus")
 }
@@ -139,19 +147,23 @@ model Motorista {
   onibus    Onibus?  @relation(fields: [onibusId], references: [id])
   criadoEm  DateTime @default(now())
 
-  viagens   Viagem[]
+  viagens         Viagem[]
   sessoesEmbarque BoardingSession[]
+  programacoes    Programacao[]
 
   @@map("motoristas")
 }
 
 model Rota {
-  id       String      @id @default(uuid())
+  id       String   @id @default(uuid())
   nome     String
-  criadoEm DateTime    @default(now())
+  criadoEm DateTime @default(now())
 
-  pontos   PontoRota[]
-  viagens  Viagem[]
+  pontos         PontoRota[]
+  viagens        Viagem[]
+  pontosEmbarque RotaPontoEmbarque[]
+  programacoes   Programacao[]
+  alocacoes      AlocacaoAluno[]
 
   @@map("rotas")
 }
@@ -167,53 +179,137 @@ model PontoRota {
   @@map("pontos_rota")
 }
 
+/// Local onde os alunos esperam o ônibus na ida (praça, bairro, parada)
+model PontoEmbarque {
+  id           String   @id @default(uuid())
+  nome         String   @unique
+  endereco     String?
+  latitude     Float?
+  longitude    Float?
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  rotas     RotaPontoEmbarque[]
+  alocacoes AlocacaoAluno[]
+  checkins  Checkin[]
+
+  @@map("pontos_embarque")
+}
+
+/// Pontos de embarque de uma rota, na ordem em que o ônibus passa
+model RotaPontoEmbarque {
+  id              String        @id @default(uuid())
+  rotaId          String
+  rota            Rota          @relation(fields: [rotaId], references: [id], onDelete: Cascade)
+  pontoEmbarqueId String
+  pontoEmbarque   PontoEmbarque @relation(fields: [pontoEmbarqueId], references: [id])
+  ordem           Int
+
+  @@unique([rotaId, pontoEmbarqueId])
+  @@map("rota_pontos_embarque")
+}
+
+/// Programação semanal de uma rota: gera as viagens de ida/volta dos próximos dias.
+/// A capacidade de cada dia é a capacidade do ônibus. Uma programação ativa por rota.
+model Programacao {
+  id              String    @id @default(uuid())
+  rotaId          String
+  rota            Rota      @relation(fields: [rotaId], references: [id], onDelete: Cascade)
+  onibusId        String
+  onibus          Onibus    @relation(fields: [onibusId], references: [id])
+  motoristaId     String
+  motorista       Motorista @relation(fields: [motoristaId], references: [id])
+  horarioIda      String // HH:MM
+  horarioVolta    String? // HH:MM (null = sem volta)
+  /// Dias da semana em que a rota opera: 0 = domingo … 6 = sábado
+  diasSemana      Json
+  /// Viagens canceladas pelo admin (ex.: feriado), que a geração não recria: ["IDA:2026-10-12", ...]
+  datasCanceladas Json?
+  ativa           Boolean   @default(true)
+  criadoEm        DateTime  @default(now())
+  atualizadoEm    DateTime  @updatedAt
+
+  viagens Viagem[]
+
+  @@index([rotaId, ativa])
+  @@map("programacoes")
+}
+
+/// Dia fixo de uso do transporte pelo aluno (um por dia da semana)
+model AlocacaoAluno {
+  id              String         @id @default(uuid())
+  alunoId         String
+  aluno           Aluno          @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  diaSemana       Int // 0 = domingo … 6 = sábado
+  rotaId          String
+  rota            Rota           @relation(fields: [rotaId], references: [id], onDelete: Cascade)
+  pontoEmbarqueId String?
+  pontoEmbarque   PontoEmbarque? @relation(fields: [pontoEmbarqueId], references: [id], onDelete: SetNull)
+  ativo           Boolean        @default(true)
+  criadoEm        DateTime       @default(now())
+  atualizadoEm    DateTime       @updatedAt
+
+  @@unique([alunoId, diaSemana])
+  @@index([rotaId, diaSemana, ativo])
+  @@map("alocacoes_aluno")
+}
+
 model Viagem {
-  id          String       @id @default(uuid())
-  rotaId      String
-  rota        Rota         @relation(fields: [rotaId], references: [id])
-  onibusId    String
-  onibus      Onibus       @relation(fields: [onibusId], references: [id])
-  motoristaId String
-  motorista   Motorista    @relation(fields: [motoristaId], references: [id])
-  data        DateTime
-  horario     String
-  vagas       Int          @default(30)
-  status      StatusViagem @default(AGUARDANDO)
-  latitude    Float?
-  longitude   Float?
-  criadoEm    DateTime     @default(now())
+  id            String        @id @default(uuid())
+  rotaId        String
+  rota          Rota          @relation(fields: [rotaId], references: [id])
+  onibusId      String
+  onibus        Onibus        @relation(fields: [onibusId], references: [id])
+  motoristaId   String
+  motorista     Motorista     @relation(fields: [motoristaId], references: [id])
+  data          DateTime
+  horario       String
+  vagas         Int           @default(30)
+  status        StatusViagem  @default(AGUARDANDO)
+  sentido       SentidoViagem @default(IDA)
+  /// Viagem gerada pela programação semanal (null = criada avulsa pelo admin)
+  programacaoId String?
+  programacao   Programacao?  @relation(fields: [programacaoId], references: [id], onDelete: SetNull)
+  latitude      Float?
+  longitude     Float?
+  criadoEm      DateTime      @default(now())
 
-  checkins    Checkin[]
+  checkins        Checkin[]
   sessoesEmbarque BoardingSession[]
-  embarques   Embarque[]
+  embarques       Embarque[]
 
+  @@unique([programacaoId, sentido, data])
   @@map("viagens")
 }
 
 model Checkin {
-  id         String        @id @default(uuid())
-  viagemId   String
-  viagem     Viagem        @relation(fields: [viagemId], references: [id], onDelete: Cascade)
-  alunoId    String
-  aluno      Aluno         @relation(fields: [alunoId], references: [id], onDelete: Cascade)
-  status     StatusCheckin @default(CONFIRMADO)
-  embarcado  Boolean       @default(false)
-  posicaoFila Int?
-  criadoEm  DateTime       @default(now())
-  atualizadoEm DateTime    @updatedAt
+  id              String         @id @default(uuid())
+  viagemId        String
+  viagem          Viagem         @relation(fields: [viagemId], references: [id], onDelete: Cascade)
+  alunoId         String
+  aluno           Aluno          @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  status          StatusCheckin  @default(CONFIRMADO)
+  embarcado       Boolean        @default(false)
+  /// Onde o aluno embarca (vem da alocação do dia)
+  pontoEmbarqueId String?
+  pontoEmbarque   PontoEmbarque? @relation(fields: [pontoEmbarqueId], references: [id], onDelete: SetNull)
+  posicaoFila     Int?
+  criadoEm        DateTime       @default(now())
+  atualizadoEm    DateTime       @updatedAt
 
   @@unique([viagemId, alunoId])
   @@map("checkins")
 }
 
 model Notificacao {
-  id        String   @id @default(uuid())
+  id        String               @id @default(uuid())
   usuarioId String
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuario   Usuario              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   categoria CategoriaNotificacao @default(GERAL)
-  mensagem  String   @db.VarChar(500)
-  lida      Boolean  @default(false)
-  criadoEm  DateTime @default(now())
+  mensagem  String               @db.VarChar(500)
+  lida      Boolean              @default(false)
+  criadoEm  DateTime             @default(now())
 
   @@index([usuarioId, lida])
   @@map("notificacoes")
@@ -286,16 +382,16 @@ model Embarque {
 
 /// Registro de ações importantes (Regra 10 — auditoria)
 model Auditoria {
-  id         String   @id @default(uuid())
-  usuarioId  String?  // quem fez (null = sistema)
-  usuario    Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
-  acao       String
-  entidade   String
-  entidadeId String
-  detalhes   Json?
+  id            String   @id @default(uuid())
+  usuarioId     String? // quem fez (null = sistema)
+  usuario       Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  acao          String
+  entidade      String
+  entidadeId    String
+  detalhes      Json?
   valorAnterior Json?
   valorNovo     Json?
-  criadoEm   DateTime @default(now())
+  criadoEm      DateTime @default(now())
 
   @@index([entidade, entidadeId])
   @@map("auditorias")

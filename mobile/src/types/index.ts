@@ -16,7 +16,9 @@ export interface Perfil extends Usuario {
   } | null;
 }
 
-export type StatusCheckin = "CONFIRMADO" | "ESPERA" | "CANCELADO";
+/** PROGRAMADO = alocado no dia (vaga garantida), ainda sem confirmar a presença */
+export type StatusCheckin = "CONFIRMADO" | "PROGRAMADO" | "ESPERA" | "CANCELADO";
+export type SentidoViagem = "IDA" | "VOLTA";
 export type StatusViagem = "AGUARDANDO" | "EM_ANDAMENTO" | "ENCERRADA";
 
 export interface Onibus {
@@ -32,10 +34,19 @@ export interface Universidade {
   nome: string;
 }
 
+export interface PontoEmbarque {
+  id: string;
+  nome: string;
+  endereco: string | null;
+  ativo: boolean;
+  _count?: { rotas: number };
+}
+
 export interface Rota {
   id: string;
   nome: string;
   pontos: { id: string; ordem: number; universidade: Universidade }[];
+  pontosEmbarque: { id: string; ordem: number; pontoEmbarque: PontoEmbarque }[];
 }
 
 export interface Motorista {
@@ -47,6 +58,10 @@ export interface Motorista {
 
 export interface ResumoViagem {
   confirmados: number;
+  /** Alocados no dia que ainda não confirmaram */
+  programados: number;
+  /** confirmados + programados = lugares ocupados */
+  ocupados: number;
   embarcados: number;
   espera: number;
 }
@@ -57,6 +72,9 @@ export interface Viagem {
   horario: string;
   vagas: number;
   status: StatusViagem;
+  sentido: SentidoViagem;
+  /** Gerada pela programação semanal (null = criada avulsa) */
+  programacaoId: string | null;
   latitude?: number;
   longitude?: number;
   rota: { nome: string };
@@ -66,7 +84,13 @@ export interface Viagem {
   /** Só vem para o aluno */
   vagasRestantes?: number;
   /** Só vem para o aluno: o check-in dele nesta viagem */
-  meuCheckin?: { status: StatusCheckin; embarcado: boolean; embarcadoEm?: string | null; posicaoFila: number | null } | null;
+  meuCheckin?: {
+    status: StatusCheckin;
+    embarcado: boolean;
+    embarcadoEm?: string | null;
+    posicaoFila: number | null;
+    pontoEmbarque: { id: string; nome: string } | null;
+  } | null;
 }
 
 export interface Checkin {
@@ -74,10 +98,69 @@ export interface Checkin {
   alunoId: string;
   status: StatusCheckin;
   embarcado: boolean;
+  pontoEmbarque: { id: string; nome: string } | null;
   aluno: {
     universidade: { nome: string };
     usuario: { nome: string };
   };
+}
+
+/** GET /viagens/:id/rota */
+export interface RotaDoDia {
+  sentido: SentidoViagem;
+  universidades: { universidade: string; alunosConfirmados: number; ativoNoDia: boolean }[];
+  pontosEmbarque: { id: string; nome: string; endereco: string | null; alunos: number; ativoNoDia: boolean }[];
+}
+
+/** Dia de uso do aluno (alocação) */
+export interface DiaAlocado {
+  diaSemana: number;
+  rota: { id: string; nome: string };
+  pontoEmbarque: { id: string; nome: string } | null;
+}
+
+/** GET /alunos/me/dias e /alunos/:id/dias */
+export interface DiasDoAluno {
+  statusConta: StatusConta;
+  universidade: { id: string; nome: string };
+  dias: DiaAlocado[];
+  opcoes: {
+    rota: { id: string; nome: string; instituicoes: string[] };
+    horarioIda: string;
+    horarioVolta: string | null;
+    pontosEmbarque: { id: string; nome: string; endereco: string | null }[];
+    /** ocupados/disponiveis não contam o próprio aluno */
+    dias: { diaSemana: number; nome: string; capacidade: number; ocupados: number; disponiveis: number }[];
+  }[];
+}
+
+export interface OcupacaoDia {
+  diaSemana: number;
+  nome: string;
+  alocados: number;
+  capacidade: number;
+}
+
+/** Programação semanal de uma rota (GET /programacoes) */
+export interface Programacao {
+  id: string;
+  rotaId: string;
+  onibusId: string;
+  motoristaId: string;
+  horarioIda: string;
+  horarioVolta: string | null;
+  diasSemana: number[];
+  ativa: boolean;
+  rota: { id: string; nome: string };
+  onibus: { id: string; placa: string; capacidade: number; emManutencao: boolean };
+  motorista: { id: string; usuario: { nome: string } };
+  ocupacao: (OcupacaoDia & { disponiveis: number })[];
+}
+
+/** GET /dashboard/ocupacao-semanal */
+export interface OcupacaoSemanal {
+  dias: OcupacaoDia[];
+  rotas: { rota: string; dias: OcupacaoDia[] }[];
 }
 
 export type CategoriaNotificacao = "GERAL" | "CADASTRO" | "DOCUMENTO" | "LEMBRETE" | "DIAS" | "FALTA" | "TRANSPORTE" | "LIBERACAO" | "ROTA";
@@ -113,12 +196,15 @@ export interface EventoAuditoria {
   id: string;
   acao: string;
   detalhes: Record<string, unknown> | null;
+  valorAnterior: Record<string, unknown> | null;
+  valorNovo: Record<string, unknown> | null;
   criadoEm: string;
   usuario: { nome: string; papel: Papel } | null;
 }
 
 /** GET /alunos/:id (admin) */
 export interface PerfilAlunoAdmin extends AlunoResumo {
+  dias: DiaAlocado[];
   historico: EventoAuditoria[];
 }
 

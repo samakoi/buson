@@ -3,6 +3,7 @@ import { prisma } from "../../config/prisma";
 import { AppError } from "../../errors/AppError";
 import { historico, registrarAuditoria } from "../auditoria/auditoria.service";
 import { notificarAluno } from "../notificacoes/notificacao.service";
+import { OPCOES_TX, revalidarDiasAoAtivar, revisarAlocacoes, sincronizarCheckins } from "../alocacao/alocacao.service";
 
 const usuarioPublico = { select: { id: true, nome: true, email: true } } as const;
 
@@ -65,7 +66,15 @@ export async function listar(f: FiltroAlunos) {
 export async function detalhar(alunoId: string) {
   const aluno = await prisma.aluno.findUnique({ where: { id: alunoId }, select: alunoResumo });
   if (!aluno) throw new AppError("ALUNO_NAO_ENCONTRADO");
-  return { ...aluno, historico: await historico("Aluno", alunoId) };
+  const [dias, registros] = await Promise.all([
+    prisma.alocacaoAluno.findMany({
+      where: { alunoId, ativo: true },
+      select: { diaSemana: true, rota: { select: { id: true, nome: true } }, pontoEmbarque: { select: { id: true, nome: true } } },
+      orderBy: { diaSemana: "asc" },
+    }),
+    historico("Aluno", alunoId),
+  ]);
+  return { ...aluno, dias, historico: registros };
 }
 
 /** Admin ativa/inativa (ou volta para pendente) a conta do aluno. */
@@ -92,8 +101,13 @@ export async function alterarStatus(alunoId: string, status: StatusConta, motivo
       PENDENTE: `Seu cadastro voltou para análise${motivo ? `: ${motivo}` : "."}`,
     };
     await notificarAluno(tx, alunoId, { mensagem: mensagens[status], categoria: "CADASTRO" });
+
+    // Dias de uso: só contam com a conta ATIVA. Reativado → os dias voltam (se ainda
+    // houver vaga); inativado/pendente → sai das viagens programadas.
+    if (status === "ATIVO") await revalidarDiasAoAtivar(tx, alunoId);
+    else await sincronizarCheckins(tx, alunoId);
     return atualizado;
-  });
+  }, OPCOES_TX);
 }
 
 /** Dados do próprio aluno + o que falta para completar o cadastro. */
@@ -102,6 +116,10 @@ export async function meusDados(usuarioId: string) {
   if (!aluno) throw new AppError("PERFIL_ALUNO_NAO_ENCONTRADO");
   const pendencias: string[] = [];
   if (!aluno.matricula || !aluno.curso || !aluno.telefone) pendencias.push("DADOS_ACADEMICOS");
+  // Conta ativa sem dias fixos: o app sugere escolher os dias de transporte
+  if (aluno.statusConta === "ATIVO" && (await prisma.alocacaoAluno.count({ where: { alunoId: aluno.id, ativo: true } })) === 0) {
+    pendencias.push("DIAS_DE_USO");
+  }
   return { ...aluno, pendencias };
 }
 
@@ -144,7 +162,9 @@ export async function atualizarMeusDados(usuarioId: string, dados: DadosAcademic
         valorAnterior: { universidadeId: aluno.universidadeId },
         valorNovo: { universidadeId: dados.universidadeId },
       });
+      // Rotas que não passam pela nova instituição deixam de valer
+      await revisarAlocacoes(tx, { alunoId: aluno.id }, usuarioId);
     }
     return { ok: true };
-  }).then(() => meusDados(usuarioId));
+  }, OPCOES_TX).then(() => meusDados(usuarioId));
 }

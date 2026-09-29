@@ -40,3 +40,32 @@ export function intervaloDeDias(de: Date, ate: Date = de) {
 export function intervaloDeHoje() {
   return intervaloDeDias(new Date());
 }
+
+// ---- Dias da semana (0 = domingo … 6 = sábado, como Date.getDay())
+
+export const NOMES_DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"] as const;
+
+/** "Seg, Qua e Sex" */
+export function nomesDosDias(dias: number[]): string {
+  const nomes = [...new Set(dias)].sort((a, b) => a - b).map((d) => NOMES_DIAS[d]);
+  return nomes.length > 1 ? `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}` : nomes.join("");
+}
+
+/** Lê a coluna JSON `diasSemana` garantindo uma lista ordenada de dias válidos. */
+export function lerDiasSemana(valor: unknown): number[] {
+  if (!Array.isArray(valor)) return [];
+  return [...new Set(valor.filter((d): d is number => Number.isInteger(d) && d >= 0 && d <= 6))].sort((a, b) => a - b);
+}
+
+/** O dia `dia` no horário "HH:MM". */
+export function comHorario(dia: Date, horario: string): Date {
+  const [hora, minuto] = horario.split(":").map(Number);
+  const data = inicioDoDia(dia);
+  data.setHours(hora, minuto);
+  return data;
+}
+
+/** "28/09" */
+export function diaMes(data: Date): string {
+  return `${String(data.getDate()).padStart(2, "0")}/${String(data.getMonth() + 1).padStart(2, "0")}`;
+}

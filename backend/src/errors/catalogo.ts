@@ -58,6 +58,19 @@ export const ERROS = {
   SEM_VAGA_CONFIRMADA: { status: 400, mensagem: "Embarque não autorizado: não há vaga confirmada nesta viagem." },
   EMBARQUE_JA_CONFIRMADO: { status: 409, mensagem: "O embarque já foi confirmado nesta viagem." },
 
+  // ---- Alocação: pontos de embarque, programação semanal e dias do aluno
+  ROTA_NAO_CADASTRADA: { status: 404, mensagem: "Rota não encontrada." },
+  PONTO_EMBARQUE_NAO_ENCONTRADO: { status: 404, mensagem: "Ponto de embarque não encontrado." },
+  PONTO_FORA_DA_ROTA: { status: 400, mensagem: "O ponto de embarque escolhido não faz parte desta rota." },
+  PROGRAMACAO_NAO_ENCONTRADA: { status: 404, mensagem: "Programação não encontrada." },
+  PROGRAMACAO_JA_ATIVA_NA_ROTA: { status: 409, mensagem: "Esta rota já tem uma programação ativa. Edite a existente." },
+  HORARIO_VOLTA_INVALIDO: { status: 400, mensagem: "O horário da volta deve ser depois do horário da ida." },
+  CAPACIDADE_INSUFICIENTE: { status: 409, mensagem: "O novo ônibus não comporta os alunos já alocados." },
+  CONTA_NAO_ATIVA: { status: 403, mensagem: "Os dias de uso só podem ser escolhidos com a conta ativa (após a validação da matrícula)." },
+  ROTA_NAO_ATENDE_INSTITUICAO: { status: 400, mensagem: "Esta rota não passa pela instituição do aluno." },
+  DIA_SEM_TRANSPORTE: { status: 400, mensagem: "Não há transporte programado nesta rota em um dos dias escolhidos." },
+  DIAS_LOTADOS: { status: 409, mensagem: "Não há mais vagas em um ou mais dias escolhidos. Escolha outro dia." },
+
   // ---- Relatórios e datas
   DATA_INVALIDA: { status: 400, mensagem: "Data inválida." },
   PERIODO_INVALIDO: { status: 400, mensagem: "A data final deve ser igual ou posterior à inicial." },

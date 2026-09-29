@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { CompositeNavigationProp, useNavigation } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { api } from "../../services/api";
-import { MeusDados, Viagem } from "../../types";
+import { MeusDados, RotaDoDia, Viagem } from "../../types";
 import { useSessao } from "../../store/sessao";
 import { useNotificacoes } from "../../contexts/NotificacoesContext";
 import { useCarregamento } from "../../hooks/useCarregamento";
@@ -13,13 +14,7 @@ import { Aviso, BarraProgresso, Botao, Cabecalho, Card, Carregando, EstadoVazio,
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { dataPorExtenso, diaISO, formatarDuracao, minutosAte } from "../../utils/datas";
 import { statusViagem } from "../../utils/rotulos";
-import type { AbasAluno } from "../../navigation/AlunoTabs";
-
-interface PontoRota {
-  universidade: string;
-  alunosConfirmados: number;
-  ativoNoDia: boolean;
-}
+import type { AbasAluno, PilhaAluno } from "../../navigation/AlunoTabs";
 
 /** Atualiza a cada minuto para a contagem "sai em…" andar sozinha. */
 function useAgora() {
@@ -34,13 +29,13 @@ function useAgora() {
 export default function AlunoHomeScreen() {
   const { usuario } = useSessao();
   const { atualizar: atualizarAvisos } = useNotificacoes();
-  const navegacao = useNavigation<BottomTabNavigationProp<AbasAluno>>();
+  const navegacao = useNavigation<CompositeNavigationProp<BottomTabNavigationProp<AbasAluno>, NativeStackNavigationProp<PilhaAluno>>>();
   const { cores } = useTema();
   const s = useEstilos();
   const agora = useAgora();
 
   const [viagem, setViagem] = useState<Viagem | null>(null);
-  const [pontos, setPontos] = useState<PontoRota[]>([]);
+  const [rotaDoDia, setRotaDoDia] = useState<RotaDoDia | null>(null);
   const [eu, setEu] = useState<MeusDados | null>(null);
   const minhaUniversidade = eu?.universidade.nome ?? null;
   const [processando, setProcessando] = useState(false);
@@ -55,10 +50,10 @@ export default function AlunoHomeScreen() {
       setViagem(v);
       setEu(dados);
       if (v) {
-        const { data: rota } = await api.get<PontoRota[]>(`/viagens/${v.id}/rota`);
-        setPontos(rota);
+        const { data: rota } = await api.get<RotaDoDia>(`/viagens/${v.id}/rota`);
+        setRotaDoDia(rota);
       } else {
-        setPontos([]);
+        setRotaDoDia(null);
       }
     },
     { intervaloMs: 20_000 }
@@ -69,7 +64,9 @@ export default function AlunoHomeScreen() {
     setProcessando(true);
     try {
       const { data } = await api.post<{ status: string }>(`/viagens/${viagem.id}/checkin`);
-      if (data.status === "ESPERA") {
+      if (viagem.meuCheckin?.status === "PROGRAMADO") {
+        avisar("Presença confirmada", viagem.sentido === "IDA" ? "Sua ida e sua volta de hoje estão confirmadas." : "Sua volta está confirmada.");
+      } else if (data.status === "ESPERA") {
         avisar("Lista de espera", "As vagas acabaram, mas você entrou na lista de espera. Avisaremos se uma vaga abrir.");
       }
       await recarregar();
@@ -83,12 +80,15 @@ export default function AlunoHomeScreen() {
 
   async function cancelarPresenca() {
     if (!viagem) return;
+    const programado = viagem.meuCheckin?.status === "PROGRAMADO";
     const ok = await confirmar(
-      "Cancelar check-in",
-      viagem.meuCheckin?.status === "CONFIRMADO"
-        ? "Sua vaga será liberada para o próximo da lista de espera."
-        : "Você sairá da lista de espera.",
-      { textoConfirmar: "Cancelar check-in", destrutivo: true }
+      programado ? "Não vou nesta viagem" : "Cancelar check-in",
+      viagem.meuCheckin?.status === "ESPERA"
+        ? "Você sairá da lista de espera."
+        : programado
+          ? "Sua vaga de hoje nesta viagem será liberada para outro aluno. Seus dias fixos continuam valendo nas próximas semanas."
+          : "Sua vaga será liberada para o próximo da lista de espera.",
+      { textoConfirmar: programado ? "Liberar minha vaga" : "Cancelar check-in", destrutivo: true }
     );
     if (!ok) return;
     setProcessando(true);
@@ -122,6 +122,14 @@ export default function AlunoHomeScreen() {
           Você não pode usar o transporte no momento. Procure a administração.
         </Aviso>
       )}
+      {eu?.pendencias.includes("DIAS_DE_USO") && (
+        <Card>
+          <Aviso tipo="info" titulo="Escolha seus dias de transporte" style={{ marginBottom: 0 }}>
+            Com dias fixos, sua vaga fica garantida toda semana — é só confirmar a presença no dia.
+          </Aviso>
+          <Botao titulo="Escolher meus dias" icone="calendar-outline" variante="secundario" onPress={() => navegacao.navigate("MeusDias")} style={{ marginTop: 12 }} />
+        </Card>
+      )}
     </>
   );
 
@@ -138,6 +146,10 @@ export default function AlunoHomeScreen() {
 
   const meu = viagem.meuCheckin;
   const ativo = !!meu && meu.status !== "CANCELADO";
+  const programado = meu?.status === "PROGRAMADO";
+  const comVaga = meu?.status === "CONFIRMADO" || programado;
+  const volta = viagem.sentido === "VOLTA";
+  const pontos = rotaDoDia?.universidades ?? [];
   const lotado = viagem.vagasRestantes === 0;
   const status = statusViagem[viagem.status];
 
@@ -157,6 +169,8 @@ export default function AlunoHomeScreen() {
     ? { texto: "Embarque confirmado. Boa viagem!", icone: "checkmark-done-circle" }
     : meu?.status === "CONFIRMADO"
       ? { texto: "Sua vaga está confirmada", icone: "checkmark-circle" }
+      : programado
+        ? { texto: "Vaga garantida — confirme sua presença", icone: "calendar" }
       : meu?.status === "ESPERA"
         ? { texto: `Você é o ${meu.posicaoFila}º da lista de espera`, icone: "time" }
         : viagem.status === "AGUARDANDO"
@@ -165,7 +179,9 @@ export default function AlunoHomeScreen() {
 
   // Ação principal: uma só, a que faz sentido agora
   let acao: React.ReactNode = null;
-  if (viagem.status === "AGUARDANDO" && !ativo) {
+  if (viagem.status === "AGUARDANDO" && programado) {
+    acao = <Botao titulo="Confirmar presença" icone="checkmark-circle" variante="claro" onPress={confirmarPresenca} carregando={processando} />;
+  } else if (viagem.status === "AGUARDANDO" && !ativo) {
     acao = (
       <Botao
         titulo={lotado ? "Entrar na lista de espera" : "Confirmar presença"}
@@ -175,7 +191,7 @@ export default function AlunoHomeScreen() {
         carregando={processando}
       />
     );
-  } else if (meu?.status === "CONFIRMADO" && !meu.embarcado && viagem.status === "EM_ANDAMENTO") {
+  } else if (comVaga && !meu?.embarcado && viagem.status === "EM_ANDAMENTO") {
     // Ônibus saiu: o aluno escaneia o QR exibido pelo motorista
     acao = <Botao titulo="Embarcar" icone="scan" variante="claro" onPress={() => navegacao.navigate("Embarcar")} />;
   }
@@ -195,7 +211,7 @@ export default function AlunoHomeScreen() {
           <View style={s.rota}>
             <Ionicons name="bus" size={18} color={cores.sobreDestaque} />
             <Texto variante="corpoForte" cor="sobreDestaque" numberOfLines={1} style={{ flexShrink: 1 }}>
-              {viagem.rota.nome}
+              {volta ? "Volta" : "Ida"} • {viagem.rota.nome}
             </Texto>
           </View>
           <Pilula texto={status.rotulo} icone={status.icone} sobreDestaque />
@@ -216,7 +232,7 @@ export default function AlunoHomeScreen() {
 
         {viagem.status === "AGUARDANDO" && (
           <View style={s.vagas}>
-            <BarraProgresso valor={viagem.resumo.confirmados / Math.max(1, viagem.vagas)} cor={cores.sobreDestaque} fundo="rgba(255,255,255,0.18)" />
+            <BarraProgresso valor={viagem.resumo.ocupados / Math.max(1, viagem.vagas)} cor={cores.sobreDestaque} fundo="rgba(255,255,255,0.18)" />
             <Texto variante="pequeno" cor="sobreDestaqueSuave">
               {lotado ? `Lotado • ${viagem.resumo.espera} na lista de espera` : `${viagem.vagasRestantes} de ${viagem.vagas} vagas livres`}
             </Texto>
@@ -231,6 +247,19 @@ export default function AlunoHomeScreen() {
             {situacao.texto}
           </Texto>
         </View>
+        {comVaga && !volta && meu?.pontoEmbarque && viagem.status !== "ENCERRADA" && (
+          <View style={[s.situacao, { marginTop: 8 }]}>
+            <Ionicons name="location" size={18} color={cores.sobreDestaqueSuave} />
+            <Texto variante="pequenoForte" cor="sobreDestaqueSuave" style={{ flex: 1 }}>
+              Embarque em {meu.pontoEmbarque.nome}
+            </Texto>
+          </View>
+        )}
+        {programado && viagem.status === "AGUARDANDO" && (
+          <Texto variante="pequeno" cor="sobreDestaqueSuave" style={{ marginTop: 4 }}>
+            Hoje é um dos seus dias fixos. Confirme para o motorista saber que você vai{volta ? "." : " (vale para a ida e a volta)."}
+          </Texto>
+        )}
         {meu?.status === "CONFIRMADO" && !meu.embarcado && viagem.status === "AGUARDANDO" && (
           <Texto variante="pequeno" cor="sobreDestaqueSuave" style={{ marginTop: 4 }}>
             Quando o motorista iniciar a viagem, toque em Embarcar e escaneie o QR Code que aparece no celular dele.
@@ -246,7 +275,13 @@ export default function AlunoHomeScreen() {
       </Card>
 
       {viagem.status === "AGUARDANDO" && ativo && (
-        <Botao titulo="Cancelar check-in" icone="close-circle-outline" variante="perigoFantasma" onPress={cancelarPresenca} carregando={processando} />
+        <Botao
+          titulo={programado ? "Não vou nesta viagem" : "Cancelar check-in"}
+          icone="close-circle-outline"
+          variante="perigoFantasma"
+          onPress={cancelarPresenca}
+          carregando={processando}
+        />
       )}
       {viagem.status === "EM_ANDAMENTO" && !ativo && (
         <Texto variante="pequeno" cor="textoSuave" alinhar="center">
@@ -262,7 +297,7 @@ export default function AlunoHomeScreen() {
               riscarInativas={viagem.status !== "AGUARDANDO"}
               paradas={pontos.map((p) => ({
                 nome: p.universidade,
-                detalhe: p.ativoNoDia ? `${p.alunosConfirmados} aluno(s) confirmado(s)` : (viagem.status === "AGUARDANDO" ? "Ninguém confirmado ainda" : "Sem passageiros hoje"),
+                detalhe: p.ativoNoDia ? `${p.alunosConfirmados} aluno(s) com vaga` : (viagem.status === "AGUARDANDO" ? "Ninguém com vaga ainda" : "Sem passageiros hoje"),
                 ativa: p.ativoNoDia,
                 minha: p.universidade === minhaUniversidade,
               }))}

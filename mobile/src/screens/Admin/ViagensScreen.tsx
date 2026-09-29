@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import { View } from "react-native";
 import { api } from "../../services/api";
-import { Motorista, Onibus, Rota, Viagem } from "../../types";
+import { Motorista, Onibus, Rota, SentidoViagem, Viagem } from "../../types";
 import { useCarregamento } from "../../hooks/useCarregamento";
-import { Aviso, Botao, BotaoIcone, Cabecalho, Campo, Card, Carregando, Chips, EstadoVazio, Folha, ItemLista, Pilula, Rotulo, Secao, Tela } from "../../components/ui";
+import { Aviso, Botao, BotaoIcone, Cabecalho, Campo, Card, Carregando, Chips, EstadoVazio, Folha, ItemLista, Pilula, Rotulo, Secao, Tela, Texto } from "../../components/ui";
 import { useTema } from "../../theme/TemaProvider";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { diaISO, formatarDiaCurto, mascararDia, mascararHora, parseDiaBR, somarDias } from "../../utils/datas";
 import { statusViagem } from "../../utils/rotulos";
+import { ProgramacaoSecao } from "../../features/alocacao/ProgramacaoSecao";
 
 type OpcaoData = "hoje" | "amanha" | "outra";
+type Aba = "viagens" | "programacao";
 
 export default function ViagensScreen() {
   const { cores } = useTema();
@@ -18,7 +20,9 @@ export default function ViagensScreen() {
   const [onibus, setOnibus] = useState<Onibus[]>([]);
   const [motoristas, setMotoristas] = useState<Motorista[]>([]);
 
+  const [aba, setAba] = useState<Aba>("viagens");
   const [formAberto, setFormAberto] = useState(false);
+  const [sentido, setSentido] = useState<SentidoViagem>("IDA");
   const [opcaoData, setOpcaoData] = useState<OpcaoData>("hoje");
   const [outraData, setOutraData] = useState("");
   const [horario, setHorario] = useState("");
@@ -56,6 +60,7 @@ export default function ViagensScreen() {
     setMotoristaId(null);
     setOnibusId(null);
     setVagas("");
+    setSentido("IDA");
     setErro(null);
   }
 
@@ -70,7 +75,7 @@ export default function ViagensScreen() {
     setErro(null);
     setSalvando(true);
     try {
-      await api.post("/viagens", { data, horario, rotaId, motoristaId, onibusId, vagas: vagas ? Number(vagas) : undefined });
+      await api.post("/viagens", { data, horario, rotaId, motoristaId, onibusId, sentido, vagas: vagas ? Number(vagas) : undefined });
       fecharFormulario();
       await recarregar();
     } catch (err) {
@@ -81,11 +86,12 @@ export default function ViagensScreen() {
   }
 
   async function excluir(v: Viagem) {
-    const ativos = v.resumo.confirmados + v.resumo.espera;
+    const ativos = v.resumo.ocupados + v.resumo.espera;
     const ok = await confirmar(
-      "Excluir viagem",
-      `Excluir a viagem de ${formatarDiaCurto(diaISO(new Date(v.data)))} às ${v.horario}?` +
-        (ativos > 0 ? ` ${ativos} aluno(s) com check-in serão avisados do cancelamento.` : ""),
+      v.programacaoId ? "Cancelar viagem programada" : "Excluir viagem",
+      `${v.programacaoId ? "Cancelar" : "Excluir"} a ${v.sentido === "VOLTA" ? "volta" : "ida"} de ${formatarDiaCurto(diaISO(new Date(v.data)))} às ${v.horario}?` +
+        (ativos > 0 ? ` ${ativos} aluno(s) serão avisados do cancelamento.` : "") +
+        (v.programacaoId ? " Ela não será recriada pela programação (ex.: feriado)." : ""),
       { textoConfirmar: "Excluir", destrutivo: true }
     );
     if (!ok) return;
@@ -112,22 +118,39 @@ export default function ViagensScreen() {
     <Tela atualizando={atualizando} onAtualizar={atualizar}>
       <Cabecalho
         titulo="Viagens"
-        subtitulo="De hoje em diante"
-        acoes={<BotaoIcone icone="add" rotulo="Nova viagem" onPress={() => setFormAberto(true)} cor={cores.sobrePrimaria} tamanho={24} style={{ backgroundColor: cores.primariaForte }} />}
+        subtitulo={aba === "viagens" ? "De hoje em diante" : "Rotas que se repetem toda semana"}
+        acoes={
+          aba === "viagens" ? (
+            <BotaoIcone icone="add" rotulo="Nova viagem avulsa" onPress={() => setFormAberto(true)} cor={cores.sobrePrimaria} tamanho={24} style={{ backgroundColor: cores.primariaForte }} />
+          ) : undefined
+        }
       />
 
-      {viagens.length === 0 && (
+      <View style={{ marginBottom: 16 }}>
+        <Chips
+          opcoes={[
+            { valor: "viagens", rotulo: "Próximas viagens" },
+            { valor: "programacao", rotulo: "Programação semanal" },
+          ]}
+          valor={aba}
+          onChange={setAba}
+        />
+      </View>
+
+      {aba === "programacao" && <ProgramacaoSecao rotas={rotas} onibus={onibus} motoristas={motoristas} aoMudarViagens={recarregar} />}
+
+      {aba === "viagens" && viagens.length === 0 && (
         <Card>
           <EstadoVazio
             icone="calendar-outline"
-            titulo="Nenhuma viagem programada"
-            texto="Cadastre a próxima viagem para os alunos poderem fazer check-in."
-            acao={{ titulo: "Nova viagem", icone: "add", onPress: () => setFormAberto(true) }}
+            titulo="Nenhuma viagem nos próximos dias"
+            texto="Crie a programação semanal das rotas (as viagens passam a ser criadas sozinhas) ou uma viagem avulsa."
+            acao={{ titulo: "Programação semanal", icone: "repeat", onPress: () => setAba("programacao") }}
           />
         </Card>
       )}
 
-      {[...porDia.entries()].map(([dia, lista]) => (
+      {aba === "viagens" && [...porDia.entries()].map(([dia, lista]) => (
         <View key={dia}>
           <Secao titulo={dia === diaISO() ? `Hoje • ${formatarDiaCurto(dia)}` : formatarDiaCurto(dia)} />
           <Card semPadding>
@@ -139,15 +162,17 @@ export default function ViagensScreen() {
                   key={v.id}
                   icone={manutencao ? "construct" : st.icone}
                   tomIcone={manutencao ? "alerta" : st.tom}
-                  titulo={`${v.horario} • ${v.rota.nome}`}
+                  titulo={`${v.horario} • ${v.sentido === "VOLTA" ? "Volta" : "Ida"} • ${v.rota.nome}`}
                   subtitulo={
-                    `${v.onibus.placa} • ${v.motorista?.usuario.nome ?? "—"} • ${v.resumo.confirmados}/${v.vagas} vagas` +
+                    `${v.onibus.placa} • ${v.motorista?.usuario.nome ?? "—"} • ${v.resumo.ocupados}/${v.vagas} vagas` +
+                    (v.resumo.programados ? ` (${v.resumo.programados} sem confirmar)` : "") +
                     (v.resumo.espera ? ` • ${v.resumo.espera} na espera` : "") +
                     (v.status !== "AGUARDANDO" ? ` • ${v.resumo.embarcados} embarcaram` : "")
                   }
                   abaixo={
                     <>
                       <Pilula texto={st.rotulo} tom={st.tom} />
+                      {v.programacaoId && <Pilula texto="Programada" tom="info" icone="repeat" />}
                       {manutencao && <Pilula texto="Ônibus em manutenção" tom="alerta" icone="construct" />}
                     </>
                   }
@@ -164,8 +189,11 @@ export default function ViagensScreen() {
         </View>
       ))}
 
-      <Folha visivel={formAberto} onFechar={fecharFormulario} titulo="Nova viagem">
+      <Folha visivel={formAberto} onFechar={fecharFormulario} titulo="Nova viagem avulsa">
         {erro && <Aviso tipo="erro" titulo={erro} />}
+        <Texto variante="pequeno" cor="textoSuave" style={{ marginBottom: 8 }}>
+          Para viagens que se repetem toda semana, use a Programação semanal.
+        </Texto>
 
         <Rotulo>Data</Rotulo>
         <Chips
@@ -180,6 +208,16 @@ export default function ViagensScreen() {
         {opcaoData === "outra" && (
           <Campo rotulo="Qual data?" value={outraData} onChangeText={(t) => setOutraData(mascararDia(t))} placeholder="DD/MM/AAAA" keyboardType="number-pad" maxLength={10} />
         )}
+
+        <Rotulo>Sentido</Rotulo>
+        <Chips
+          opcoes={[
+            { valor: "IDA", rotulo: "Ida", detalhe: "leva às instituições" },
+            { valor: "VOLTA", rotulo: "Volta", detalhe: "busca nas instituições" },
+          ]}
+          valor={sentido}
+          onChange={setSentido}
+        />
 
         <Campo rotulo="Horário de saída" value={horario} onChangeText={(t) => setHorario(mascararHora(t))} placeholder="HH:MM" keyboardType="number-pad" maxLength={5} />
 

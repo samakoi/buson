@@ -61,7 +61,7 @@ export default function PainelScreen() {
 
   const r = viagem.resumo;
   const status = statusViagem[viagem.status];
-  const faltam = r.confirmados - r.embarcados;
+  const faltam = r.ocupados - r.embarcados;
 
   // Ação principal fixa no rodapé: fácil de alcançar com o polegar
   const rodape =
@@ -80,7 +80,7 @@ export default function PainelScreen() {
 
   return (
     <Tela atualizando={atualizando} onAtualizar={atualizar} rodape={rodape}>
-      <Cabecalho titulo="Painel" subtitulo={viagem.rota.nome} />
+      <Cabecalho titulo="Painel" subtitulo={`${viagem.sentido === "VOLTA" ? "Volta" : "Ida"} • ${viagem.rota.nome}`} />
 
       {viagem.onibus.emManutencao && viagem.status === "AGUARDANDO" && (
         <Aviso tipo="alerta" titulo={`Ônibus ${viagem.onibus.placa} em manutenção`}>
@@ -108,15 +108,15 @@ export default function PainelScreen() {
           <View style={s.progressoTexto}>
             <Texto variante="pequenoForte">Embarques</Texto>
             <Texto variante="pequenoForte" cor="textoSuave">
-              {r.embarcados} de {r.confirmados}
+              {r.embarcados} de {r.ocupados}
             </Texto>
           </View>
-          <BarraProgresso valor={r.confirmados ? r.embarcados / r.confirmados : 0} cor={cores.sucesso} altura={10} />
+          <BarraProgresso valor={r.ocupados ? r.embarcados / r.ocupados : 0} cor={cores.sucesso} altura={10} />
         </View>
       </Card>
 
       <GradeEstatisticas>
-        <Estatistica rotulo="Confirmados" valor={`${r.confirmados}/${viagem.vagas}`} tom="info" icone="people-outline" />
+        <Estatistica rotulo="Passageiros" valor={`${r.ocupados}/${viagem.vagas}`} tom="info" icone="people-outline" />
         <Estatistica rotulo="Embarcados" valor={r.embarcados} tom="sucesso" icone="checkmark-done-outline" />
         <Estatistica rotulo="Faltam embarcar" valor={faltam} tom={faltam > 0 ? "alerta" : "neutro"} icone="hourglass-outline" />
         <Estatistica rotulo="Lista de espera" valor={r.espera} icone="time-outline" />
@@ -132,7 +132,7 @@ export default function PainelScreen() {
       )}
       {viagem.status === "ENCERRADA" && (
         <Aviso tipo="sucesso" titulo="Viagem encerrada">
-          {faltam > 0 ? `${faltam} aluno(s) foram registrados como falta.` : "Todos os confirmados embarcaram. Bom descanso!"}
+          {faltam > 0 ? `${faltam} aluno(s) foram registrados como falta.` : "Todos os passageiros embarcaram. Bom descanso!"}
         </Aviso>
       )}
     </Tela>

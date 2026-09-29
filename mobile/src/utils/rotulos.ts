@@ -46,4 +46,30 @@ export const acaoAuditoria: Record<string, string> = {
   ALUNO_CADASTRADO: "Cadastro criado",
   STATUS_CONTA_ALTERADO: "Status da conta alterado",
   UNIVERSIDADE_ALTERADA: "Universidade alterada",
+  DIAS_ALTERADOS: "Dias de uso alterados",
+  DIAS_REMOVIDOS_PELO_SISTEMA: "Dias liberados automaticamente",
 };
+
+type DiaAuditado = { dia: string; rota?: string; ponto?: string | null };
+
+/** Resumo legível do "antes → depois" de um registro da auditoria. */
+export function mudancaAuditoria(h: { valorAnterior: Record<string, unknown> | null; valorNovo: Record<string, unknown> | null }): string {
+  const antes = h.valorAnterior ?? {};
+  const depois = h.valorNovo ?? {};
+  if ("statusConta" in antes || "statusConta" in depois) {
+    return `${rotuloValorAuditoria(antes.statusConta)} → ${rotuloValorAuditoria(depois.statusConta)}`;
+  }
+  const dias = (v: unknown) => {
+    if (!Array.isArray(v)) return null;
+    const lista = v.map((d) => (typeof d === "string" ? d : (d as DiaAuditado).dia));
+    return lista.length ? lista.join(", ") : "nenhum";
+  };
+  if ("dias" in antes || "dias" in depois) {
+    const a = dias(antes.dias);
+    const d = dias(depois.dias);
+    if (a && d) return `${a} → ${d}`;
+    if (a) return `${a}${typeof antes.rota === "string" ? ` (${antes.rota})` : ""}`;
+    return d ?? "";
+  }
+  return "";
+}

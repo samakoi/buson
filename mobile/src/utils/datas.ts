@@ -79,3 +79,14 @@ export function dataPorExtenso(data = new Date()): string {
   const texto = data.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
+
+// ---- Dias da semana (0 = domingo … 6 = sábado, igual à API)
+
+export const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"] as const;
+export const DIAS_SEMANA_COMPLETOS = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"] as const;
+
+/** [1, 3, 5] → "Seg, Qua e Sex" */
+export function listarDias(dias: number[]): string {
+  const nomes = [...new Set(dias)].sort((a, b) => a - b).map((d) => DIAS_SEMANA[d]);
+  return nomes.length > 1 ? `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}` : nomes.join("");
+}

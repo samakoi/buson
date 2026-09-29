@@ -9,6 +9,8 @@ import { dashboardRouter } from "../modules/dashboard/dashboard.routes";
 import { motoristaRouter } from "../modules/motoristas/motorista.routes";
 import { notificacaoRouter } from "../modules/notificacoes/notificacao.routes";
 import { alunoRouter } from "../modules/alunos/aluno.routes";
+import { programacaoRouter } from "../modules/programacoes/programacao.routes";
+import { pontoEmbarqueRouter } from "../modules/pontosEmbarque/pontoEmbarque.routes";
 
 export const routes = Router();
 
@@ -35,3 +37,5 @@ routes.use("/dashboard", dashboardRouter);
 routes.use("/motoristas", motoristaRouter);
 routes.use("/notificacoes", notificacaoRouter);
 routes.use("/alunos", alunoRouter);
+routes.use("/programacoes", programacaoRouter);
+routes.use("/pontos-embarque", pontoEmbarqueRouter);

@@ -9,9 +9,10 @@ import PerfilAlunoScreen from "../screens/Admin/PerfilAlunoScreen";
 import ViagensScreen from "../screens/Admin/ViagensScreen";
 import CadastrosScreen from "../screens/Admin/CadastrosScreen";
 import AvisosScreen from "../screens/Comum/AvisosScreen";
+import MeusDiasScreen from "../features/alocacao/MeusDiasScreen";
 
 export type AbasAdmin = { Dashboard: undefined; Alunos: undefined; Viagens: undefined; Cadastros: undefined; Avisos: undefined };
-export type PilhaAdmin = { Abas: undefined; PerfilAluno: { alunoId: string } };
+export type PilhaAdmin = { Abas: undefined; PerfilAluno: { alunoId: string }; DiasAluno: { alunoId: string; nome: string } };
 
 const Tab = createBottomTabNavigator<AbasAdmin>();
 const Pilha = createNativeStackNavigator<PilhaAdmin>();
@@ -42,6 +43,7 @@ export default function AdminNavegacao() {
     <Pilha.Navigator screenOptions={{ headerShown: false }}>
       <Pilha.Screen name="Abas" component={Abas} />
       <Pilha.Screen name="PerfilAluno" component={PerfilAlunoScreen} />
+      <Pilha.Screen name="DiasAluno" component={MeusDiasScreen} />
     </Pilha.Navigator>
   );
 }

@@ -78,13 +78,14 @@ export async function escanear(viagemId: string, usuarioId: string, token: strin
   try {
     const embarque = await prisma.$transaction(async (tx) => {
       const checkin = await tx.checkin.findUnique({ where: { viagemId_alunoId: { viagemId, alunoId: aluno.id } } });
-      if (!checkin || checkin.status !== "CONFIRMADO") throw new AppError("SEM_VAGA_CONFIRMADA");
+      // PROGRAMADO: alocado no dia que embarcou sem confirmar antes — a vaga já era dele
+      if (!checkin || (checkin.status !== "CONFIRMADO" && checkin.status !== "PROGRAMADO")) throw new AppError("SEM_VAGA_CONFIRMADA");
       if (checkin.embarcado) throw new AppError("EMBARQUE_JA_CONFIRMADO");
 
       const registro = await tx.embarque.create({
         data: { viagemId, alunoId: aluno.id, metodo: "QR_MOTORISTA", sessaoId: sessao.id },
       });
-      await tx.checkin.update({ where: { id: checkin.id }, data: { embarcado: true } });
+      await tx.checkin.update({ where: { id: checkin.id }, data: { embarcado: true, status: "CONFIRMADO" } });
       return registro;
     });
     return {
@@ -109,13 +110,14 @@ export async function registrarManual(viagemId: string, motoristaId: string, mot
         where: { viagemId_alunoId: { viagemId, alunoId } },
         include: { aluno: { include: { usuario: { select: { nome: true } }, universidade: { select: { nome: true } } } } },
       });
-      if (!checkin || checkin.status !== "CONFIRMADO") throw new AppError("SEM_VAGA_CONFIRMADA");
+      // PROGRAMADO: alocado no dia que embarcou sem confirmar antes — a vaga já era dele
+      if (!checkin || (checkin.status !== "CONFIRMADO" && checkin.status !== "PROGRAMADO")) throw new AppError("SEM_VAGA_CONFIRMADA");
       if (checkin.embarcado) throw new AppError("EMBARQUE_JA_CONFIRMADO");
 
       const embarque = await tx.embarque.create({
         data: { viagemId, alunoId, metodo: "MANUAL", registradoPorId: motoristaUsuarioId },
       });
-      await tx.checkin.update({ where: { id: checkin.id }, data: { embarcado: true } });
+      await tx.checkin.update({ where: { id: checkin.id }, data: { embarcado: true, status: "CONFIRMADO" } });
       await registrarAuditoria(tx, {
         usuarioId: motoristaUsuarioId,
         acao: "EMBARQUE_MANUAL",

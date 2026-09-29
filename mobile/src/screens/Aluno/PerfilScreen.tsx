@@ -34,6 +34,8 @@ export default function PerfilScreen() {
 
   const st = statusConta[dados.statusConta];
   const dadosCompletos = !dados.pendencias.includes("DADOS_ACADEMICOS");
+  const semDias = dados.pendencias.includes("DIAS_DE_USO");
+  const ativa = dados.statusConta === "ATIVO";
   const seta = <Ionicons name="chevron-forward" size={18} color={cores.textoFraco} />;
 
   return (
@@ -79,6 +81,16 @@ export default function PerfilScreen() {
           abaixo={!dadosCompletos ? <Pilula texto="Pendente" tom="alerta" /> : undefined}
           direita={seta}
           onPress={() => navegacao.navigate("DadosAcademicos")}
+        />
+        <ItemLista
+          icone="calendar-outline"
+          tomIcone={!ativa ? "neutro" : semDias ? "alerta" : "sucesso"}
+          titulo="Meus dias"
+          subtitulo={ativa ? (semDias ? "Escolha os dias em que você usa o transporte" : "Dias fixos com vaga garantida") : "Disponível depois da validação da matrícula"}
+          abaixo={ativa && semDias ? <Pilula texto="Pendente" tom="alerta" /> : undefined}
+          direita={seta}
+          onPress={() => navegacao.navigate("MeusDias")}
+          apagado={!ativa}
           ultimo
         />
       </Card>

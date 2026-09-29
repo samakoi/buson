@@ -32,12 +32,13 @@ export function useEncerrarViagem(aoConcluir?: () => void) {
   });
 
   async function encerrar(viagem: Viagem) {
-    const faltando = viagem.resumo.confirmados - viagem.resumo.embarcados;
+    // Com vaga = confirmados + programados (dia fixo que não confirmou)
+    const faltando = viagem.resumo.ocupados - viagem.resumo.embarcados;
     const ok = await confirmar(
       "Encerrar viagem",
       faltando > 0
-        ? `${faltando} aluno(s) com vaga confirmada ainda não embarcaram e serão registrados como falta. Deseja encerrar mesmo assim?`
-        : "Todos os alunos confirmados embarcaram. Deseja encerrar a viagem?",
+        ? `${faltando} aluno(s) com vaga ainda não embarcaram e serão registrados como falta. Deseja encerrar mesmo assim?`
+        : "Todos os alunos com vaga embarcaram. Deseja encerrar a viagem?",
       { textoConfirmar: "Encerrar", destrutivo: faltando > 0 }
     );
     if (ok) mutacao.mutate(viagem.id);

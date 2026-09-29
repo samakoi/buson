@@ -6,6 +6,8 @@ import { inicioDoDia } from "../../utils/datas";
 import { notificarAlunos } from "../notificacoes/notificacao.service";
 import { diferenca, registrarAuditoria } from "../auditoria/auditoria.service";
 import { AppError } from "../../errors/AppError";
+import { OPCOES_TX } from "../alocacao/alocacao.service";
+import { aplicarNovaCapacidade } from "../programacoes/programacao.service";
 
 export const onibusRouter = Router();
 
@@ -60,11 +62,15 @@ onibusRouter.patch("/:id", async (req, res, next) => {
     const onibus = await prisma.$transaction(async (tx) => {
       const antes = await tx.onibus.findUnique({ where: { id: req.params.id } });
       if (!antes) throw new AppError("ONIBUS_NAO_ENCONTRADO");
+      // A capacidade do ônibus é a capacidade de cada dia das programações que o usam
+      if (dados.capacidade !== undefined && dados.capacidade !== antes.capacidade) {
+        await aplicarNovaCapacidade(tx, antes.id, dados.capacidade);
+      }
       const atualizado = await tx.onibus.update({ where: { id: antes.id }, data: dados });
       const { valorAnterior, valorNovo, mudou } = diferenca(antes, dados);
       if (mudou) await registrarAuditoria(tx, { usuarioId: req.usuario!.sub, acao: "ONIBUS_ALTERADO", entidade: "Onibus", entidadeId: antes.id, valorAnterior, valorNovo });
       return atualizado;
-    });
+    }, OPCOES_TX);
     res.json(onibus);
   } catch (err) {
     next(err);
@@ -99,7 +105,7 @@ onibusRouter.patch("/:id/manutencao", async (req, res, next) => {
     // Avisa os alunos com check-in ativo nas próximas viagens deste ônibus
     const afetados = await prisma.checkin.findMany({
       where: {
-        status: { in: ["CONFIRMADO", "ESPERA"] },
+        status: { in: ["CONFIRMADO", "PROGRAMADO", "ESPERA"] },
         viagem: { onibusId: onibus.id, status: { not: "ENCERRADA" }, data: { gte: inicioDoDia() } },
       },
       select: { alunoId: true },

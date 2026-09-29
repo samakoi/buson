@@ -3,7 +3,8 @@ import { z } from "zod";
 import { prisma } from "../../config/prisma";
 import { autenticar, exigir } from "../../middlewares/auth";
 import { AppError } from "../../errors/AppError";
-import { formatarDia, intervaloDeDias, parseDia, somarDias } from "../../utils/datas";
+import { formatarDia, intervaloDeDias, lerDiasSemana, NOMES_DIAS, parseDia, somarDias } from "../../utils/datas";
+import { ocupacaoPorDia } from "../alocacao/alocacao.service";
 
 export const dashboardRouter = Router();
 
@@ -22,6 +23,34 @@ dashboardRouter.get("/resumo", async (_req, res, next) => {
       ]);
 
     res.json({ totalAlunos, totalMotoristas, totalOnibus, totalUniversidades, viagensAtivas, onibusEmManutencao });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Ocupação semanal: alunos alocados × lugares, por dia da semana, somando as
+ * programações ativas (ex.: Seg 36/40), e o detalhe por rota.
+ */
+dashboardRouter.get("/ocupacao-semanal", async (_req, res, next) => {
+  try {
+    const programacoes = await prisma.programacao.findMany({
+      where: { ativa: true },
+      select: { rotaId: true, diasSemana: true, rota: { select: { nome: true } }, onibus: { select: { capacidade: true } } },
+      orderBy: { rota: { nome: "asc" } },
+    });
+    const ocupacao = await ocupacaoPorDia(prisma, programacoes.map((p) => p.rotaId));
+    const dias = NOMES_DIAS.map((nome, diaSemana) => ({ diaSemana, nome, alocados: 0, capacidade: 0 }));
+    const rotas = programacoes.map((p) => ({
+      rota: p.rota.nome,
+      dias: lerDiasSemana(p.diasSemana).map((diaSemana) => {
+        const alocados = ocupacao.get(`${p.rotaId}:${diaSemana}`) ?? 0;
+        dias[diaSemana].alocados += alocados;
+        dias[diaSemana].capacidade += p.onibus.capacidade;
+        return { diaSemana, nome: NOMES_DIAS[diaSemana], alocados, capacidade: p.onibus.capacidade };
+      }),
+    }));
+    res.json({ dias: dias.filter((d) => d.capacidade > 0), rotas });
   } catch (err) {
     next(err);
   }
@@ -90,7 +119,8 @@ dashboardRouter.get("/relatorio", async (req, res, next) => {
         rota: { select: { nome: true } },
         onibus: { select: { placa: true } },
         checkins: {
-          where: { status: "CONFIRMADO" },
+          // Programado = alocado no dia que não confirmou; se não embarcou, também é falta
+          where: { status: { in: ["CONFIRMADO", "PROGRAMADO"] } },
           select: {
             embarcado: true,
             aluno: { select: { id: true, usuario: { select: { nome: true } }, universidade: { select: { nome: true } } } },

@@ -74,7 +74,7 @@ export default function QrMotoristaScreen() {
     );
   }
 
-  const { confirmados, embarcados } = viagem.resumo;
+  const { ocupados: confirmados, embarcados } = viagem.resumo;
   const aguardando = Math.max(0, confirmados - embarcados);
   const tamanhoQr = Math.min(280, width - 96);
 
@@ -127,7 +127,7 @@ export default function QrMotoristaScreen() {
         </View>
         <BarraProgresso valor={confirmados ? embarcados / confirmados : 0} cor={cores.sucesso} altura={10} />
         <Texto variante="pequenoForte" cor={aguardando > 0 ? "alerta" : "sucesso"} style={{ marginTop: 8 }}>
-          {aguardando > 0 ? `${aguardando} aguardando embarque` : "Todos os confirmados embarcaram"}
+          {aguardando > 0 ? `${aguardando} aguardando embarque` : "Todos os passageiros embarcaram"}
         </Texto>
       </Card>
 

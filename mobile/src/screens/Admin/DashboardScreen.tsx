@@ -26,6 +26,9 @@ import {
 import { dataPorExtenso, diaISO, formatarDiaBR, formatarDiaCurto, mascararDia, parseDiaBR, somarDias } from "../../utils/datas";
 import { mensagemDeErro } from "../../utils/feedback";
 import { statusViagem } from "../../utils/rotulos";
+import { queryClient } from "../../services/queryClient";
+import { chavesAlocacao } from "../../features/alocacao/api";
+import { OcupacaoSemanalCard } from "../../features/alocacao/OcupacaoSemanalCard";
 
 interface Resumo {
   totalAlunos: number;
@@ -101,6 +104,7 @@ export default function DashboardScreen() {
     ]);
     setResumo(r);
     setOcupacao(o);
+    queryClient.invalidateQueries({ queryKey: chavesAlocacao.ocupacaoSemanal });
   });
 
   // Troca de período: recarrega só o relatório (a primeira carga já vem junto com o resumo)
@@ -211,7 +215,7 @@ export default function DashboardScreen() {
 
           <GradeEstatisticas colunas={3}>
             <Estatistica compacta rotulo="Viagens" valor={t.viagens} />
-            <Estatistica compacta rotulo="Confirmados" valor={t.confirmados} tom="info" />
+            <Estatistica compacta rotulo="Com vaga" valor={t.confirmados} tom="info" />
             <Estatistica compacta rotulo="Faltas" valor={t.faltas} tom={t.faltas > 0 ? "perigo" : "neutro"} />
           </GradeEstatisticas>
 
@@ -233,7 +237,7 @@ export default function DashboardScreen() {
               <EstadoVazio
                 icone="happy-outline"
                 titulo="Nenhuma falta"
-                texto={t.pendentes > 0 ? "As faltas aparecem quando o motorista encerra a viagem." : "Todos os alunos confirmados embarcaram."}
+                texto={t.pendentes > 0 ? "As faltas aparecem quando o motorista encerra a viagem." : "Todos os alunos com vaga embarcaram."}
               />
             )}
           </Card>
@@ -280,6 +284,8 @@ export default function DashboardScreen() {
           </Card>
         </>
       )}
+
+      <OcupacaoSemanalCard />
 
       <Secao titulo="Visão geral do sistema" />
       <GradeEstatisticas colunas={3}>

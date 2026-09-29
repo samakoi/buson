@@ -26,6 +26,8 @@ const esquema = z
     UPLOADS_DIR: z.string().optional(),
     /** Validade do QR de embarque exibido pelo motorista, em minutos */
     BOARDING_QR_MINUTOS: z.coerce.number().int().min(1).max(24 * 60).default(60),
+    // Quantos dias à frente a programação semanal gera viagens (0 = desliga o agendador)
+    DIAS_GERACAO_VIAGENS: z.coerce.number().int().min(0).max(31).default(7),
   })
   .superRefine((v, ctx) => {
     if (v.NODE_ENV === "production") {
@@ -58,5 +60,6 @@ export const env = {
   logLevel: v.NODE_ENV === "test" ? "silent" : v.LOG_LEVEL,
   rateLimit: { login: v.RATE_LIMIT_LOGIN_MAX, cadastro: v.RATE_LIMIT_CADASTRO_MAX, refresh: v.RATE_LIMIT_REFRESH_MAX },
   qrEmbarqueMinutos: v.BOARDING_QR_MINUTOS,
+  diasGeracaoViagens: v.DIAS_GERACAO_VIAGENS,
   uploadsDir: v.UPLOADS_DIR ? path.resolve(v.UPLOADS_DIR) : path.resolve(__dirname, "../../uploads"),
 };

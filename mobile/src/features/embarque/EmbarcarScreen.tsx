@@ -97,7 +97,8 @@ export default function EmbarcarScreen() {
   let bloqueio: { icone: React.ComponentProps<typeof EstadoVazio>["icone"]; titulo: string; texto: string } | null = null;
   if (!viagem) bloqueio = { icone: "calendar-outline", titulo: "Nenhuma viagem hoje", texto: "Não há viagem para a sua instituição hoje." };
   else if (viagem.status === "ENCERRADA") bloqueio = { icone: "flag-outline", titulo: "Viagem encerrada", texto: "Esta viagem já terminou." };
-  else if (!meu || meu.status !== "CONFIRMADO")
+  // Programado (dia fixo) também embarca: a vaga já é dele
+  else if (!meu || (meu.status !== "CONFIRMADO" && meu.status !== "PROGRAMADO"))
     bloqueio = {
       icone: "ticket-outline",
       titulo: "Sem vaga confirmada",

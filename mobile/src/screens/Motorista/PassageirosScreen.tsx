@@ -40,7 +40,8 @@ export default function PassageirosScreen() {
 
   if (carregando) return <Carregando />;
 
-  const confirmados = passageiros.filter((p) => p.status === "CONFIRMADO");
+  // Com vaga: confirmados e programados (dia fixo que ainda não confirmou)
+  const confirmados = passageiros.filter((p) => p.status === "CONFIRMADO" || p.status === "PROGRAMADO");
   const faltam = confirmados.filter((p) => !p.embarcado);
   const embarcaram = confirmados.filter((p) => p.embarcado);
   const espera = passageiros.filter((p) => p.status === "ESPERA");
@@ -67,7 +68,7 @@ export default function PassageirosScreen() {
 
           {confirmados.length === 0 && (
             <Card>
-              <EstadoVazio icone="people-outline" titulo="Ninguém confirmado ainda" texto="Os alunos aparecem aqui assim que fizerem check-in." />
+              <EstadoVazio icone="people-outline" titulo="Nenhum passageiro ainda" texto="Os alunos aparecem aqui quando têm vaga na viagem (dia fixo ou check-in)." />
             </Card>
           )}
 
@@ -80,7 +81,8 @@ export default function PassageirosScreen() {
                     key={p.id}
                     iniciais={iniciaisDe(p.aluno.usuario.nome)}
                     titulo={p.aluno.usuario.nome}
-                    subtitulo={p.aluno.universidade.nome}
+                    subtitulo={[p.aluno.universidade.nome, viagem.sentido === "IDA" && p.pontoEmbarque ? `embarca em ${p.pontoEmbarque.nome}` : null].filter(Boolean).join(" • ")}
+                    abaixo={p.status === "PROGRAMADO" ? <Pilula texto="Não confirmou" tom="neutro" icone="help-circle-outline" /> : undefined}
                     ultimo={i === faltam.length - 1}
                     direita={
                       podeEmbarcar ? (

@@ -1,20 +1,23 @@
 import React, { useState } from "react";
 import { View } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { api } from "../../services/api";
 import { PerfilAlunoAdmin, StatusConta } from "../../types";
 import { useCarregamento } from "../../hooks/useCarregamento";
-import { criarEstilos } from "../../theme/TemaProvider";
+import { criarEstilos, useTema } from "../../theme/TemaProvider";
 import { Botao, Cabecalho, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista, Pilula, Secao, Tela, Texto, iniciaisDe } from "../../components/ui";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { formatarTelefone } from "../../utils/formatos";
-import { formatarDiaBR, diaISO, tempoRelativo } from "../../utils/datas";
-import { acaoAuditoria, rotuloValorAuditoria, statusConta } from "../../utils/rotulos";
+import { DIAS_SEMANA_COMPLETOS, formatarDiaBR, diaISO, tempoRelativo } from "../../utils/datas";
+import { acaoAuditoria, mudancaAuditoria, rotuloValorAuditoria, statusConta } from "../../utils/rotulos";
 import type { PilhaAdmin } from "../../navigation/AdminTabs";
 
 export default function PerfilAlunoScreen() {
-  const navegacao = useNavigation();
+  const navegacao = useNavigation<NativeStackNavigationProp<PilhaAdmin>>();
   const { alunoId } = useRoute<RouteProp<PilhaAdmin, "PerfilAluno">>().params;
+  const { cores } = useTema();
   const s = useEstilos();
   const [aluno, setAluno] = useState<PerfilAlunoAdmin | null>(null);
   const [inativarAberto, setInativarAberto] = useState(false);
@@ -84,11 +87,39 @@ export default function PerfilAlunoScreen() {
         <ItemLista icone="school-outline" tomIcone="neutro" titulo={aluno.curso ?? "Não informado"} subtitulo="Curso" ultimo />
       </Card>
 
+      <Secao
+        titulo="Dias de uso"
+        acao={aluno.statusConta === "ATIVO" ? { texto: "Editar", onPress: () => navegacao.navigate("DiasAluno", { alunoId, nome: aluno.usuario.nome }) } : undefined}
+      />
+      <Card semPadding>
+        {aluno.dias.map((d, i) => (
+          <ItemLista
+            key={d.diaSemana}
+            icone="calendar-outline"
+            tomIcone="info"
+            titulo={DIAS_SEMANA_COMPLETOS[d.diaSemana]}
+            subtitulo={`${d.rota.nome}${d.pontoEmbarque ? ` • embarca em ${d.pontoEmbarque.nome}` : ""}`}
+            ultimo={i === aluno.dias.length - 1}
+          />
+        ))}
+        {aluno.dias.length === 0 && (
+          <ItemLista
+            icone="calendar-clear-outline"
+            tomIcone="neutro"
+            titulo="Sem dias fixos"
+            subtitulo={aluno.statusConta === "ATIVO" ? "Toque para escolher os dias do aluno" : "Só contas ativas têm dias fixos"}
+            direita={aluno.statusConta === "ATIVO" ? <Ionicons name="chevron-forward" size={18} color={cores.textoFraco} /> : undefined}
+            onPress={aluno.statusConta === "ATIVO" ? () => navegacao.navigate("DiasAluno", { alunoId, nome: aluno.usuario.nome }) : undefined}
+            ultimo
+          />
+        )}
+      </Card>
+
       <Secao titulo="Histórico" />
       <Card semPadding>
         {aluno.historico.map((h, i) => {
           const d = h.detalhes as { de?: string; para?: string; motivo?: string | null } | null;
-          const mudanca = d?.de && d?.para ? `${rotuloValorAuditoria(d.de)} → ${rotuloValorAuditoria(d.para)}` : "";
+          const mudanca = d?.de && d?.para ? `${rotuloValorAuditoria(d.de)} → ${rotuloValorAuditoria(d.para)}` : mudancaAuditoria(h);
           return (
             <ItemLista
               key={h.id}

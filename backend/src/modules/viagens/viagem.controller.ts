@@ -37,6 +37,7 @@ const novaViagemSchema = z.object({
   data: dia,
   horario: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário inválido (use HH:MM)."),
   vagas: z.number().int().positive("As vagas devem ser maiores que zero.").optional(),
+  sentido: z.enum(["IDA", "VOLTA"]).optional(),
 });
 
 export async function criar(req: Request, res: Response, next: NextFunction) {
