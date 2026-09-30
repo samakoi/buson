@@ -9,8 +9,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "build:staging": "npx eas-cli build -p android --profile staging",
-    "build:producao": "npx eas-cli build -p android --profile production",
+    "build:staging": "node scripts/eas.mjs build -p android --profile staging",
+    "build:producao": "node scripts/eas.mjs build -p android --profile production",
     "atualizacao": "node scripts/publicar-atualizacao.mjs"
   },
   "dependencies": {
