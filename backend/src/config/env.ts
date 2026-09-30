@@ -47,6 +47,9 @@ const esquema = z
     GPS_RETENCAO_DIAS: z.coerce.number().int().min(1).max(3650).default(90),
     // Monitoramento de erros (opcional): chave pública do projeto no Sentry
     SENTRY_DSN: z.string().url().or(z.literal("")).optional(),
+    // App Android: versionCode mínimo aceito (0 = qualquer) e link para baixar o APK atual
+    APP_VERSAO_MINIMA_ANDROID: z.coerce.number().int().min(0).default(0),
+    APP_LINK_ANDROID: z.string().url().or(z.literal("")).default(""),
   })
   .superRefine((v, ctx) => {
     // Staging segue as mesmas regras da produção (é o ensaio dela)
@@ -93,6 +96,7 @@ export const env = {
     recibosEsperaMs: v.RECIBOS_ESPERA_MS,
   },
   gpsRetencaoDias: v.GPS_RETENCAO_DIAS,
+  appAndroid: { versaoMinima: v.APP_VERSAO_MINIMA_ANDROID, link: v.APP_LINK_ANDROID || null },
   lembretes: {
     saidaMinutos: v.LEMBRETE_SAIDA_MINUTOS,
     vesperaHorario: v.LEMBRETE_VESPERA_HORARIO || null,

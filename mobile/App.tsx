@@ -8,6 +8,7 @@ import { TemaProvider } from "./src/theme/TemaProvider";
 import { queryClient } from "./src/services/queryClient";
 import RootNavigator from "./src/navigation/RootNavigator";
 import { envolverApp, iniciarMonitoramento } from "./src/services/monitoramento";
+import { AtualizacaoObrigatoria } from "./src/features/atualizacao/AtualizacaoObrigatoria";
 
 // Sentry (só com EXPO_PUBLIC_SENTRY_DSN no build)
 iniciarMonitoramento();
@@ -19,7 +20,10 @@ function App() {
         <TemaProvider>
           {/* "auto": texto escuro no tema claro e claro no tema escuro */}
           <StatusBar style="auto" />
-          <RootNavigator />
+          {/* APK antigo demais vê "Atualize o Bus On"; atualizações pela internet chegam sozinhas */}
+          <AtualizacaoObrigatoria>
+            <RootNavigator />
+          </AtualizacaoObrigatoria>
         </TemaProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

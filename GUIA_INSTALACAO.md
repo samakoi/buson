@@ -281,36 +281,38 @@ mobile/
 ## 6.1 Push no celular (EAS + Firebase)
 
 Os avisos do app (vaga, lembrete de viagem, documento, faltas…) também são enviados ao
-celular pelo **Expo Push**. A API já faz tudo sozinha (fila em segundo plano, vários
-aparelhos por usuário, tokens inválidos descartados); falta só ligar o app às suas contas.
+celular pelo **Expo Push**. A API já faz tudo sozinha: fila em segundo plano, vários
+aparelhos por usuário e descarte de tokens inválidos. Falta só ligar o app às suas contas.
 
-> O push **não funciona no Expo Go do Android**, no emulador nem no navegador — nesses
-> casos os avisos ficam na aba Avisos. Ele funciona no **APK** gerado pelo EAS.
+> O push **não funciona no Expo Go do Android**, no emulador nem no navegador. Nesses
+> casos, os avisos ficam só na aba Avisos. Ele funciona no **APK** (seção 11).
 
 1. **Projeto EAS** (na pasta `mobile`, com a sua conta Expo):
    ```bash
    npx eas-cli login
    npx eas-cli init
    ```
-   O `eas init` grava o `projectId` no `app.json` (`expo.extra.eas.projectId`) — é ele
-   que o app usa para pedir o token de push.
-2. **Firebase (Android)** — em https://console.firebase.google.com:
-   - crie um projeto e adicione um app **Android** com o pacote `com.buson.app`;
-   - baixe o `google-services.json`, coloque em `mobile/` e adicione no `app.json`:
-     `"android": { "googleServicesFile": "./google-services.json", ... }`;
-   - em *Configurações do projeto › Contas de serviço*, clique em **Gerar nova chave
-     privada**. Guarde esse JSON fora do projeto (**nunca** no git).
-3. **Enviar a chave para o EAS**: `npx eas-cli credentials` › Android › production ›
-   Google Service Account › *Manage your Google Service Account Key for Push
-   Notifications (FCM V1)* › *Upload a new service account key*.
-4. **Gerar o APK**: ajuste `EXPO_PUBLIC_API_URL` no `mobile/eas.json` para o endereço
-   público da API e rode `npx eas-cli build -p android --profile preview`.
-5. **API**: no `backend/.env`, mantenha `PUSH_MODO=expo`. Os lembretes usam
-   `LEMBRETE_VESPERA_HORARIO` (padrão 20:00) e `LEMBRETE_SAIDA_MINUTOS` (padrão 60).
+   O `projectId` do projeto fica em `EAS_PROJECT_ID`, no `mobile/app.config.ts`. Ele não é
+   segredo: o push e as atualizações pela internet usam esse identificador.
+2. **Firebase (Android)**, em https://console.firebase.google.com:
+   - crie o projeto e adicione dois apps **Android**: `com.buson.app` (oficial) e
+     `com.buson.app.staging` (Bus On Teste);
+   - baixe o `google-services.json`, que vale para os dois apps. Guarde-o **fora do git**,
+     porque o repositório é público;
+   - em *Configurações do projeto › Contas de serviço*, clique em **Gerar nova chave privada**
+     e guarde esse JSON fora do projeto.
+3. **Enviar os arquivos ao EAS** (expo.dev › projeto):
+   - em *Environment variables › Add variable*, crie a variável `GOOGLE_SERVICES_JSON`,
+     do tipo **File**, com o `google-services.json`, visibilidade **Secret**, nos
+     ambientes `preview` e `production`;
+   - em *Credentials › Android*, abra cada pacote (`com.buson.app` e
+     `com.buson.app.staging`), vá em *FCM V1 service account key* e envie a chave privada.
+4. **API**: mantenha `PUSH_MODO=expo`. Os lembretes usam `LEMBRETE_VESPERA_HORARIO`
+   (padrão 20:00) e `LEMBRETE_SAIDA_MINUTOS` (padrão 60).
 
 No app, cada usuário escolhe em **Avisos › ⚙** se quer receber no celular os lembretes e
-os avisos de vaga/lista de espera. Cadastro, documentos, faltas e viagem cancelada sempre
-chegam.
+os avisos de vaga e de lista de espera. Cadastro, documentos, faltas e viagem cancelada
+sempre chegam.
 
 ---
 
@@ -423,7 +425,7 @@ Celular ──HTTPS──▶ Cloudflare ──túnel──▶ cloudflared ──
 | Pasta do servidor | `C:\buson\producao` | `C:\buson\staging` |
 | Arquivo de ambiente | `deploy\.env.producao` | `deploy\.env.staging` |
 | API na própria máquina | `http://127.0.0.1:4000` | `http://127.0.0.1:4001` |
-| Endereço público (exemplo) | `https://api.SEUDOMINIO` | `https://api-staging.SEUDOMINIO` |
+| Endereço público | `https://api.onbus.online` | `https://api-staging.onbus.online` |
 
 ### 10.1 Pré-requisitos
 
@@ -477,6 +479,16 @@ e **guarde uma cópia dele num gerenciador de senhas**. O arquivo nunca vai para
 Mantenha `TRUST_PROXY=1`, para o limite de tentativas de login enxergar o IP real, e
 `CORS_ORIGINS` vazio: o app Android não precisa de CORS.
 
+**Ajustes de segurança no Cloudflare** (painel do domínio `onbus.online`):
+- *SSL/TLS › Edge Certificates*: ligue **Always Use HTTPS** e ponha **Minimum TLS Version** em 1.2.
+- *Security › WAF › Rate limiting rules*: crie a regra "login" com as condições
+  *URI Path* começa com `/api/v1/auth/` e *mais de 30 requisições em 1 minuto pelo mesmo IP*.
+  A ação é *Block* por 10 minutos. É uma segunda barreira, além do limite que a própria API já faz.
+- *Security › Bots*: deixe o **Bot Fight Mode DESLIGADO**. Ele bloqueia apps que não são
+  navegador, e o Bus On pararia de funcionar.
+- *Notifications › Add*: crie o aviso **Tunnel Health Alert** para o seu e-mail, que avisa
+  se um túnel cair.
+
 ### 10.5 Cloudflare R2 (cópia dos backups fora da máquina)
 
 1. No Cloudflare, abra *R2 › Create bucket* e crie o `buson-backups`. Um bucket serve para os
@@ -491,13 +503,13 @@ Mantenha `TRUST_PROXY=1`, para o limite de tentativas de login enxergar o IP rea
 - **Sentry** (https://sentry.io): crie dois projetos.
   - **API** (plataforma *Node.js*): cole o DSN dele em `SENTRY_DSN` no arquivo de ambiente.
   - **App** (plataforma *React Native*): em expo.dev › projeto › *Environment variables*, crie
-    `EXPO_PUBLIC_SENTRY_DSN` com o DSN do app (visibilidade *Plain text*) para `preview` e
+    `EXPO_PUBLIC_SENTRY_DSN` com o DSN do app (visibilidade *Plain text*) para `preview` (app de teste) e
     `production`.
 
   Nenhum dos dois envia dados pessoais: sem cabeçalhos, senhas, corpos de requisição nem tela
   gravada.
 - **UptimeRobot** (https://uptimerobot.com): crie um monitor *HTTP(s)* para
-  `https://api.SEUDOMINIO/api/v1/saude` a cada 5 minutos, com alerta por e-mail ou Telegram. Esse
+  `https://api.onbus.online/api/v1/saude` a cada 5 minutos, com alerta por e-mail ou Telegram. Esse
   endereço só responde "ok" se a API **e** o banco estiverem funcionando.
 
 ### 10.7 Primeira instalação
@@ -510,8 +522,7 @@ powershell -ExecutionPolicy Bypass -File .\deploy\criar-admin.ps1 -Ambiente prod
 
 O `criar-admin` pede nome, e-mail e senha. A senha não aparece na tela e precisa ter
 no mínimo 10 caracteres. O seed de demonstração (senha 123456) **não roda** em produção nem em staging.
-Depois, abra `https://api.SEUDOMINIO/api/v1/saude` no navegador. Para gerar o APK apontando
-para esse endereço, veja a seção 6.1.
+Depois, abra `https://api.onbus.online/api/v1/saude` no navegador. Para gerar o APK, veja a seção 11.
 
 ### 10.8 Atualizar uma versão
 
@@ -599,6 +610,84 @@ imagens mais recentes e apaga as mais antigas.
 - [ ] Windows e Docker Desktop atualizados.
 - [ ] UptimeRobot e Sentry avisando por e-mail.
 - [ ] Restauração testada no staging no último mês.
+
+---
+
+## 11. O app Android (APK)
+
+São dois apps, que podem ficar instalados lado a lado no mesmo celular:
+
+| | Bus On (oficial) | Bus On Teste |
+|---|---|---|
+| Pacote | `com.buson.app` | `com.buson.app.staging` |
+| Fala com | `https://api.onbus.online` | `https://api-staging.onbus.online` |
+| Perfil do build (`mobile/eas.json`) | `production` | `staging` |
+| Canal de atualização | `production` | `staging` |
+| Ícone | fundo azul | fundo laranja |
+
+O endereço da API de cada app fica no `eas.json`. Um build sem endereço `https://` é recusado
+antes de começar. Assim, nenhum APK sai apontando para o IP da rede local.
+
+### 11.1 Gerar o APK
+
+Antes, faça a seção 6.1 (conta Expo, `eas init` e Firebase). Depois, na pasta `mobile`:
+
+```bash
+npm run build:staging     # Bus On Teste
+npm run build:producao    # Bus On (oficial)
+```
+
+O build roda na nuvem do Expo e leva de 10 a 20 minutos. No fim aparece um **link** (e um QR)
+da página do build no expo.dev: quem abrir o link no celular baixa e instala o APK.
+O Android pede para permitir a instalação de "fontes desconhecidas", e isso é normal para
+APK fora da Play Store.
+
+Cada build ganha um número novo (o `versionCode`, que aparece como "build N" no app).
+
+**Cópia da chave de assinatura (obrigatório):** o EAS cria e guarda a chave que assina o APK.
+Baixe uma cópia com `npx eas-cli credentials` › Android › production › *Keystore* ›
+*Download*, e guarde-a no gerenciador de senhas. **Sem essa chave, nenhum APK novo consegue
+atualizar o app já instalado nos celulares.** Repita para o perfil `staging`.
+
+### 11.2 Atualizações
+
+**Correções só de código (telas, textos, regras no app)** chegam pela internet, sem
+reinstalar:
+
+```bash
+npm run atualizacao -- staging "Corrige o texto da tela de faltas"
+npm run atualizacao -- producao "Corrige o texto da tela de faltas"
+```
+
+O app procura atualização ao abrir e sempre que volta para a tela, e a nova versão vale
+na próxima abertura. No menu da conta (as iniciais no topo) aparecem a versão e o botão
+**Procurar atualização**, que aplica na hora. Publique primeiro no `staging`, teste no Bus On
+Teste e só depois publique no `producao`.
+
+**Mudanças nativas** (biblioteca nova com código nativo, permissão, plugin, versão do Expo) **não
+chegam pela internet**. A atualização só é entregue a APKs com o mesmo código nativo, então
+esses casos exigem um APK novo:
+
+1. Gere e distribua o APK novo (11.1).
+2. No arquivo de ambiente do servidor, defina:
+   - `APP_VERSAO_MINIMA_ANDROID` com o número do build novo;
+   - `APP_LINK_ANDROID` com o link da página do build.
+3. Aplique com `atualizar.ps1 -Ambiente <ambiente> -Forcar`.
+
+Quem ainda tiver um APK mais antigo vê a tela **"Atualize o Bus On"**, com o botão para baixar.
+
+### 11.3 Roteiro de teste de um APK novo
+
+No **Bus On Teste**, com a API de staging, confira:
+- login dos três perfis;
+- QR de embarque pela câmera;
+- envio de documento (foto e PDF);
+- o **push** chegando com o app fechado;
+- o **GPS com a tela apagada** (o motorista escolhe "Permitir o tempo todo");
+- o mapa ao vivo;
+- a versão no menu da conta.
+
+Só depois gere o APK oficial.
 
 ---
 

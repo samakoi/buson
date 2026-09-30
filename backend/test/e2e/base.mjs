@@ -13,6 +13,13 @@ const eco = await fetch(`${BASE}/`, { headers: { "X-Request-Id": "tst-rastreio-1
 ok(eco.headers.get("x-request-id") === "tst-rastreio-123", "X-Request-Id recebido é reaproveitado (rastreio ponta a ponta)");
 const saude = await req("GET", "/saude");
 ok(saude.status === 200 && saude.data.banco === "ok", "GET /saude confirma API e banco", saude.data);
+ok(typeof saude.data.versao === "string" && saude.data.versao.length > 0, "GET /saude informa a versão no ar", saude.data);
+const versaoApp = await req("GET", "/app/versao");
+ok(
+  versaoApp.status === 200 && versaoApp.data.android?.versaoMinima === 3 && versaoApp.data.android?.link === "https://expo.dev/tst-apk",
+  "GET /app/versao (sem login) informa a versão mínima do APK e o link",
+  versaoApp.data
+);
 
 // ---- 404 e rotas antigas
 const antiga = await fetch(`${RAIZ}/api/viagens`);

@@ -96,6 +96,8 @@ try {
         RECIBOS_ESPERA_MS: "0",
         LEMBRETES_INTERVALO_MS: "1000",
         LEMBRETE_VESPERA_HORARIO: "00:00",
+        APP_VERSAO_MINIMA_ANDROID: "3",
+        APP_LINK_ANDROID: "https://expo.dev/tst-apk",
       },
       logPrincipal
     )

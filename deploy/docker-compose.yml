@@ -63,6 +63,8 @@ services:
       LEMBRETE_VESPERA_HORARIO: ${LEMBRETE_VESPERA_HORARIO:-20:00}
       GPS_RETENCAO_DIAS: ${GPS_RETENCAO_DIAS:-90}
       SENTRY_DSN: ${SENTRY_DSN:-}
+      APP_VERSAO_MINIMA_ANDROID: ${APP_VERSAO_MINIMA_ANDROID:-0}
+      APP_LINK_ANDROID: ${APP_LINK_ANDROID:-}
       TZ: ${TZ:-America/Fortaleza}
     volumes:
       - uploads:/app/uploads

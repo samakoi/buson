@@ -25,3 +25,6 @@ Thumbs.db
 
 # Chaves de serviço do Firebase (push): nunca no repositório
 *firebase-adminsdk*.json
+
+# Configuração do Firebase do app: fica no EAS (variável de arquivo GOOGLE_SERVICES_JSON)
+google-services.json

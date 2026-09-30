@@ -8,7 +8,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:staging": "npx eas-cli build -p android --profile staging",
+    "build:producao": "npx eas-cli build -p android --profile production",
+    "atualizacao": "node scripts/publicar-atualizacao.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -22,6 +25,7 @@
     "axios": "^1.7.4",
     "eslint-config-expo": "~57.0.2",
     "expo": "~57.0.26",
+    "expo-application": "~57.0.3",
     "expo-camera": "~57.0.6",
     "expo-constants": "~57.0.20",
     "expo-device": "~57.0.2",
@@ -34,6 +38,7 @@
     "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",
     "expo-task-manager": "~57.0.21",
+    "expo-updates": "~57.0.24",
     "expo-web-browser": "~57.0.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",

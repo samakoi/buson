@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { env } from "../config/env";
 import { prisma } from "../config/prisma";
 import { authRouter } from "../modules/auth/auth.routes";
 import { viagemRouter } from "../modules/viagens/viagem.routes";
@@ -28,6 +29,12 @@ routes.get("/saude", async (_req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+// Versão mínima do app (pública): o app compara com o próprio versionCode e, se for menor,
+// pede para instalar o APK novo (mudanças nativas não chegam pelas atualizações pela internet)
+routes.get("/app/versao", (_req, res) => {
+  res.json({ android: { versaoMinima: env.appAndroid.versaoMinima, link: env.appAndroid.link } });
 });
 
 routes.use("/auth", authRouter);
