@@ -11,10 +11,6 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
 const variante = process.env.APP_VARIANT === "staging" ? "staging" : "producao";
 const ehStaging = variante === "staging";
 
-// Projeto no EAS (gerado pelo "eas init"; usado pelo push e pelas atualizações pela internet).
-// Não é segredo: identifica o projeto, não dá acesso a ele.
-const EAS_PROJECT_ID = "";
-
 // google-services.json (Firebase/push): no EAS vem da variável de arquivo GOOGLE_SERVICES_JSON
 // (o arquivo nunca vai para o git: o repositório é público). Para um build local, defina
 // GOOGLE_SERVICES_JSON=./google-services.json.
@@ -34,7 +30,8 @@ if (
 }
 
 export default ({ config }: ConfigContext): ExpoConfig => {
-  const projectId: string = config.extra?.eas?.projectId ?? EAS_PROJECT_ID;
+  // Projeto no EAS (gravado no app.json pelo "eas init"; não é segredo)
+  const projectId: string | undefined = config.extra?.eas?.projectId;
   return {
     ...config,
     name: ehStaging ? "Bus On Teste" : "Bus On",

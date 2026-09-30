@@ -75,6 +75,12 @@
         }
       ],
       "@sentry/react-native"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4432b6a8-07fe-4bc9-9f3e-2534faf21cb9"
+      }
+    },
+    "owner": "pedropinho"
   }
 }
