@@ -39,21 +39,22 @@ function Executar([string]$Programa, [object[]]$Argumentos) {
 
 # docker compose já com o projeto, o arquivo e o ambiente certos
 function Compose {
+    if (-not $env:APP_VERSAO) { throw 'APP_VERSAO não definida: nenhuma versão da API foi escolhida (o compose montaria uma imagem "dev").' }
     Executar 'docker' (@('compose', '-p', $Projeto, '-f', (Join-Path $Deploy 'docker-compose.yml'), '--env-file', $ArquivoEnv) + $Perfis + $args)
 }
 
 # Para comandos que conversam com o usuário (precisam do terminal direto, sem filtro na saída)
 function Compose-Interativo {
+    if (-not $env:APP_VERSAO) { throw 'APP_VERSAO não definida.' }
     & docker compose -p $Projeto -f (Join-Path $Deploy 'docker-compose.yml') --env-file $ArquivoEnv @Perfis @args
     if ($LASTEXITCODE -ne 0) { throw "docker compose $($args -join ' ') falhou (código $LASTEXITCODE)" }
 }
 
 # Versão (commit) da API que está rodando agora, ou $null se não houver.
+# Consulta o Docker direto pelos rótulos do compose (não depende das variáveis do ambiente).
 function Versao-Atual {
-    $id = & docker compose -p $Projeto -f (Join-Path $Deploy 'docker-compose.yml') --env-file $ArquivoEnv ps -q api
-    if (-not $id) { return $null }
-    $imagem = & docker inspect --format '{{.Config.Image}}' $id
-    if ($imagem -match ':(.+)$') { return $Matches[1] }
+    $imagem = & docker ps --filter "label=com.docker.compose.project=$Projeto" --filter 'label=com.docker.compose.service=api' --format '{{.Image}}' | Select-Object -First 1
+    if ($imagem -match '^buson-api:(.+)$' -and $Matches[1] -ne 'dev') { return $Matches[1] }
     return $null
 }
 
