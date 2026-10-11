@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View } from "react-native";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
-import { useNotificacoes } from "../../contexts/NotificacoesContext";
+import { useNotificacoes } from "./NotificacoesContext";
 import { useTema } from "../../theme/TemaProvider";
 import { BotaoIcone, Cabecalho, Card, EstadoVazio, ItemLista, Secao, Tela } from "../../components/ui";
-import { ConviteAvisosNoCelular, PreferenciasAvisos } from "../../features/push/AvisosNoCelular";
+import { ConviteAvisosNoCelular, PreferenciasAvisos } from "../push/AvisosNoCelular";
 import { diaISO, tempoRelativo } from "../../utils/datas";
 import { Notificacao, Papel } from "../../types";
 import { categoriaAviso } from "../../utils/rotulos";

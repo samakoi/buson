@@ -30,8 +30,8 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { PilhaAdmin } from "../../navigation/AdminTabs";
 import { queryClient } from "../../services/queryClient";
-import { chavesAlocacao } from "../../features/alocacao/api";
-import { OcupacaoSemanalCard } from "../../features/alocacao/OcupacaoSemanalCard";
+import { chavesAlocacao } from "../alocacao/api";
+import { OcupacaoSemanalCard } from "../alocacao/OcupacaoSemanalCard";
 
 interface Resumo {
   totalAlunos: number;

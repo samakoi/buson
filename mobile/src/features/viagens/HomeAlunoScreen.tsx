@@ -7,7 +7,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { api } from "../../services/api";
 import { MeusDados, RotaDoDia, Viagem } from "../../types";
 import { useSessao } from "../../store/sessao";
-import { useNotificacoes } from "../../contexts/NotificacoesContext";
+import { useNotificacoes } from "../avisos/NotificacoesContext";
 import { useCarregamento } from "../../hooks/useCarregamento";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
 import {
@@ -29,8 +29,8 @@ import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { dataPorExtenso, diaISO, formatarDuracao, minutosAte } from "../../utils/datas";
 import { statusViagem } from "../../utils/rotulos";
 import type { AbasAluno, PilhaAluno } from "../../navigation/AlunoTabs";
-import { LiberarVagaFolha } from "../../features/faltas/LiberarVagaFolha";
-import { ConviteAvisosNoCelular } from "../../features/push/AvisosNoCelular";
+import { LiberarVagaFolha } from "../faltas/LiberarVagaFolha";
+import { ConviteAvisosNoCelular } from "../push/AvisosNoCelular";
 
 /** Atualiza a cada minuto para a contagem "sai em…" andar sozinha. */
 function useAgora() {

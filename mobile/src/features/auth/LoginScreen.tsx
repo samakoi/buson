@@ -5,7 +5,7 @@ import { criarEstilos } from "../../theme/TemaProvider";
 import { Aviso, Botao, Campo, Texto } from "../../components/ui";
 import { Logo } from "../../components/Logo";
 import { mensagemDeErro } from "../../utils/feedback";
-import { InstalarApp } from "../../features/web/InstalarApp";
+import { InstalarApp } from "../web/InstalarApp";
 
 export default function LoginScreen({ onCriarConta }: { onCriarConta: () => void }) {
   const { login } = useSessao();

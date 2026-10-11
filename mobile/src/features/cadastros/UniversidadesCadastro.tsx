@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { View } from "react-native";
-import { api } from "../../../services/api";
-import { Universidade } from "../../../types";
-import { useCarregamento } from "../../../hooks/useCarregamento";
-import { useTema } from "../../../theme/TemaProvider";
-import { Aviso, Botao, BotaoIcone, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista } from "../../../components/ui";
-import { avisar, confirmar, mensagemDeErro } from "../../../utils/feedback";
-import { CampoCoordenadas, escreverCoordenadas, lerCoordenadas } from "../../../features/gps/CampoCoordenadas";
+import { api } from "../../services/api";
+import { Universidade } from "../../types";
+import { useCarregamento } from "../../hooks/useCarregamento";
+import { useTema } from "../../theme/TemaProvider";
+import { Aviso, Botao, BotaoIcone, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista } from "../../components/ui";
+import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
+import { CampoCoordenadas, escreverCoordenadas, lerCoordenadas } from "../gps/CampoCoordenadas";
 import { BarraSecao } from "./BarraSecao";
 
 type Formulario = { id?: string; nome: string; endereco: string; coordenadas: string };

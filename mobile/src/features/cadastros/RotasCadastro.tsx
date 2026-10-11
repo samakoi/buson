@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { Pressable, View } from "react-native";
-import { api } from "../../../services/api";
-import { PontoEmbarque, Rota, Universidade } from "../../../types";
-import { useCarregamento } from "../../../hooks/useCarregamento";
-import { criarEstilos, useTema } from "../../../theme/TemaProvider";
-import { Aviso, Botao, BotaoIcone, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista, Rotulo, Texto } from "../../../components/ui";
-import { avisar, confirmar, mensagemDeErro } from "../../../utils/feedback";
+import { api } from "../../services/api";
+import { PontoEmbarque, Rota, Universidade } from "../../types";
+import { useCarregamento } from "../../hooks/useCarregamento";
+import { criarEstilos, useTema } from "../../theme/TemaProvider";
+import { Aviso, Botao, BotaoIcone, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista, Rotulo, Texto } from "../../components/ui";
+import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { BarraSecao } from "./BarraSecao";
 
 /** Seleção em que a ordem dos toques define a ordem (paradas / pontos de embarque). */

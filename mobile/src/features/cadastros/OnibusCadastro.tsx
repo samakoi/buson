@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { Switch, View } from "react-native";
-import { api } from "../../../services/api";
-import { Onibus } from "../../../types";
-import { useCarregamento } from "../../../hooks/useCarregamento";
-import { useTema } from "../../../theme/TemaProvider";
-import { Aviso, Botao, BotaoIcone, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista, Texto } from "../../../components/ui";
-import { avisar, confirmar, mensagemDeErro } from "../../../utils/feedback";
+import { api } from "../../services/api";
+import { Onibus } from "../../types";
+import { useCarregamento } from "../../hooks/useCarregamento";
+import { useTema } from "../../theme/TemaProvider";
+import { Aviso, Botao, BotaoIcone, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista, Texto } from "../../components/ui";
+import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { BarraSecao } from "./BarraSecao";
 
 export default function OnibusCadastro() {

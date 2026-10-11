@@ -17,9 +17,9 @@ import {
   Rotulo,
 } from "../../components/ui";
 import { avisar, codigoDeErro, confirmar, mensagemDeErro } from "../../utils/feedback";
-import { BarraSecao } from "../../screens/Admin/cadastros/BarraSecao";
+import { BarraSecao } from "./BarraSecao";
 import { CampoCoordenadas, escreverCoordenadas, lerCoordenadas } from "../gps/CampoCoordenadas";
-import { useExcluirPonto, usePontosEmbarque, useSalvarPonto } from "./api";
+import { useExcluirPonto, usePontosEmbarque, useSalvarPonto } from "../alocacao/api";
 
 type Formulario = { id?: string; nome: string; endereco: string; coordenadas: string; ativo: boolean };
 const vazio: Formulario = { nome: "", endereco: "", coordenadas: "", ativo: true };

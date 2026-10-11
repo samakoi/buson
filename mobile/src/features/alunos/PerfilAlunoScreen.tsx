@@ -35,9 +35,9 @@ import {
   statusConta,
 } from "../../utils/rotulos";
 import type { PilhaAdmin } from "../../navigation/AdminTabs";
-import { DocumentosDoAluno } from "../../features/documentos/DocumentosDoAluno";
-import { DecisaoFaltaFolha } from "../../features/faltas/DecisaoFaltaFolha";
-import { tituloViagem } from "../../features/faltas/api";
+import { DocumentosDoAluno } from "../documentos/DocumentosDoAluno";
+import { DecisaoFaltaFolha } from "../faltas/DecisaoFaltaFolha";
+import { tituloViagem } from "../faltas/api";
 
 export default function PerfilAlunoScreen() {
   const navegacao = useNavigation<NativeStackNavigationProp<PilhaAdmin>>();

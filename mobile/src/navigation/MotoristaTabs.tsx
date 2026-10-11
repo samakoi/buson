@@ -1,12 +1,12 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { useNotificacoes } from "../contexts/NotificacoesContext";
+import { useNotificacoes } from "../features/avisos/NotificacoesContext";
 import { iconeAba, useOpcoesAbas } from "./opcoesAbas";
-import PainelScreen from "../screens/Motorista/PainelScreen";
+import PainelScreen from "../features/viagens/PainelScreen";
 import QrMotoristaScreen from "../features/embarque/QrMotoristaScreen";
-import PassageirosScreen from "../screens/Motorista/PassageirosScreen";
-import RotaScreen from "../screens/Motorista/RotaScreen";
-import AvisosScreen from "../screens/Comum/AvisosScreen";
+import PassageirosScreen from "../features/viagens/PassageirosScreen";
+import RotaScreen from "../features/viagens/RotaScreen";
+import AvisosScreen from "../features/avisos/AvisosScreen";
 import { useViagemAtual } from "../features/viagens/api";
 import { useGpsDaViagem } from "../features/gps/StatusGps";
 

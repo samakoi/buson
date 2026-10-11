@@ -1,10 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { AppState, Platform } from "react-native";
 import * as Notifications from "expo-notifications";
-import { api } from "../services/api";
-import { CategoriaNotificacao, Notificacao, Papel } from "../types";
-import { registrarSeJaPermitido } from "../features/push/push";
-import { abrirTelaDoAviso } from "../features/push/abrirAviso";
+import { api } from "../../services/api";
+import { CategoriaNotificacao, Notificacao, Papel } from "../../types";
+import { registrarSeJaPermitido } from "../push/push";
+import { abrirTelaDoAviso } from "../push/abrirAviso";
 
 // Toques já tratados (o mesmo toque pode chegar pelo ouvinte e pela "última resposta")
 const toquesTratados = new Set<string>();

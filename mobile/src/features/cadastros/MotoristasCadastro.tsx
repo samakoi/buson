@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { View } from "react-native";
-import { api } from "../../../services/api";
-import { Motorista, Onibus } from "../../../types";
-import { useCarregamento } from "../../../hooks/useCarregamento";
-import { useTema } from "../../../theme/TemaProvider";
+import { api } from "../../services/api";
+import { Motorista, Onibus } from "../../types";
+import { useCarregamento } from "../../hooks/useCarregamento";
+import { useTema } from "../../theme/TemaProvider";
 import {
   Aviso,
   Botao,
@@ -17,8 +17,8 @@ import {
   ItemLista,
   Rotulo,
   iniciaisDe,
-} from "../../../components/ui";
-import { avisar, confirmar, mensagemDeErro } from "../../../utils/feedback";
+} from "../../components/ui";
+import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { BarraSecao } from "./BarraSecao";
 
 export default function MotoristasCadastro() {

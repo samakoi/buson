@@ -23,9 +23,9 @@ import {
 import { avisar, mensagemDeErro } from "../../utils/feedback";
 import { statusViagem } from "../../utils/rotulos";
 import type { AbasMotorista } from "../../navigation/MotoristaTabs";
-import { chavesViagem, useEncerrarViagem } from "../../features/viagens/api";
-import { StatusGps } from "../../features/gps/StatusGps";
-import { pararRastreamento } from "../../features/gps/rastreador";
+import { chavesViagem, useEncerrarViagem } from "./api";
+import { StatusGps } from "../gps/StatusGps";
+import { pararRastreamento } from "../gps/rastreador";
 import { queryClient } from "../../services/queryClient";
 
 export default function PainelScreen() {

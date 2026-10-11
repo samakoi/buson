@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { View } from "react-native";
 import { Cabecalho, Chips, Tela } from "../../components/ui";
 import { useTema } from "../../theme/TemaProvider";
-import OnibusCadastro from "./cadastros/OnibusCadastro";
-import MotoristasCadastro from "./cadastros/MotoristasCadastro";
-import UniversidadesCadastro from "./cadastros/UniversidadesCadastro";
-import RotasCadastro from "./cadastros/RotasCadastro";
-import PontosCadastro from "../../features/alocacao/PontosCadastro";
+import OnibusCadastro from "./OnibusCadastro";
+import MotoristasCadastro from "./MotoristasCadastro";
+import UniversidadesCadastro from "./UniversidadesCadastro";
+import RotasCadastro from "./RotasCadastro";
+import PontosCadastro from "./PontosCadastro";
 
 type Secao = "onibus" | "motoristas" | "universidades" | "pontos" | "rotas";
 

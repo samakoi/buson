@@ -25,7 +25,7 @@ import { useTema } from "../../theme/TemaProvider";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { diaISO, formatarDiaCurto, mascararDia, mascararHora, parseDiaBR, somarDias } from "../../utils/datas";
 import { statusViagem } from "../../utils/rotulos";
-import { ProgramacaoSecao } from "../../features/alocacao/ProgramacaoSecao";
+import { ProgramacaoSecao } from "../alocacao/ProgramacaoSecao";
 
 type OpcaoData = "hoje" | "amanha" | "outra";
 type Aba = "viagens" | "programacao";
