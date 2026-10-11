@@ -98,14 +98,15 @@ separado) para essas tarefas.
 
 ### Dados
 
-O schema completo está em [`prisma/schema.prisma`](../backend/prisma/schema.prisma) (23 tabelas). Os grupos principais:
+O schema completo está em [`prisma/schema.prisma`](../backend/prisma/schema.prisma) (24 tabelas). Os grupos principais:
 
 ```mermaid
 erDiagram
   Usuario ||--o| Aluno : "é"
   Usuario ||--o| Motorista : "é"
   Universidade ||--o{ Aluno : ""
-  Rota ||--o{ PontoRota : "paradas"
+  Rota ||--|{ TrechoRota : "ida e volta"
+  Rota ||--o{ PontoRota : "paradas por sentido"
   Programacao }o--|| Rota : ""
   Programacao ||--o{ Viagem : "gera ida/volta"
   Aluno ||--o{ AlocacaoAluno : "dias fixos"
@@ -120,6 +121,10 @@ erDiagram
 ```
 
 - **Datas de calendário** (`AAAA-MM-DD`) e horários (`HH:MM`) usam o fuso do servidor (`TZ=America/Fortaleza`).
+- **Rota com ida e volta**: `trechos_rota` guarda origem e destino de cada sentido (único por rota e sentido) e as
+  paradas (`pontos_rota`, `rota_pontos_embarque`) têm `sentido`, com ordem própria. Os horários ficam na programação.
+- **Exclusão lógica da rota** (`excluidaEm`): ela some das listas e das escolhas, mas as viagens feitas continuam ligadas
+  a ela no histórico ([ADR 0009](./adr/0009-rota-com-trechos-e-exclusao-logica.md)).
 - **Arquivos** dos alunos ficam fora do banco (volume `uploads`) e só abrem por link assinado de 5 minutos.
 
 ## App e site

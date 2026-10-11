@@ -5,6 +5,21 @@ As versões do Bus On são entregues por fases, cada uma num branch e PR própri
 
 ## Não lançado
 
+### Fase 12: viagem com ida e volta e exclusão de rotas
+
+- **Rota dentro da viagem**: a tela *Editar viagem* (nova e edição) tem dados gerais e as seções Ida e Volta, cada uma
+  com origem, destino, horário e paradas próprias (adicionar, tirar e reordenar). Não é preciso cadastrar a rota antes.
+  *Cadastros › Rotas* abre a mesma tela; os formulários antigos de programação e de rota saíram.
+- **Banco**: tabela `trechos_rota`, `sentido` nas paradas, `atualizadoEm` e `excluidaEm` na rota. A migration copia as
+  paradas atuais para a volta e cria os trechos, sem duplicar.
+- **Exclusão de rota com alunos vinculados**: mostra o impacto, pede confirmação e faz exclusão lógica. Viagens futuras
+  são canceladas com aviso, a programação é encerrada, os dias fixos são liberados com aviso e o histórico (viagens
+  feitas, presenças, faltas, auditoria) é preservado. Viagem em andamento bloqueia.
+- **Edição concorrente**: salvar com uma versão antiga é recusado, e a tela oferece recarregar a versão atual.
+- **Aluno**: *Meus dias* mostra a viagem como uma opção só, com ida e volta descritas.
+- Embarque, GPS e rota do dia do motorista usam as paradas do trecho certo.
+- Testes: suíte E2E `rotas` (64 checagens), 15 unitários na API e 16 no app.
+
 ### Fase 11: histórico de viagens, senha forte e fluxos de uso
 
 - **Histórico de viagens** (administração): botão Histórico na aba Viagens, com períodos prontos ou personalizado,

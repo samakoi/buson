@@ -65,6 +65,13 @@ Cada rota no Swagger mostra o resumo, quem pode chamar (permissão e papéis), o
   minúscula, número e caractere especial (`auth/senha.ts`; o app usa a mesma regra em `utils/senha.ts`). O login
   aceita as senhas antigas.
 
+- **Viagem com ida e volta**: a programação (`/programacoes`) cria e edita a rota junto (`rota.ida`, `rota.volta`), cada
+  trecho com origem, destino, instituições e pontos em ordem. Com `versao`, a edição é recusada (409
+  `EDICAO_CONFLITANTE`) se outra pessoa salvou antes.
+- **Exclusão de rota**: `GET /rotas/:id/impacto-exclusao` mostra o que será afetado; `DELETE /rotas/:id` exige
+  `confirmarVinculos=true` quando há alunos ou viagens futuras. Cancela as viagens que ainda não começaram (com aviso),
+  encerra a programação, desativa os dias fixos (com aviso) e marca a rota como excluída; o histórico fica. Viagem em
+  andamento bloqueia (409).
 - **Vaga por dia da semana**: o aluno escolhe dias fixos (`PUT /alunos/me/dias`) dentro da capacidade de cada dia. Com
   algum dia lotado, a resposta é `409` com a lista dos dias. A checagem roda em transação com trava na programação.
 - **Viagens geradas sozinhas**: cada programação ativa gera a ida e a volta dos próximos `DIAS_GERACAO_VIAGENS` dias.

@@ -13,6 +13,7 @@ que substitua outra ganha um arquivo novo; o antigo fica com o status "Substitu�
 | [0006](./0006-tokens-securestore.md) | Tokens da sessão no SecureStore | Aceito |
 | [0007](./0007-openapi-gerado-das-rotas.md) | OpenAPI gerado das rotas do Express e dos schemas zod | Aceito |
 | [0008](./0008-estrategia-de-testes.md) | Testes: unitários (Vitest / jest-expo) + E2E da API | Aceito |
+| [0009](./0009-rota-com-trechos-e-exclusao-logica.md) | Rota com trechos de ida e volta e exclusão lógica | Aceito |
 
 Modelo para uma decisão nova:
 

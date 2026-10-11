@@ -88,12 +88,16 @@ flowchart TD
 ```mermaid
 flowchart LR
   subgraph Cadastros
-    C1[Universidades e pontos<br/>com localização] --> C2[Rotas com a ordem das paradas]
+    C1[Universidades e pontos<br/>com localização]
     C3[Ônibus e capacidade] --> C4[Motoristas<br/>senha inicial forte]
     C3 --> C5[Manutenção liga/desliga<br/>avisa os alunos afetados]
   end
   subgraph Viagens
-    V1[Programação semanal<br/>rota, ônibus, motorista, horários, dias] --> V2[Viagens de ida e volta<br/>geradas para os próximos dias]
+    V0[Editar viagem<br/>dias, ônibus, motorista] --> V0a[Ida: origem, destino, horário,<br/>pontos e instituições em ordem]
+    V0 --> V0b[Volta: origem, destino, horário,<br/>instituições e pontos em ordem]
+    V0a & V0b --> V1[Viagem programada]
+    V1 --> V2[Viagens de ida e volta<br/>geradas para os próximos dias]
+    V0 -.-> V6[Excluir rota: mostra o impacto,<br/>cancela viagens futuras com aviso,<br/>libera os dias fixos, preserva o histórico]
     V3[Viagem avulsa] --> V2
     V2 --> V4[Histórico: período e filtros]
     V4 --> V5[Detalhe: horários, números,<br/>passageiros e trajeto no mapa]
@@ -109,9 +113,13 @@ flowchart LR
     D1[Dashboard: ocupação por dia,<br/>presença e faltas do período] --> D2[Faltas: decidir justificativas]
     D1 --> D3[Mapa ao vivo dos ônibus]
   end
-  C2 --> V1
-  C4 --> V1
+  C1 --> V0
+  C4 --> V0
 ```
+
+A rota é criada e editada dentro da própria viagem (*Viagens › Programação semanal › Nova viagem* ou *Editar*), com as
+seções Ida e Volta. Na ida os alunos embarcam nos pontos e descem nas instituições; na volta, o inverso. A volta começa
+igual à ida invertida e pode ter paradas e ordem próprias. *Cadastros › Rotas* abre a mesma tela.
 
 ## 6. Ciclo da viagem e da vaga
 
