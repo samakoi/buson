@@ -61,12 +61,13 @@ const csp = [
   "default-src 'self'",
   // Leaflet (mapa) só nesse arquivo exato (e conferido por hash); blob: = o código do mapa no iframe;
   // 'wasm-unsafe-eval' = leitor de QR em WebAssembly
-  "script-src 'self' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js",
+  // + o contador de visitas do Cloudflare (Web Analytics, sem dados pessoais), que o Pages injeta sozinho
+  "script-src 'self' 'wasm-unsafe-eval' blob: https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js https://static.cloudflareinsights.com",
   // O React Native Web gera estilos em linha
   "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css",
   "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
   "font-src 'self' data:",
-  `connect-src 'self' ${origemApi} https://fastly.jsdelivr.net/npm/zxing-wasm@${zxing}/`,
+  `connect-src 'self' ${origemApi} https://fastly.jsdelivr.net/npm/zxing-wasm@${zxing}/ https://cloudflareinsights.com`,
   "media-src 'self' blob:",
   "worker-src 'self' blob:",
   "frame-src 'self'",
