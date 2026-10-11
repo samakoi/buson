@@ -5,7 +5,9 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { api } from "../../services/api";
 import { PerfilAlunoAdmin, StatusConta } from "../../types";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import { useQueryClient } from "@tanstack/react-query";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
+import { chavesAluno, usePerfilAluno } from "./api";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
 import {
   Botao,
@@ -44,22 +46,23 @@ export default function PerfilAlunoScreen() {
   const { alunoId } = useRoute<RouteProp<PilhaAdmin, "PerfilAluno">>().params;
   const { cores } = useTema();
   const s = useEstilos();
-  const [aluno, setAluno] = useState<PerfilAlunoAdmin | null>(null);
+  const cliente = useQueryClient();
+  const consulta = usePerfilAluno(alunoId);
+  const aluno = consulta.data ?? null;
   const [inativarAberto, setInativarAberto] = useState(false);
   const [faltaAberta, setFaltaAberta] = useState<string | null>(null);
   const [motivo, setMotivo] = useState("");
   const [salvando, setSalvando] = useState(false);
 
-  const { carregando, atualizando, atualizar, recarregar } = useCarregamento(async () => {
-    const { data } = await api.get<PerfilAlunoAdmin>(`/alunos/${alunoId}`);
-    setAluno(data);
-  });
+  const { carregando, atualizando, atualizar, recarregar } = useDadosDaTela(consulta);
 
   async function alterarStatus(status: StatusConta, motivoTexto?: string) {
     setSalvando(true);
     try {
       const { data } = await api.patch<PerfilAlunoAdmin>(`/alunos/${alunoId}/status`, { status, motivo: motivoTexto || undefined });
-      setAluno(data);
+      // A API devolve o perfil já atualizado: vai direto para o cache (e a lista de alunos se atualiza)
+      cliente.setQueryData(chavesAluno.perfil(alunoId), data);
+      cliente.invalidateQueries({ queryKey: ["alunos", "lista"] });
       setInativarAberto(false);
       setMotivo("");
     } catch (err) {

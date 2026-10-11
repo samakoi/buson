@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { View } from "react-native";
 import { api } from "../../services/api";
-import { Motorista, Onibus } from "../../types";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import { Motorista } from "../../types";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
+import { useMotoristas, useOnibus } from "./api";
 import { useTema } from "../../theme/TemaProvider";
 import {
   Aviso,
@@ -23,8 +24,6 @@ import { BarraSecao } from "./BarraSecao";
 
 export default function MotoristasCadastro() {
   const { cores } = useTema();
-  const [motoristas, setMotoristas] = useState<Motorista[]>([]);
-  const [onibus, setOnibus] = useState<Onibus[]>([]);
   const [aberto, setAberto] = useState(false);
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -33,11 +32,11 @@ export default function MotoristasCadastro() {
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
-  const { carregando, recarregar } = useCarregamento(async () => {
-    const [m, o] = await Promise.all([api.get<Motorista[]>("/motoristas"), api.get<Onibus[]>("/onibus")]);
-    setMotoristas(m.data);
-    setOnibus(o.data);
-  });
+  const consultaMotoristas = useMotoristas();
+  const consultaOnibus = useOnibus();
+  const motoristas = consultaMotoristas.data ?? [];
+  const onibus = consultaOnibus.data ?? [];
+  const { carregando, recarregar } = useDadosDaTela([consultaMotoristas, consultaOnibus]);
 
   function fechar() {
     setAberto(false);

@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { View } from "react-native";
 import { api } from "../../services/api";
-import { Motorista, Onibus, Rota, SentidoViagem, Viagem } from "../../types";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import { SentidoViagem, Viagem } from "../../types";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
+import { useViagensDesde } from "./api";
+import { useMotoristas, useOnibus, useRotas } from "../cadastros/api";
 import {
   Aviso,
   Botao,
@@ -32,10 +34,13 @@ type Aba = "viagens" | "programacao";
 
 export default function ViagensScreen() {
   const { cores } = useTema();
-  const [viagens, setViagens] = useState<Viagem[]>([]);
-  const [rotas, setRotas] = useState<Rota[]>([]);
-  const [onibus, setOnibus] = useState<Onibus[]>([]);
-  const [motoristas, setMotoristas] = useState<Motorista[]>([]);
+  const hoje = diaISO();
+  const consultas = [useViagensDesde(hoje), useRotas(), useOnibus(), useMotoristas()] as const;
+  const [consultaViagens, consultaRotas, consultaOnibus, consultaMotoristas] = consultas;
+  const viagens = consultaViagens.data ?? [];
+  const rotas = consultaRotas.data ?? [];
+  const onibus = consultaOnibus.data ?? [];
+  const motoristas = consultaMotoristas.data ?? [];
 
   const [aba, setAba] = useState<Aba>("viagens");
   const [formAberto, setFormAberto] = useState(false);
@@ -50,18 +55,7 @@ export default function ViagensScreen() {
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
-  const { carregando, atualizando, atualizar, recarregar } = useCarregamento(async () => {
-    const [v, r, o, m] = await Promise.all([
-      api.get<Viagem[]>("/viagens", { params: { desde: diaISO() } }),
-      api.get<Rota[]>("/rotas"),
-      api.get<Onibus[]>("/onibus"),
-      api.get<Motorista[]>("/motoristas"),
-    ]);
-    setViagens(v.data);
-    setRotas(r.data);
-    setOnibus(o.data);
-    setMotoristas(m.data);
-  });
+  const { carregando, atualizando, atualizar, recarregar } = useDadosDaTela([...consultas]);
 
   function escolherMotorista(id: string) {
     setMotoristaId(id);

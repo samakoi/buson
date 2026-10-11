@@ -1,38 +1,33 @@
 import React, { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { api } from "../../services/api";
+import { useQueryClient } from "@tanstack/react-query";
 import { MeusDados, Universidade } from "../../types";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import { useUniversidades } from "../cadastros/api";
+import { chavesAluno, useMeusDados } from "./api";
 import { Aviso, Botao, Cabecalho, Campo, Carregando, Chips, Rotulo, Tela } from "../../components/ui";
 import { avisar, mensagemDeErro } from "../../utils/feedback";
 import { mascararTelefone } from "../../utils/formatos";
 
 export default function DadosAcademicosScreen() {
+  const eu = useMeusDados();
+  const universidades = useUniversidades();
+  if (!eu.data || !universidades.data) return <Carregando />;
+  // O formulário recebe os dados uma vez: buscas novas não apagam o que já foi digitado
+  return <FormularioDados eu={eu.data} universidades={universidades.data} />;
+}
+
+function FormularioDados({ eu, universidades }: { eu: MeusDados; universidades: Universidade[] }) {
   const navegacao = useNavigation();
-  const [universidades, setUniversidades] = useState<Universidade[]>([]);
-  const [nome, setNome] = useState("");
-  const [matricula, setMatricula] = useState("");
-  const [curso, setCurso] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [universidadeId, setUniversidadeId] = useState<string | null>(null);
-  const [universidadeOriginal, setUniversidadeOriginal] = useState<string | null>(null);
+  const cliente = useQueryClient();
+  const [nome, setNome] = useState(eu.usuario.nome);
+  const [matricula, setMatricula] = useState(eu.matricula ?? "");
+  const [curso, setCurso] = useState(eu.curso ?? "");
+  const [telefone, setTelefone] = useState(eu.telefone ? mascararTelefone(eu.telefone) : "");
+  const [universidadeId, setUniversidadeId] = useState<string | null>(eu.universidade.id);
+  const universidadeOriginal = eu.universidade.id;
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
-
-  // Carrega uma vez (não recarrega ao voltar o foco, para não apagar o que foi digitado)
-  const [carregado, setCarregado] = useState(false);
-  const { carregando } = useCarregamento(async () => {
-    if (carregado) return;
-    const [{ data: eu }, { data: unis }] = await Promise.all([api.get<MeusDados>("/alunos/me"), api.get<Universidade[]>("/universidades")]);
-    setNome(eu.usuario.nome);
-    setMatricula(eu.matricula ?? "");
-    setCurso(eu.curso ?? "");
-    setTelefone(eu.telefone ? mascararTelefone(eu.telefone) : "");
-    setUniversidadeId(eu.universidade.id);
-    setUniversidadeOriginal(eu.universidade.id);
-    setUniversidades(unis);
-    setCarregado(true);
-  });
 
   async function salvar() {
     if (nome.trim().length < 2) return setErro("Informe seu nome.");
@@ -50,6 +45,7 @@ export default function DadosAcademicosScreen() {
         telefone: digitos,
         universidadeId: universidadeId ?? undefined,
       });
+      cliente.invalidateQueries({ queryKey: chavesAluno.eu });
       avisar("Dados salvos", "Seus dados acadêmicos foram atualizados.");
       navegacao.goBack();
     } catch (err) {
@@ -58,8 +54,6 @@ export default function DadosAcademicosScreen() {
       setSalvando(false);
     }
   }
-
-  if (carregando) return <Carregando />;
 
   return (
     <Tela>

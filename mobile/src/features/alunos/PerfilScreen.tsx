@@ -1,12 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import { View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { api } from "../../services/api";
-import { MeusDados } from "../../types";
 import { useSessao } from "../../store/sessao";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
+import { useMeusDados } from "./api";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
 import { Aviso, Botao, Cabecalho, Card, Carregando, ItemLista, Pilula, Secao, Tela, Texto, iniciaisDe } from "../../components/ui";
 import { confirmar } from "../../utils/feedback";
@@ -19,12 +18,9 @@ export default function PerfilScreen() {
   const { logout } = useSessao();
   const { cores } = useTema();
   const s = useEstilos();
-  const [dados, setDados] = useState<MeusDados | null>(null);
-
-  const { carregando, atualizando, atualizar } = useCarregamento(async () => {
-    const { data } = await api.get<MeusDados>("/alunos/me");
-    setDados(data);
-  });
+  const consulta = useMeusDados();
+  const dados = consulta.data ?? null;
+  const { carregando, atualizando, atualizar } = useDadosDaTela(consulta);
 
   async function sair() {
     if (await confirmar("Sair da conta", "Deseja realmente sair?", { textoConfirmar: "Sair", destrutivo: true })) logout();

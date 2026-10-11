@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Pressable, View } from "react-native";
 import { api } from "../../services/api";
-import { PontoEmbarque, Rota, Universidade } from "../../types";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import { Rota } from "../../types";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
+import { useRotas, useUniversidades } from "./api";
+import { usePontosEmbarque } from "../alocacao/api";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
 import { Aviso, Botao, BotaoIcone, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista, Rotulo, Texto } from "../../components/ui";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
@@ -67,9 +69,6 @@ function SelecaoOrdenada({
 
 export default function RotasCadastro() {
   const { cores } = useTema();
-  const [rotas, setRotas] = useState<Rota[]>([]);
-  const [universidades, setUniversidades] = useState<Universidade[]>([]);
-  const [pontosEmbarque, setPontosEmbarque] = useState<PontoEmbarque[]>([]);
   const [aberto, setAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [nome, setNome] = useState("");
@@ -79,16 +78,13 @@ export default function RotasCadastro() {
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
-  const { carregando, recarregar } = useCarregamento(async () => {
-    const [r, u, p] = await Promise.all([
-      api.get<Rota[]>("/rotas"),
-      api.get<Universidade[]>("/universidades"),
-      api.get<PontoEmbarque[]>("/pontos-embarque"),
-    ]);
-    setRotas(r.data);
-    setUniversidades(u.data);
-    setPontosEmbarque(p.data);
-  });
+  const consultaRotas = useRotas();
+  const consultaUniversidades = useUniversidades();
+  const consultaPontos = usePontosEmbarque();
+  const rotas = consultaRotas.data ?? [];
+  const universidades = consultaUniversidades.data ?? [];
+  const pontosEmbarque = consultaPontos.data ?? [];
+  const { carregando, recarregar } = useDadosDaTela([consultaRotas, consultaUniversidades, consultaPontos]);
 
   function abrir(r?: Rota) {
     setEditandoId(r?.id ?? null);

@@ -3,8 +3,7 @@ import { View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { api } from "../../services/api";
-import { Viagem } from "../../types";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
 import {
   Aviso,
@@ -23,26 +22,20 @@ import {
 import { avisar, mensagemDeErro } from "../../utils/feedback";
 import { statusViagem } from "../../utils/rotulos";
 import type { AbasMotorista } from "../../navigation/MotoristaTabs";
-import { chavesViagem, useEncerrarViagem } from "./api";
+import { useEncerrarViagem, useViagemAtual } from "./api";
 import { StatusGps } from "../gps/StatusGps";
 import { pararRastreamento } from "../gps/rastreador";
-import { queryClient } from "../../services/queryClient";
 
 export default function PainelScreen() {
   const navegacao = useNavigation<BottomTabNavigationProp<AbasMotorista>>();
   const { cores } = useTema();
   const s = useEstilos();
-  const [viagem, setViagem] = useState<Viagem | null>(null);
+  const consulta = useViagemAtual();
+  const viagem = consulta.data ?? null;
   const [processando, setProcessando] = useState(false);
 
   // Recarrega sozinho para acompanhar novos check-ins antes da saída
-  const { carregando, atualizando, atualizar, recarregar } = useCarregamento(
-    async () => {
-      const { data } = await api.get<Viagem | null>("/viagens/atual");
-      setViagem(data);
-    },
-    { intervaloMs: 20_000 }
-  );
+  const { carregando, atualizando, atualizar, recarregar } = useDadosDaTela(consulta, { intervaloMs: 20_000 });
 
   async function iniciar() {
     if (!viagem) return;
@@ -50,7 +43,6 @@ export default function PainelScreen() {
     try {
       await api.post(`/viagens/${viagem.id}/iniciar`);
       // As abas do motorista ligam o GPS assim que a viagem aparece em andamento
-      queryClient.invalidateQueries({ queryKey: chavesViagem.atual });
       await recarregar();
     } catch (err) {
       avisar("Não foi possível iniciar", mensagemDeErro(err, "Tente novamente."));

@@ -1,27 +1,19 @@
-import React, { useState } from "react";
+import React from "react";
 import { api } from "../../services/api";
-import { Checkin, Viagem } from "../../types";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import { Checkin } from "../../types";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
+import { usePassageiros, useViagemAtual } from "./api";
 import { Aviso, Botao, Cabecalho, Card, Carregando, EstadoVazio, ItemLista, Pilula, Secao, Tela, iniciaisDe } from "../../components/ui";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 
 export default function PassageirosScreen() {
-  const [viagem, setViagem] = useState<Viagem | null>(null);
-  const [passageiros, setPassageiros] = useState<Checkin[]>([]);
-
-  const { carregando, atualizando, atualizar, recarregar } = useCarregamento(
-    async () => {
-      const { data: atual } = await api.get<Viagem | null>("/viagens/atual");
-      setViagem(atual);
-      if (atual) {
-        const { data } = await api.get<Checkin[]>(`/viagens/${atual.id}/passageiros`);
-        setPassageiros(data);
-      } else {
-        setPassageiros([]);
-      }
-    },
-    { intervaloMs: 20_000 }
-  );
+  const consultaViagem = useViagemAtual();
+  const viagem = consultaViagem.data ?? null;
+  const consultaPassageiros = usePassageiros(viagem?.id);
+  const passageiros = viagem ? (consultaPassageiros.data ?? []) : [];
+  const { carregando, atualizando, atualizar, recarregar } = useDadosDaTela([consultaViagem, consultaPassageiros], {
+    intervaloMs: 20_000,
+  });
 
   // Emergência: aluno sem celular, câmera com defeito etc. (fica auditado no servidor)
   async function confirmarManualmente(item: Checkin) {

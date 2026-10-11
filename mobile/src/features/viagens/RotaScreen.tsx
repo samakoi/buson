@@ -1,21 +1,14 @@
-import React, { useState } from "react";
-import { api } from "../../services/api";
-import { RotaDoDia, Viagem } from "../../types";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import React from "react";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
+import { useRotaDoDia, useViagemAtual } from "./api";
 import { Cabecalho, Card, Carregando, EstadoVazio, Secao, Tela, Texto, Trajeto } from "../../components/ui";
 
 export default function RotaScreen() {
-  const [viagem, setViagem] = useState<Viagem | null>(null);
-  const [rota, setRota] = useState<RotaDoDia | null>(null);
-
-  const { carregando, atualizando, atualizar } = useCarregamento(
-    async () => {
-      const { data: atual } = await api.get<Viagem | null>("/viagens/atual");
-      setViagem(atual);
-      setRota(atual ? (await api.get<RotaDoDia>(`/viagens/${atual.id}/rota`)).data : null);
-    },
-    { intervaloMs: 30_000 }
-  );
+  const consultaViagem = useViagemAtual();
+  const viagem = consultaViagem.data ?? null;
+  const consultaRota = useRotaDoDia(viagem?.id);
+  const rota = viagem ? (consultaRota.data ?? null) : null;
+  const { carregando, atualizando, atualizar } = useDadosDaTela([consultaViagem, consultaRota], { intervaloMs: 30_000 });
 
   if (carregando) return <Carregando />;
 

@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
-import { api } from "../../services/api";
 import { Relatorio } from "../../types";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
+import { useOcupacaoPorUniversidade, useRelatorio, useResumo } from "./api";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
 import {
   Aviso,
@@ -32,18 +32,6 @@ import type { PilhaAdmin } from "../../navigation/AdminTabs";
 import { queryClient } from "../../services/queryClient";
 import { chavesAlocacao } from "../alocacao/api";
 import { OcupacaoSemanalCard } from "../alocacao/OcupacaoSemanalCard";
-
-interface Resumo {
-  totalAlunos: number;
-  totalMotoristas: number;
-  totalOnibus: number;
-  totalUniversidades: number;
-  viagensAtivas: number;
-  onibusEmManutencao: number;
-  alunosAtivos: number;
-  alunosPendentes: number;
-  documentosPendentes: number;
-}
 
 type Preset = "hoje" | "ontem" | "7d" | "30d" | "mes" | "personalizado";
 
@@ -78,69 +66,52 @@ export default function DashboardScreen() {
   const navegacao = useNavigation<NativeStackNavigationProp<PilhaAdmin>>();
   const { cores } = useTema();
   const s = useEstilos();
-  const [resumo, setResumo] = useState<Resumo | null>(null);
-  const [ocupacao, setOcupacao] = useState<Record<string, number>>({});
 
   const [preset, setPreset] = useState<Preset>("hoje");
   const [periodo, setPeriodo] = useState(periodoDoPreset("hoje"));
   const [deTexto, setDeTexto] = useState("");
   const [ateTexto, setAteTexto] = useState("");
-  const [relatorio, setRelatorio] = useState<Relatorio | null>(null);
-  const [carregandoRelatorio, setCarregandoRelatorio] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
+  const [erroDatas, setErroDatas] = useState<string | null>(null);
   const [todasFaltas, setTodasFaltas] = useState(false);
 
-  const carregarRelatorio = useCallback(async () => {
-    setCarregandoRelatorio(true);
-    setErro(null);
-    try {
-      const { data } = await api.get<Relatorio>("/dashboard/relatorio", { params: periodo });
-      setRelatorio(data);
-    } catch (err) {
-      setErro(mensagemDeErro(err, "Não foi possível carregar o relatório."));
-    } finally {
-      setCarregandoRelatorio(false);
-    }
-  }, [periodo]);
+  const consultaResumo = useResumo();
+  const consultaOcupacao = useOcupacaoPorUniversidade();
+  // O período faz parte da chave: trocar o período busca só o relatório
+  const consultaRelatorio = useRelatorio(periodo);
+  const resumo = consultaResumo.data ?? null;
+  const ocupacao = consultaOcupacao.data ?? {};
+  const relatorio = consultaRelatorio.data ?? null;
+  const carregandoRelatorio = consultaRelatorio.isFetching;
+  const erro =
+    erroDatas ?? (consultaRelatorio.error ? mensagemDeErro(consultaRelatorio.error, "Não foi possível carregar o relatório.") : null);
 
-  const { carregando, atualizando, atualizar } = useCarregamento(async () => {
-    const [{ data: r }, { data: o }] = await Promise.all([
-      api.get<Resumo>("/dashboard/resumo"),
-      api.get<Record<string, number>>("/dashboard/ocupacao-por-universidade"),
-      carregarRelatorio(),
-    ]);
-    setResumo(r);
-    setOcupacao(o);
+  const { carregando, atualizando, atualizar } = useDadosDaTela([consultaResumo, consultaOcupacao, consultaRelatorio]);
+  // A ocupação da semana (outro cartão) acompanha o puxar para atualizar do painel
+  const atualizarTudo = useCallback(async () => {
     queryClient.invalidateQueries({ queryKey: chavesAlocacao.ocupacaoSemanal });
-  });
-
-  // Troca de período: recarrega só o relatório (a primeira carga já vem junto com o resumo)
-  const primeiraCarga = useRef(true);
-  useEffect(() => {
-    if (primeiraCarga.current) {
-      primeiraCarga.current = false;
-      return;
-    }
-    carregarRelatorio();
-    setTodasFaltas(false);
-  }, [carregarRelatorio]);
+    await atualizar();
+  }, [atualizar]);
 
   function escolherPreset(p: Preset) {
     setPreset(p);
+    setErroDatas(null);
     if (p === "personalizado") {
       setDeTexto(formatarDiaBR(periodo.inicio));
       setAteTexto(formatarDiaBR(periodo.fim));
       return;
     }
     setPeriodo(periodoDoPreset(p));
+    setTodasFaltas(false);
   }
 
   function aplicarPersonalizado() {
     const inicio = parseDiaBR(deTexto);
     const fim = parseDiaBR(ateTexto);
-    if (!inicio || !fim) return setErro("Informe as duas datas no formato DD/MM/AAAA.");
-    if (fim < inicio) return setErro("A data final deve ser igual ou posterior à inicial.");
+    if (!inicio || !fim) return setErroDatas("Informe as duas datas no formato DD/MM/AAAA.");
+    if (fim < inicio) return setErroDatas("A data final deve ser igual ou posterior à inicial.");
+    setErroDatas(null);
     setPeriodo({ inicio, fim });
+    setTodasFaltas(false);
   }
 
   if (carregando || !resumo) return <Carregando />;
@@ -157,7 +128,7 @@ export default function DashboardScreen() {
   const presenca = t?.taxaPresenca ?? null;
 
   return (
-    <Tela atualizando={atualizando} onAtualizar={atualizar}>
+    <Tela atualizando={atualizando} onAtualizar={atualizarTudo}>
       <Cabecalho sobrescrito={dataPorExtenso()} titulo="Dashboard" />
 
       <Chips opcoes={presets} valor={preset} onChange={escolherPreset} />

@@ -1,4 +1,5 @@
-import { QueryClient } from "@tanstack/react-query";
+import { focusManager, QueryClient } from "@tanstack/react-query";
+import { AppState, Platform } from "react-native";
 import { AxiosError } from "axios";
 
 /**
@@ -18,3 +19,9 @@ export const queryClient = new QueryClient({
     mutations: { retry: false },
   },
 });
+
+// No celular, "voltar para o app" conta como foco: o React Query atualiza o que estiver velho
+// (no navegador ele já percebe a troca de aba sozinho)
+if (Platform.OS !== "web") {
+  AppState.addEventListener("change", (estado) => focusManager.setFocused(estado === "active"));
+}

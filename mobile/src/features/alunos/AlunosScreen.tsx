@@ -1,11 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { api } from "../../services/api";
-import { AlunoResumo, ListaAlunos, StatusConta } from "../../types";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
+import { FiltroAlunos, useListaAlunos } from "./api";
 import { useTema } from "../../theme/TemaProvider";
 import {
   Botao,
@@ -24,19 +23,12 @@ import {
 import { statusConta } from "../../utils/rotulos";
 import type { PilhaAdmin } from "../../navigation/AdminTabs";
 
-/** DOCUMENTO = alunos com documento aguardando análise */
-type FiltroStatus = "TODOS" | StatusConta | "DOCUMENTO";
-const POR_PAGINA = 20;
-
 export default function AlunosScreen() {
   const navegacao = useNavigation<NativeStackNavigationProp<PilhaAdmin>>();
   const { cores, espaco } = useTema();
   const [busca, setBusca] = useState("");
   const [buscaAplicada, setBuscaAplicada] = useState("");
-  const [filtro, setFiltro] = useState<FiltroStatus>("TODOS");
-  const [lista, setLista] = useState<ListaAlunos | null>(null);
-  const [itens, setItens] = useState<AlunoResumo[]>([]);
-  const [carregandoMais, setCarregandoMais] = useState(false);
+  const [filtro, setFiltro] = useState<FiltroAlunos>("TODOS");
 
   // Espera o usuário parar de digitar antes de buscar
   useEffect(() => {
@@ -44,41 +36,12 @@ export default function AlunosScreen() {
     return () => clearTimeout(id);
   }, [busca]);
 
-  async function buscar(pagina: number) {
-    const { data } = await api.get<ListaAlunos>("/alunos", {
-      params: {
-        busca: buscaAplicada || undefined,
-        status: filtro === "TODOS" || filtro === "DOCUMENTO" ? undefined : filtro,
-        documentoPendente: filtro === "DOCUMENTO" ? true : undefined,
-        pagina,
-        porPagina: POR_PAGINA,
-      },
-    });
-    setLista(data);
-    setItens((atuais) => (pagina === 1 ? data.itens : [...atuais, ...data.itens]));
-  }
-
-  const { carregando, atualizando, atualizar, recarregar } = useCarregamento(() => buscar(1));
-
-  // Mudou a busca ou o filtro: volta para a primeira página
-  const primeira = useRef(true);
-  useEffect(() => {
-    if (primeira.current) {
-      primeira.current = false;
-      return;
-    }
-    recarregar();
-  }, [buscaAplicada, filtro, recarregar]);
-
-  async function carregarMais() {
-    if (!lista) return;
-    setCarregandoMais(true);
-    try {
-      await buscar(lista.pagina + 1);
-    } finally {
-      setCarregandoMais(false);
-    }
-  }
+  // Busca e filtro fazem parte da chave: ao mudar, o React Query busca a primeira página de novo
+  const consulta = useListaAlunos(buscaAplicada, filtro);
+  const { carregando, atualizando, atualizar } = useDadosDaTela(consulta);
+  const paginas = consulta.data?.pages ?? [];
+  const lista = paginas.at(-1) ?? null;
+  const itens = paginas.flatMap((p) => p.itens);
 
   if (carregando && !lista) return <Carregando />;
 
@@ -118,7 +81,7 @@ export default function AlunosScreen() {
             { valor: "INATIVO", rotulo: `Inativos (${c.INATIVO})` },
           ]}
           valor={filtro}
-          onChange={(v) => setFiltro(v as FiltroStatus)}
+          onChange={(v) => setFiltro(v as FiltroAlunos)}
         />
       </View>
 
@@ -152,12 +115,12 @@ export default function AlunosScreen() {
         )}
       </Card>
 
-      {lista && itens.length < lista.total && (
+      {lista && consulta.hasNextPage && (
         <Botao
           titulo={`Carregar mais (${lista.total - itens.length})`}
           variante="fantasma"
-          onPress={carregarMais}
-          carregando={carregandoMais}
+          onPress={() => consulta.fetchNextPage()}
+          carregando={consulta.isFetchingNextPage}
         />
       )}
     </Tela>

@@ -5,10 +5,11 @@ import { CompositeNavigationProp, useNavigation } from "@react-navigation/native
 import { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { api } from "../../services/api";
-import { MeusDados, RotaDoDia, Viagem } from "../../types";
 import { useSessao } from "../../store/sessao";
 import { useNotificacoes } from "../avisos/NotificacoesContext";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
+import { useRotaDoDia, useViagemAtual } from "./api";
+import { useMeusDados } from "../alunos/api";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
 import {
   Aviso,
@@ -50,31 +51,20 @@ export default function AlunoHomeScreen() {
   const s = useEstilos();
   const agora = useAgora();
 
-  const [viagem, setViagem] = useState<Viagem | null>(null);
-  const [rotaDoDia, setRotaDoDia] = useState<RotaDoDia | null>(null);
-  const [eu, setEu] = useState<MeusDados | null>(null);
+  const consultaViagem = useViagemAtual();
+  const consultaEu = useMeusDados();
+  const viagem = consultaViagem.data ?? null;
+  const eu = consultaEu.data ?? null;
+  const consultaRota = useRotaDoDia(viagem?.id);
+  const rotaDoDia = viagem ? (consultaRota.data ?? null) : null;
   const minhaUniversidade = eu?.universidade.nome ?? null;
   const [processando, setProcessando] = useState(false);
   const [liberando, setLiberando] = useState(false);
 
   // Atualiza sozinho: o aluno vê quando o ônibus sai ou quando é promovido da espera
-  const { carregando, atualizando, atualizar, recarregar } = useCarregamento(
-    async () => {
-      const [{ data: v }, { data: dados }] = await Promise.all([
-        api.get<Viagem | null>("/viagens/atual"),
-        api.get<MeusDados>("/alunos/me"),
-      ]);
-      setViagem(v);
-      setEu(dados);
-      if (v) {
-        const { data: rota } = await api.get<RotaDoDia>(`/viagens/${v.id}/rota`);
-        setRotaDoDia(rota);
-      } else {
-        setRotaDoDia(null);
-      }
-    },
-    { intervaloMs: 20_000 }
-  );
+  const { carregando, atualizando, atualizar, recarregar } = useDadosDaTela([consultaViagem, consultaEu, consultaRota], {
+    intervaloMs: 20_000,
+  });
 
   async function confirmarPresenca() {
     if (!viagem) return;

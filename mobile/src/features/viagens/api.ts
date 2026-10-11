@@ -1,11 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../services/api";
-import { Viagem } from "../../types";
+import { Checkin, Onibus, RotaDoDia, Viagem } from "../../types";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 
 export const chavesViagem = {
   atual: ["viagens", "atual"] as const,
+  rota: (viagemId?: string) => ["viagens", viagemId, "rota"] as const,
+  passageiros: (viagemId?: string) => ["viagens", viagemId, "passageiros"] as const,
+  lista: (desde: string) => ["viagens", "lista", desde] as const,
+  frota: ["onibus", "status"] as const,
 };
+
+/** Situação da frota (ônibus em manutenção), para o aluno. */
+export type StatusFrota = Pick<Onibus, "id" | "placa" | "emManutencao" | "observacaoManutencao">;
 
 /** Viagem do dia do usuário logado (aluno ou motorista). */
 export function useViagemAtual(opcoes: { atualizarACada?: number } = {}) {
@@ -45,4 +52,34 @@ export function useEncerrarViagem(aoConcluir?: () => void) {
   }
 
   return { encerrar, encerrando: mutacao.isPending };
+}
+
+/** Paradas do dia da viagem (com quantos alunos em cada); desligada sem viagem. */
+export function useRotaDoDia(viagemId: string | undefined) {
+  return useQuery({
+    queryKey: chavesViagem.rota(viagemId),
+    queryFn: async () => (await api.get<RotaDoDia>(`/viagens/${viagemId}/rota`)).data,
+    enabled: !!viagemId,
+  });
+}
+
+/** Passageiros da viagem (motorista); desligada sem viagem. */
+export function usePassageiros(viagemId: string | undefined) {
+  return useQuery({
+    queryKey: chavesViagem.passageiros(viagemId),
+    queryFn: async () => (await api.get<Checkin[]>(`/viagens/${viagemId}/passageiros`)).data,
+    enabled: !!viagemId,
+  });
+}
+
+/** Viagens a partir de uma data (administração). */
+export function useViagensDesde(desde: string) {
+  return useQuery({
+    queryKey: chavesViagem.lista(desde),
+    queryFn: async () => (await api.get<Viagem[]>("/viagens", { params: { desde } })).data,
+  });
+}
+
+export function useFrota() {
+  return useQuery({ queryKey: chavesViagem.frota, queryFn: async () => (await api.get<StatusFrota[]>("/onibus/status")).data });
 }

@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { View } from "react-native";
 import { api } from "../../services/api";
 import { Universidade } from "../../types";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
+import { useUniversidades } from "./api";
 import { useTema } from "../../theme/TemaProvider";
 import { Aviso, Botao, BotaoIcone, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista } from "../../components/ui";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
@@ -13,15 +14,13 @@ type Formulario = { id?: string; nome: string; endereco: string; coordenadas: st
 
 export default function UniversidadesCadastro() {
   const { cores } = useTema();
-  const [universidades, setUniversidades] = useState<Universidade[]>([]);
   const [form, setForm] = useState<Formulario | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
-  const { carregando, recarregar } = useCarregamento(async () => {
-    const { data } = await api.get<Universidade[]>("/universidades");
-    setUniversidades(data);
-  });
+  const consulta = useUniversidades();
+  const universidades = consulta.data ?? [];
+  const { carregando, recarregar } = useDadosDaTela(consulta);
 
   function abrir(u?: Universidade) {
     setErro(null);

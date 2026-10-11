@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Switch, View } from "react-native";
 import { api } from "../../services/api";
 import { Onibus } from "../../types";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
+import { useOnibus } from "./api";
 import { useTema } from "../../theme/TemaProvider";
 import { Aviso, Botao, BotaoIcone, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista, Texto } from "../../components/ui";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
@@ -10,7 +11,6 @@ import { BarraSecao } from "./BarraSecao";
 
 export default function OnibusCadastro() {
   const { cores } = useTema();
-  const [onibus, setOnibus] = useState<Onibus[]>([]);
 
   // Formulário de novo ônibus
   const [novoAberto, setNovoAberto] = useState(false);
@@ -23,10 +23,9 @@ export default function OnibusCadastro() {
   const [emManutencao, setEmManutencao] = useState<Onibus | null>(null);
   const [observacao, setObservacao] = useState("");
 
-  const { carregando, recarregar } = useCarregamento(async () => {
-    const { data } = await api.get<Onibus[]>("/onibus");
-    setOnibus(data);
-  });
+  const consulta = useOnibus();
+  const onibus = consulta.data ?? [];
+  const { carregando, recarregar } = useDadosDaTela(consulta);
 
   function fecharNovo() {
     setNovoAberto(false);

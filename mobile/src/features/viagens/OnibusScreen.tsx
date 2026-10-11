@@ -1,28 +1,16 @@
-import React, { useState } from "react";
-import { api } from "../../services/api";
-import { Onibus, Viagem } from "../../types";
-import { useCarregamento } from "../../hooks/useCarregamento";
+import React from "react";
+import { useDadosDaTela } from "../../hooks/useDadosDaTela";
+import { useFrota, useViagemAtual } from "./api";
 import { Aviso, Cabecalho, Card, Carregando, EstadoVazio, ItemLista, Pilula, Secao, Tela, Texto } from "../../components/ui";
 import { statusManutencao, statusViagem } from "../../utils/rotulos";
 
-type StatusFrota = Pick<Onibus, "id" | "placa" | "emManutencao" | "observacaoManutencao">;
-
 /** Situação do ônibus da viagem de hoje e de toda a frota (manutenção). */
 export default function OnibusScreen() {
-  const [viagem, setViagem] = useState<Viagem | null>(null);
-  const [frota, setFrota] = useState<StatusFrota[]>([]);
-
-  const { carregando, atualizando, atualizar } = useCarregamento(
-    async () => {
-      const [{ data: v }, { data: f }] = await Promise.all([
-        api.get<Viagem | null>("/viagens/atual"),
-        api.get<StatusFrota[]>("/onibus/status"),
-      ]);
-      setViagem(v);
-      setFrota(f);
-    },
-    { intervaloMs: 30_000 }
-  );
+  const consultaViagem = useViagemAtual();
+  const consultaFrota = useFrota();
+  const viagem = consultaViagem.data ?? null;
+  const frota = consultaFrota.data ?? [];
+  const { carregando, atualizando, atualizar } = useDadosDaTela([consultaViagem, consultaFrota], { intervaloMs: 30_000 });
 
   if (carregando) return <Carregando />;
 

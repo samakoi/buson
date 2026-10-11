@@ -1,15 +1,14 @@
 import React, { useState } from "react";
 import { View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../../services/api";
-import { Documento, MeusDados } from "../../types";
+import { Documento } from "../../types";
 import { Aviso, Botao, Cabecalho, Card, Carregando, ItemLista, Pilula, Secao, Tela, Texto } from "../../components/ui";
 import { avisar, mensagemDeErro } from "../../utils/feedback";
 import { formatarDiaBR, diaISO } from "../../utils/datas";
 import { statusDocumento, tipoDocumento } from "../../utils/rotulos";
 import { abrirDocumento, useMeusDocumentos } from "./api";
 import { EnvioDocumento } from "./EnvioDocumento";
+import { useMeusDados } from "../alunos/api";
 
 const dataBR = (iso: string) => formatarDiaBR(diaISO(new Date(iso)));
 
@@ -25,7 +24,7 @@ async function verArquivo(d: Documento) {
 export default function DocumentacaoScreen() {
   const navegacao = useNavigation();
   const documentos = useMeusDocumentos();
-  const eu = useQuery({ queryKey: ["alunos", "me"], queryFn: async () => (await api.get<MeusDados>("/alunos/me")).data });
+  const eu = useMeusDados();
   const [enviarOutro, setEnviarOutro] = useState(false);
 
   if (documentos.isLoading || eu.isLoading) return <Carregando />;
