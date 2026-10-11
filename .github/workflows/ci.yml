@@ -1,4 +1,4 @@
-# Confere cada push e pull request: tipos, lint, build e os testes E2E da API.
+# Confere cada push e pull request: formatação, tipos, lint, testes unitários, build e os testes E2E da API.
 name: CI
 
 on:
@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   backend:
-    name: API (tipos, lint, testes E2E)
+    name: API (tipos, lint, testes)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
@@ -48,6 +48,8 @@ jobs:
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm run lint
+      - name: Testes unitários
+        run: npm test
       - run: npm run build
       - name: Testes E2E
         run: npm run test:e2e
@@ -55,7 +57,7 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
   mobile:
-    name: App (tipos, lint, expo-doctor)
+    name: App (tipos, lint, testes, expo-doctor)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     defaults:
@@ -72,6 +74,8 @@ jobs:
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm run lint
+      - name: Testes unitários
+        run: npm test -- --ci
       - run: npx expo-doctor
       - name: Site (PWA) monta
         run: npm run build:web -- producao

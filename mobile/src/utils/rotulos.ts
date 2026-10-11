@@ -59,9 +59,13 @@ export const motivoAusencia: Record<MotivoAusencia, string> = {
   FALTOU_NA_IDA: "Vaga liberada: faltou na ida",
 };
 
-/** Converte valores gravados na auditoria (ex.: "ATIVO") no texto da tela. */
-export function rotuloValorAuditoria(valor: unknown): string {
+/**
+ * Converte valores gravados na auditoria (ex.: "ATIVO") no texto da tela.
+ * `campo` desfaz a ambiguidade de PENDENTE (conta "Pendente" × documento "Aguardando análise").
+ */
+export function rotuloValorAuditoria(valor: unknown, campo?: "documento"): string {
   if (typeof valor !== "string") return String(valor ?? "");
+  if (campo === "documento" && valor in statusDocumento) return statusDocumento[valor as StatusDocumento].rotulo;
   if (valor in statusConta) return statusConta[valor as StatusConta].rotulo;
   if (valor in statusDocumento) return statusDocumento[valor as StatusDocumento].rotulo;
   if (valor === "REGISTRADA") return "Registrada";
@@ -112,8 +116,8 @@ export function mudancaAuditoria(h: { valorAnterior: Record<string, unknown> | n
   }
   if ("documento" in depois) {
     return "documento" in antes
-      ? `${rotuloValorAuditoria(antes.documento)} → ${rotuloValorAuditoria(depois.documento)}`
-      : rotuloValorAuditoria(depois.documento);
+      ? `${rotuloValorAuditoria(antes.documento, "documento")} → ${rotuloValorAuditoria(depois.documento, "documento")}`
+      : rotuloValorAuditoria(depois.documento, "documento");
   }
   const dias = (v: unknown) => {
     if (!Array.isArray(v)) return null;
