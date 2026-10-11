@@ -4,11 +4,12 @@
 //   npm run build:web -- staging      → app-staging.onbus.online, fala com api-staging.onbus.online
 //   npm run build:web -- staging --api http://localhost:3333/api/v1   → teste local contra outra API
 //
-// No Cloudflare Pages o ambiente vem da variável BUSON_WEB (producao | staging) de cada projeto.
+// No Cloudflare Pages o ambiente vai no próprio comando de build (ou na variável BUSON_WEB).
 // Usa as MESMAS variáveis dos perfis do eas.json (endereço da API, variante, ambiente), para o site e
 // o APK de um ambiente nunca apontarem para APIs diferentes.
 import { spawnSync } from "node:child_process";
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const RAIZ = fileURLToPath(new URL("..", import.meta.url));
@@ -40,6 +41,28 @@ const r =
     ? spawnSync("npx expo export --platform web --clear", { cwd: RAIZ, env, stdio: "inherit", shell: true })
     : spawnSync("npx", ["expo", "export", "--platform", "web", "--clear"], { cwd: RAIZ, env, stdio: "inherit" });
 if (r.status !== 0) process.exit(r.status ?? 1);
+
+// 1b) O Cloudflare Pages não publica pastas chamadas node_modules: as fontes de ícones e as imagens que
+//     vêm de bibliotecas (dist/assets/node_modules/...) chegavam como a página HTML e os ícones sumiam.
+//     Move a pasta e corrige os caminhos dentro dos arquivos JS. A troca é sempre a mesma, então o nome
+//     com hash de cada arquivo continua correspondendo a um único conteúdo (o cache de 1 ano segue válido).
+const PASTA_BIBLIOTECAS = "pacotes";
+if (existsSync(DIST + "assets/node_modules")) {
+  renameSync(DIST + "assets/node_modules", DIST + "assets/" + PASTA_BIBLIOTECAS);
+  for (const arquivo of readdirSync(DIST, { recursive: true })) {
+    if (!/\.(js|html|css|json)$/.test(arquivo)) continue;
+    const caminho = path.join(DIST, arquivo);
+    const conteudo = readFileSync(caminho, "utf8");
+    if (conteudo.includes("/assets/node_modules/")) {
+      writeFileSync(caminho, conteudo.replaceAll("/assets/node_modules/", `/assets/${PASTA_BIBLIOTECAS}/`));
+    }
+  }
+}
+const restantes = readdirSync(DIST, { recursive: true }).filter((a) => a.split(/[\\/]/).includes("node_modules"));
+if (restantes.length) {
+  console.error("Arquivos dentro de node_modules não seriam publicados pelo Cloudflare Pages:", restantes);
+  process.exit(1);
+}
 
 // 2) App de teste com outro nome e outra cor, para ninguém confundir com o oficial
 if (destino === "staging") {
