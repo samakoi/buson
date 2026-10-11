@@ -1,0 +1,17 @@
+# Fim de linha único no repositório (LF), independente do sistema de quem edita.
+# Acaba com os avisos "LF will be replaced by CRLF" do Git no Windows.
+* text=auto eol=lf
+
+# Scripts do PowerShell (Windows): CRLF
+*.ps1 text eol=crlf
+
+# Binários: o Git não mexe
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.docx binary
+*.pdf binary
