@@ -179,7 +179,10 @@ export async function sincronizarCheckins(tx: Tx, alunoId: string) {
   const aluno = await tx.aluno.findUnique({ where: { id: alunoId }, select: { statusConta: true } });
   const alocacoes =
     aluno?.statusConta === "ATIVO"
-      ? await tx.alocacaoAluno.findMany({ where: { alunoId, ativo: true }, select: { diaSemana: true, rotaId: true, pontoEmbarqueId: true } })
+      ? await tx.alocacaoAluno.findMany({
+          where: { alunoId, ativo: true },
+          select: { diaSemana: true, rotaId: true, pontoEmbarqueId: true },
+        })
       : [];
   const rotaIds = [...new Set(alocacoes.map((a) => a.rotaId))];
 
@@ -192,7 +195,10 @@ export async function sincronizarCheckins(tx: Tx, alunoId: string) {
     },
     select: { id: true },
   });
-  await travarViagens(tx, candidatas.map((v) => v.id));
+  await travarViagens(
+    tx,
+    candidatas.map((v) => v.id)
+  );
   const viagens = await tx.viagem.findMany({
     where: { id: { in: candidatas.map((v) => v.id) }, status: "AGUARDANDO" },
     select: {
@@ -312,10 +318,20 @@ export async function revisarAlocacoes(tx: Tx, filtro: { rotaId: string } | { al
  * conta estava parada, ele é desativado e o aluno é avisado.
  */
 export async function revalidarDiasAoAtivar(tx: Tx, alunoId: string) {
-  const alocacoes = await tx.alocacaoAluno.findMany({ where: { alunoId, ativo: true }, select: { id: true, rotaId: true, diaSemana: true } });
+  const alocacoes = await tx.alocacaoAluno.findMany({
+    where: { alunoId, ativo: true },
+    select: { id: true, rotaId: true, diaSemana: true },
+  });
   if (alocacoes.length > 0) {
-    const programacoes = await travarProgramacoesDasRotas(tx, alocacoes.map((a) => a.rotaId));
-    const ocupacao = await ocupacaoPorDia(tx, alocacoes.map((a) => a.rotaId), alunoId);
+    const programacoes = await travarProgramacoesDasRotas(
+      tx,
+      alocacoes.map((a) => a.rotaId)
+    );
+    const ocupacao = await ocupacaoPorDia(
+      tx,
+      alocacoes.map((a) => a.rotaId),
+      alunoId
+    );
     const lotados = alocacoes.filter((a) => {
       const programacao = programacoes.find((p) => p.rotaId === a.rotaId);
       return !programacao || (ocupacao.get(chave(a.rotaId, a.diaSemana)) ?? 0) >= programacao.onibus.capacidade;
@@ -374,7 +390,11 @@ export async function diasDoAluno(alunoId: string) {
     }),
   ]);
 
-  const ocupacao = await ocupacaoPorDia(prisma, programacoes.map((p) => p.rota.id), alunoId);
+  const ocupacao = await ocupacaoPorDia(
+    prisma,
+    programacoes.map((p) => p.rota.id),
+    alunoId
+  );
   const opcoes = programacoes.map((p) => ({
     rota: { id: p.rota.id, nome: p.rota.nome, instituicoes: p.rota.pontos.map((x) => x.universidade.nome) },
     horarioIda: p.horarioIda,

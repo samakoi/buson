@@ -68,7 +68,9 @@ export default function OnibusCadastro() {
       setEmManutencao(o);
       return;
     }
-    const ok = await confirmar("Liberar ônibus", `Tirar o ${o.placa} da manutenção? Os alunos das próximas viagens serão avisados.`, { textoConfirmar: "Liberar" });
+    const ok = await confirmar("Liberar ônibus", `Tirar o ${o.placa} da manutenção? Os alunos das próximas viagens serão avisados.`, {
+      textoConfirmar: "Liberar",
+    });
     if (ok) definirManutencao(o, false);
   }
 
@@ -79,7 +81,10 @@ export default function OnibusCadastro() {
       await api.delete(`/onibus/${o.id}`);
       await recarregar();
     } catch (err) {
-      avisar("Não foi possível excluir", mensagemDeErro(err, "Tente novamente.") + " Ônibus com viagens cadastradas não podem ser excluídos.");
+      avisar(
+        "Não foi possível excluir",
+        mensagemDeErro(err, "Tente novamente.") + " Ônibus com viagens cadastradas não podem ser excluídos."
+      );
     }
   }
 
@@ -117,7 +122,12 @@ export default function OnibusCadastro() {
           />
         ))}
         {onibus.length === 0 && (
-          <EstadoVazio icone="bus-outline" titulo="Nenhum ônibus" texto="Cadastre o primeiro ônibus da frota." acao={{ titulo: "Adicionar ônibus", icone: "add", onPress: () => setNovoAberto(true) }} />
+          <EstadoVazio
+            icone="bus-outline"
+            titulo="Nenhum ônibus"
+            texto="Cadastre o primeiro ônibus da frota."
+            acao={{ titulo: "Adicionar ônibus", icone: "add", onPress: () => setNovoAberto(true) }}
+          />
         )}
       </Card>
       <Texto variante="legenda" cor="textoFraco" alinhar="center">
@@ -133,7 +143,8 @@ export default function OnibusCadastro() {
 
       <Folha visivel={!!emManutencao} onFechar={() => setEmManutencao(null)} titulo={`Manutenção do ${emManutencao?.placa ?? ""}`}>
         <Texto variante="pequeno" cor="textoSuave">
-          Os alunos com check-in nas próximas viagens deste ônibus serão avisados, e o motorista não poderá iniciar a viagem até o ônibus ser liberado.
+          Os alunos com check-in nas próximas viagens deste ônibus serão avisados, e o motorista não poderá iniciar a viagem até o ônibus
+          ser liberado.
         </Texto>
         <Campo
           rotulo="Motivo ou previsão (opcional)"

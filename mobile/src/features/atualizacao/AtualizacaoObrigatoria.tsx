@@ -58,7 +58,13 @@ export function AtualizacaoObrigatoria({ children }: { children: React.ReactNode
           Esta versão do app não é mais aceita. Instale a versão nova para continuar — seus dados e seu login continuam os mesmos.
         </Texto>
         {exigida.link ? (
-          <Botao titulo="Baixar a versão nova" icone="download-outline" tamanho="grande" onPress={() => Linking.openURL(exigida.link!)} style={s.botao} />
+          <Botao
+            titulo="Baixar a versão nova"
+            icone="download-outline"
+            tamanho="grande"
+            onPress={() => Linking.openURL(exigida.link!)}
+            style={s.botao}
+          />
         ) : (
           <Texto variante="pequenoForte" alinhar="center">
             Peça o link do app novo à administração do transporte.

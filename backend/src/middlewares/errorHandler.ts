@@ -46,7 +46,7 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
   }
   if (err instanceof MulterError) {
     if (err.code === "LIMIT_FILE_SIZE") return responder(req, res, 413, "ARQUIVO_MUITO_GRANDE", ERROS.ARQUIVO_MUITO_GRANDE.mensagem);
-    return responder(req, res, 400, "VALIDACAO", "Não foi possível receber o arquivo. Envie um único arquivo no campo \"arquivo\".");
+    return responder(req, res, 400, "VALIDACAO", 'Não foi possível receber o arquivo. Envie um único arquivo no campo "arquivo".');
   }
   if (err instanceof SyntaxError && "body" in err) {
     return responder(req, res, 400, "VALIDACAO", "O corpo da requisição não é um JSON válido.");

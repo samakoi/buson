@@ -65,7 +65,8 @@ export default function PerfilScreen() {
 
       {dados.statusConta === "PENDENTE" && (
         <Aviso tipo="info" titulo="Cadastro em análise">
-          Complete os passos abaixo para a administração validar sua matrícula. Enquanto isso, você já pode pedir vagas avulsas na tela Início.
+          Complete os passos abaixo para a administração validar sua matrícula. Enquanto isso, você já pode pedir vagas avulsas na tela
+          Início.
         </Aviso>
       )}
       {dados.statusConta === "INATIVO" && (
@@ -112,7 +113,13 @@ export default function PerfilScreen() {
           icone="calendar-outline"
           tomIcone={!ativa ? "neutro" : semDias ? "alerta" : "sucesso"}
           titulo="Meus dias"
-          subtitulo={ativa ? (semDias ? "Escolha os dias em que você usa o transporte" : "Dias fixos com vaga garantida") : "Disponível depois da validação da matrícula"}
+          subtitulo={
+            ativa
+              ? semDias
+                ? "Escolha os dias em que você usa o transporte"
+                : "Dias fixos com vaga garantida"
+              : "Disponível depois da validação da matrícula"
+          }
           abaixo={ativa && semDias ? <Pilula texto="Pendente" tom="alerta" /> : undefined}
           direita={seta}
           onPress={() => navegacao.navigate("MeusDias")}
@@ -137,5 +144,12 @@ export default function PerfilScreen() {
 
 const useEstilos = criarEstilos((t) => ({
   topo: { flexDirection: "row", alignItems: "center", gap: t.espaco.lg },
-  avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: t.cores.primariaSuave, alignItems: "center", justifyContent: "center" },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: t.cores.primariaSuave,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 }));

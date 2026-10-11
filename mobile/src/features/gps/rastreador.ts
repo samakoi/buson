@@ -50,8 +50,7 @@ const paraLeitura = (l: Location.LocationObject): Leitura => ({
   registradoEm: new Date(l.timestamp).toISOString(),
 });
 
-export const suportaSegundoPlano = () =>
-  Platform.OS !== "web" && Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
+export const suportaSegundoPlano = () => Platform.OS !== "web" && Constants.executionEnvironment !== ExecutionEnvironment.StoreClient;
 
 let enviando: Promise<void> | null = null;
 

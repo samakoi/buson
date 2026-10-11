@@ -20,11 +20,7 @@ function FluxoDeEntrada() {
   const insets = useSafeAreaInsets();
   return (
     <View style={{ flex: 1, backgroundColor: cores.fundo, paddingTop: insets.top }}>
-      {tela === "login" ? (
-        <LoginScreen onCriarConta={() => setTela("cadastro")} />
-      ) : (
-        <CadastroScreen onVoltar={() => setTela("login")} />
-      )}
+      {tela === "login" ? <LoginScreen onCriarConta={() => setTela("cadastro")} /> : <CadastroScreen onVoltar={() => setTela("login")} />}
     </View>
   );
 }
@@ -60,7 +56,11 @@ export default function RootNavigator() {
 
   return (
     // No navegador, o título da aba é sempre o nome do app ("Bus On" ou "Bus On Teste")
-    <NavigationContainer ref={navegacaoRef} theme={temaNavegacao} documentTitle={{ formatter: () => Constants.expoConfig?.name ?? "Bus On" }}>
+    <NavigationContainer
+      ref={navegacaoRef}
+      theme={temaNavegacao}
+      documentTitle={{ formatter: () => Constants.expoConfig?.name ?? "Bus On" }}
+    >
       {!usuario ? (
         <FluxoDeEntrada />
       ) : (

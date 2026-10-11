@@ -53,7 +53,11 @@ export default function DocumentacaoScreen() {
             <Texto variante="subtitulo" style={{ flex: 1 }}>
               {tipoDocumento[ultimo.tipo]}
             </Texto>
-            <Pilula texto={statusDocumento[ultimo.status].rotulo} tom={statusDocumento[ultimo.status].tom} icone={statusDocumento[ultimo.status].icone} />
+            <Pilula
+              texto={statusDocumento[ultimo.status].rotulo}
+              tom={statusDocumento[ultimo.status].tom}
+              icone={statusDocumento[ultimo.status].icone}
+            />
           </View>
           <Texto variante="pequeno" cor="textoSuave" style={{ marginTop: 4 }}>
             Enviado em {dataBR(ultimo.criadoEm)} • {ultimo.nomeOriginal}
@@ -71,7 +75,9 @@ export default function DocumentacaoScreen() {
           )}
           {ultimo.status === "APROVADO" && (
             <Aviso tipo="sucesso" titulo="Matrícula validada" style={{ marginTop: 12, marginBottom: 0 }}>
-              {eu.data?.statusConta === "ATIVO" ? "Sua conta está ativa. Escolha seus dias de transporte em Perfil › Meus dias." : "Documento aprovado."}
+              {eu.data?.statusConta === "ATIVO"
+                ? "Sua conta está ativa. Escolha seus dias de transporte em Perfil › Meus dias."
+                : "Documento aprovado."}
             </Aviso>
           )}
           {ultimo.status === "REPROVADO" && (
@@ -80,7 +86,13 @@ export default function DocumentacaoScreen() {
             </Aviso>
           )}
 
-          <Botao titulo="Ver arquivo enviado" icone="eye-outline" variante="fantasma" onPress={() => verArquivo(ultimo)} style={{ marginTop: 8 }} />
+          <Botao
+            titulo="Ver arquivo enviado"
+            icone="eye-outline"
+            variante="fantasma"
+            onPress={() => verArquivo(ultimo)}
+            style={{ marginTop: 8 }}
+          />
         </Card>
       )}
 

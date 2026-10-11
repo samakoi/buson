@@ -16,7 +16,13 @@ export default function AoVivoScreen() {
   const mapa = useMemo<DadosMapa>(() => {
     const visiveis = viagens.filter((v) => v.posicao && (!selecionada || v.id === selecionada));
     return {
-      marcadores: visiveis.map((v) => ({ id: v.id, latitude: v.posicao!.latitude, longitude: v.posicao!.longitude, rotulo: `${v.placa} • ${v.rota}`, tipo: "ONIBUS" as const })),
+      marcadores: visiveis.map((v) => ({
+        id: v.id,
+        latitude: v.posicao!.latitude,
+        longitude: v.posicao!.longitude,
+        rotulo: `${v.placa} • ${v.rota}`,
+        tipo: "ONIBUS" as const,
+      })),
       trajeto: selecionada ? trajeto.data?.pontos.map((p) => [p.latitude, p.longitude] as [number, number]) : undefined,
       ajustar: true,
     };
@@ -31,7 +37,11 @@ export default function AoVivoScreen() {
 
       {viagens.length === 0 ? (
         <Card>
-          <EstadoVazio icone="bus-outline" titulo="Nenhum ônibus em viagem agora" texto="Os ônibus aparecem aqui quando o motorista inicia a viagem." />
+          <EstadoVazio
+            icone="bus-outline"
+            titulo="Nenhum ônibus em viagem agora"
+            texto="Os ônibus aparecem aqui quando o motorista inicia a viagem."
+          />
         </Card>
       ) : (
         <>

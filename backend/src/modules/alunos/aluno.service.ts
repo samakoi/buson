@@ -161,39 +161,41 @@ export interface DadosAcademicos {
 }
 
 export async function atualizarMeusDados(usuarioId: string, dados: DadosAcademicos) {
-  return prisma.$transaction(async (tx) => {
-    const aluno = await tx.aluno.findUnique({ where: { usuarioId } });
-    if (!aluno) throw new AppError("PERFIL_ALUNO_NAO_ENCONTRADO");
+  return prisma
+    .$transaction(async (tx) => {
+      const aluno = await tx.aluno.findUnique({ where: { usuarioId } });
+      if (!aluno) throw new AppError("PERFIL_ALUNO_NAO_ENCONTRADO");
 
-    if (dados.matricula && dados.matricula !== aluno.matricula) {
-      const dono = await tx.aluno.findUnique({ where: { matricula: dados.matricula } });
-      if (dono) throw new AppError("MATRICULA_JA_CADASTRADA");
-    }
+      if (dados.matricula && dados.matricula !== aluno.matricula) {
+        const dono = await tx.aluno.findUnique({ where: { matricula: dados.matricula } });
+        if (dono) throw new AppError("MATRICULA_JA_CADASTRADA");
+      }
 
-    if (dados.nome) await tx.usuario.update({ where: { id: usuarioId }, data: { nome: dados.nome } });
-    await tx.aluno.update({
-      where: { id: aluno.id },
-      data: {
-        matricula: dados.matricula,
-        curso: dados.curso,
-        telefone: dados.telefone,
-        universidadeId: dados.universidadeId,
-      },
-    });
-
-    // Troca de universidade muda a rota do aluno: fica registrado
-    if (dados.universidadeId && dados.universidadeId !== aluno.universidadeId) {
-      await registrarAuditoria(tx, {
-        usuarioId,
-        acao: "UNIVERSIDADE_ALTERADA",
-        entidade: "Aluno",
-        entidadeId: aluno.id,
-        valorAnterior: { universidadeId: aluno.universidadeId },
-        valorNovo: { universidadeId: dados.universidadeId },
+      if (dados.nome) await tx.usuario.update({ where: { id: usuarioId }, data: { nome: dados.nome } });
+      await tx.aluno.update({
+        where: { id: aluno.id },
+        data: {
+          matricula: dados.matricula,
+          curso: dados.curso,
+          telefone: dados.telefone,
+          universidadeId: dados.universidadeId,
+        },
       });
-      // Rotas que não passam pela nova instituição deixam de valer
-      await revisarAlocacoes(tx, { alunoId: aluno.id }, usuarioId);
-    }
-    return { ok: true };
-  }, OPCOES_TX).then(() => meusDados(usuarioId));
+
+      // Troca de universidade muda a rota do aluno: fica registrado
+      if (dados.universidadeId && dados.universidadeId !== aluno.universidadeId) {
+        await registrarAuditoria(tx, {
+          usuarioId,
+          acao: "UNIVERSIDADE_ALTERADA",
+          entidade: "Aluno",
+          entidadeId: aluno.id,
+          valorAnterior: { universidadeId: aluno.universidadeId },
+          valorNovo: { universidadeId: dados.universidadeId },
+        });
+        // Rotas que não passam pela nova instituição deixam de valer
+        await revisarAlocacoes(tx, { alunoId: aluno.id }, usuarioId);
+      }
+      return { ok: true };
+    }, OPCOES_TX)
+    .then(() => meusDados(usuarioId));
 }

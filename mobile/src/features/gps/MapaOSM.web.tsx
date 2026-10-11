@@ -35,5 +35,11 @@ export function MapaOSM({ dados, altura = 320 }: { dados: DadosMapa; altura?: nu
 }
 
 const useEstilos = criarEstilos((t) => ({
-  caixa: { borderRadius: t.raio.lg, overflow: "hidden", borderWidth: 1, borderColor: t.cores.borda, backgroundColor: t.cores.superficieAlt },
+  caixa: {
+    borderRadius: t.raio.lg,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: t.cores.borda,
+    backgroundColor: t.cores.superficieAlt,
+  },
 }));

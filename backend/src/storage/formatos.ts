@@ -14,10 +14,15 @@ export function detectarFormato(conteudo: Buffer) {
   return FORMATOS.find((f) => f.assinatura.every((byte, i) => conteudo[i] === byte)) ?? null;
 }
 
+// Caracteres de controle (quebras de linha etc.), removidos de propósito dos nomes de arquivo
+// eslint-disable-next-line no-control-regex
+const CONTROLE = /[\u0000-\u001f]/g;
+
 /** Nome enviado pelo celular, sem pastas e com tamanho limitado. */
 export function nomeSeguro(nome: string | undefined, extensao: string, padrao = "documento") {
-  // Remove caracteres de controle (quebras de linha etc.) de propósito
-  // eslint-disable-next-line no-control-regex
-  const base = path.basename(nome || "").replace(/[\u0000-\u001f]/g, "").trim();
+  const base = path
+    .basename(nome || "")
+    .replace(CONTROLE, "")
+    .trim();
   return (base || `${padrao}.${extensao}`).slice(0, 180);
 }

@@ -46,7 +46,8 @@ export function abrirDocumento(documentoId: string) {
 export function useFilaDocumentos(status?: StatusDocumento, busca?: string) {
   return useQuery({
     queryKey: chavesDocumento.fila(status, busca),
-    queryFn: async () => (await api.get<FilaDocumentos>("/documentos", { params: { status, busca: busca || undefined, porPagina: 50 } })).data,
+    queryFn: async () =>
+      (await api.get<FilaDocumentos>("/documentos", { params: { status, busca: busca || undefined, porPagina: 50 } })).data,
   });
 }
 

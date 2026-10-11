@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
@@ -29,22 +29,94 @@
           --borda: #23384f;
         }
       }
-      * { box-sizing: border-box; }
-      body { margin: 0; background: var(--fundo); color: var(--texto); font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-      main { max-width: 640px; margin: 0 auto; padding: 32px 16px 48px; }
-      header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
-      header img { width: 64px; height: 64px; border-radius: 16px; }
-      h1 { margin: 0; font-size: 28px; color: var(--marinho); }
-      header p { margin: 2px 0 0; color: var(--suave); }
-      .abrir { display: block; text-align: center; background: var(--primaria); color: #fff; text-decoration: none; font-weight: 700; padding: 14px; border-radius: 14px; margin: 8px 0 28px; }
-      @media (prefers-color-scheme: dark) { .abrir { color: #0b1520; } }
-      section { background: var(--cartao); border: 1px solid var(--borda); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
-      h2 { margin: 0 0 8px; font-size: 20px; color: var(--marinho); }
-      ol { margin: 0; padding-left: 22px; }
-      li { margin: 6px 0; }
-      b { color: var(--marinho); }
-      .nota { color: var(--suave); font-size: 15px; margin: 10px 0 0; }
-      footer { color: var(--suave); font-size: 14px; text-align: center; margin-top: 24px; }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--fundo);
+        color: var(--texto);
+        font:
+          17px/1.5 system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+      }
+      main {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 32px 16px 48px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      header img {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        color: var(--marinho);
+      }
+      header p {
+        margin: 2px 0 0;
+        color: var(--suave);
+      }
+      .abrir {
+        display: block;
+        text-align: center;
+        background: var(--primaria);
+        color: #fff;
+        text-decoration: none;
+        font-weight: 700;
+        padding: 14px;
+        border-radius: 14px;
+        margin: 8px 0 28px;
+      }
+      @media (prefers-color-scheme: dark) {
+        .abrir {
+          color: #0b1520;
+        }
+      }
+      section {
+        background: var(--cartao);
+        border: 1px solid var(--borda);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 16px;
+      }
+      h2 {
+        margin: 0 0 8px;
+        font-size: 20px;
+        color: var(--marinho);
+      }
+      ol {
+        margin: 0;
+        padding-left: 22px;
+      }
+      li {
+        margin: 6px 0;
+      }
+      b {
+        color: var(--marinho);
+      }
+      .nota {
+        color: var(--suave);
+        font-size: 15px;
+        margin: 10px 0 0;
+      }
+      footer {
+        color: var(--suave);
+        font-size: 14px;
+        text-align: center;
+        margin-top: 24px;
+      }
     </style>
   </head>
   <body>
@@ -76,7 +148,9 @@
           <li>Toque no menu <b>⋮</b> (canto de cima).</li>
           <li>Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</li>
         </ol>
-        <p class="nota">Motoristas: peçam o link do app Android (APK) à administração. Com ele, o GPS do ônibus continua funcionando com a tela apagada.</p>
+        <p class="nota">
+          Motoristas: peçam o link do app Android (APK) à administração. Com ele, o GPS do ônibus continua funcionando com a tela apagada.
+        </p>
       </section>
 
       <section>

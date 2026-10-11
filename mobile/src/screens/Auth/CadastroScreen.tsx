@@ -126,7 +126,14 @@ export default function CadastroScreen({ onVoltar }: { onVoltar: () => void }) {
             quebrarLinha
           />
 
-          <Botao titulo="Criar conta" icone="person-add" onPress={cadastrar} carregando={carregando} tamanho="grande" style={{ marginTop: 28 }} />
+          <Botao
+            titulo="Criar conta"
+            icone="person-add"
+            onPress={cadastrar}
+            carregando={carregando}
+            tamanho="grande"
+            style={{ marginTop: 28 }}
+          />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

@@ -45,11 +45,20 @@ export function EnvioDocumento({ aoEnviar }: { aoEnviar?: () => void }) {
         <>
           <Rotulo>Que documento é este?</Rotulo>
           <Chips
-            opcoes={(["DECLARACAO", "COMPROVANTE", "OUTRO"] as const).map((t) => ({ valor: t, rotulo: tipoDocumento[t].replace(" de matrícula", "") }))}
+            opcoes={(["DECLARACAO", "COMPROVANTE", "OUTRO"] as const).map((t) => ({
+              valor: t,
+              rotulo: tipoDocumento[t].replace(" de matrícula", ""),
+            }))}
             valor={tipo}
             onChange={setTipo}
           />
-          <Botao titulo="Enviar documento" icone="cloud-upload-outline" onPress={confirmarEnvio} carregando={enviar.isPending} style={{ marginTop: 20 }} />
+          <Botao
+            titulo="Enviar documento"
+            icone="cloud-upload-outline"
+            onPress={confirmarEnvio}
+            carregando={enviar.isPending}
+            style={{ marginTop: 20 }}
+          />
         </>
       )}
     </View>

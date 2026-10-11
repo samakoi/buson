@@ -10,7 +10,21 @@ import { useSessao } from "../../store/sessao";
 import { useNotificacoes } from "../../contexts/NotificacoesContext";
 import { useCarregamento } from "../../hooks/useCarregamento";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
-import { Aviso, BarraProgresso, Botao, Cabecalho, Card, Carregando, EstadoVazio, NomeIcone, Pilula, Secao, Tela, Texto, Trajeto } from "../../components/ui";
+import {
+  Aviso,
+  BarraProgresso,
+  Botao,
+  Cabecalho,
+  Card,
+  Carregando,
+  EstadoVazio,
+  NomeIcone,
+  Pilula,
+  Secao,
+  Tela,
+  Texto,
+  Trajeto,
+} from "../../components/ui";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { dataPorExtenso, diaISO, formatarDuracao, minutosAte } from "../../utils/datas";
 import { statusViagem } from "../../utils/rotulos";
@@ -68,7 +82,10 @@ export default function AlunoHomeScreen() {
     try {
       const { data } = await api.post<{ status: string }>(`/viagens/${viagem.id}/checkin`);
       if (viagem.meuCheckin?.status === "PROGRAMADO") {
-        avisar("Presença confirmada", viagem.sentido === "IDA" ? "Sua ida e sua volta de hoje estão confirmadas." : "Sua volta está confirmada.");
+        avisar(
+          "Presença confirmada",
+          viagem.sentido === "IDA" ? "Sua ida e sua volta de hoje estão confirmadas." : "Sua volta está confirmada."
+        );
       } else if (data.status === "ESPERA") {
         avisar("Lista de espera", "As vagas acabaram, mas você entrou na lista de espera. Avisaremos se uma vaga abrir.");
       }
@@ -120,7 +137,13 @@ export default function AlunoHomeScreen() {
                 ? `Motivo: ${eu.documento.motivoReprovacao ?? "não informado"}. Envie um novo comprovante.`
                 : "Envie o comprovante de matrícula para ativar sua conta e garantir vaga nos seus dias. Até lá, você pode pedir vagas avulsas."}
             </Aviso>
-            <Botao titulo="Enviar comprovante" icone="cloud-upload-outline" variante="secundario" onPress={() => navegacao.navigate("Documentacao")} style={{ marginTop: 12 }} />
+            <Botao
+              titulo="Enviar comprovante"
+              icone="cloud-upload-outline"
+              variante="secundario"
+              onPress={() => navegacao.navigate("Documentacao")}
+              style={{ marginTop: 12 }}
+            />
           </Card>
         ) : (
           <Aviso tipo="info" titulo={eu.documento?.status === "EM_ANALISE" ? "Documento em análise" : "Documento enviado"}>
@@ -138,7 +161,13 @@ export default function AlunoHomeScreen() {
           <Aviso tipo="alerta" titulo="Você tem falta para justificar" style={{ marginBottom: 0 }}>
             Você tem 7 dias depois da viagem para explicar o motivo e anexar um atestado, se tiver.
           </Aviso>
-          <Botao titulo="Ver minhas faltas" icone="alert-circle-outline" variante="secundario" onPress={() => navegacao.navigate("MinhasFaltas")} style={{ marginTop: 12 }} />
+          <Botao
+            titulo="Ver minhas faltas"
+            icone="alert-circle-outline"
+            variante="secundario"
+            onPress={() => navegacao.navigate("MinhasFaltas")}
+            style={{ marginTop: 12 }}
+          />
         </Card>
       )}
       {eu?.pendencias.includes("DIAS_DE_USO") && (
@@ -146,7 +175,13 @@ export default function AlunoHomeScreen() {
           <Aviso tipo="info" titulo="Escolha seus dias de transporte" style={{ marginBottom: 0 }}>
             Com dias fixos, sua vaga fica garantida toda semana — é só confirmar a presença no dia.
           </Aviso>
-          <Botao titulo="Escolher meus dias" icone="calendar-outline" variante="secundario" onPress={() => navegacao.navigate("MeusDias")} style={{ marginTop: 12 }} />
+          <Botao
+            titulo="Escolher meus dias"
+            icone="calendar-outline"
+            variante="secundario"
+            onPress={() => navegacao.navigate("MeusDias")}
+            style={{ marginTop: 12 }}
+          />
         </Card>
       )}
     </>
@@ -157,7 +192,11 @@ export default function AlunoHomeScreen() {
       <Tela atualizando={atualizando} onAtualizar={atualizar}>
         {cabecalho}
         <Card>
-          <EstadoVazio icone="calendar-outline" titulo="Nenhuma viagem hoje" texto="Não há viagem para a sua universidade hoje. Puxe para baixo para atualizar." />
+          <EstadoVazio
+            icone="calendar-outline"
+            titulo="Nenhuma viagem hoje"
+            texto="Não há viagem para a sua universidade hoje. Puxe para baixo para atualizar."
+          />
         </Card>
       </Tela>
     );
@@ -190,20 +229,22 @@ export default function AlunoHomeScreen() {
       ? { texto: "Sua vaga está confirmada", icone: "checkmark-circle" }
       : programado
         ? { texto: "Vaga garantida — confirme sua presença", icone: "calendar" }
-      : meu?.status === "ESPERA"
-        ? { texto: `Você é o ${meu.posicaoFila}º da lista de espera`, icone: "time" }
-        : meu?.motivoAusencia === "FALTOU_NA_IDA" && viagem.status === "AGUARDANDO"
-          ? { texto: "Sua vaga na volta foi liberada porque você faltou na ida", icone: "swap-horizontal" }
-          : meu?.status === "CANCELADO" && meu.motivoAusencia && viagem.status === "AGUARDANDO"
-          ? { texto: "Você avisou que não vai nesta viagem", icone: "calendar-clear-outline" }
-          : viagem.status === "AGUARDANDO"
-          ? { texto: "Você ainda não confirmou presença", icone: "ellipse-outline" }
-          : { texto: "Você não fez check-in nesta viagem", icone: "remove-circle-outline" };
+        : meu?.status === "ESPERA"
+          ? { texto: `Você é o ${meu.posicaoFila}º da lista de espera`, icone: "time" }
+          : meu?.motivoAusencia === "FALTOU_NA_IDA" && viagem.status === "AGUARDANDO"
+            ? { texto: "Sua vaga na volta foi liberada porque você faltou na ida", icone: "swap-horizontal" }
+            : meu?.status === "CANCELADO" && meu.motivoAusencia && viagem.status === "AGUARDANDO"
+              ? { texto: "Você avisou que não vai nesta viagem", icone: "calendar-clear-outline" }
+              : viagem.status === "AGUARDANDO"
+                ? { texto: "Você ainda não confirmou presença", icone: "ellipse-outline" }
+                : { texto: "Você não fez check-in nesta viagem", icone: "remove-circle-outline" };
 
   // Ação principal: uma só, a que faz sentido agora
   let acao: React.ReactNode = null;
   if (viagem.status === "AGUARDANDO" && programado) {
-    acao = <Botao titulo="Confirmar presença" icone="checkmark-circle" variante="claro" onPress={confirmarPresenca} carregando={processando} />;
+    acao = (
+      <Botao titulo="Confirmar presença" icone="checkmark-circle" variante="claro" onPress={confirmarPresenca} carregando={processando} />
+    );
   } else if (viagem.status === "AGUARDANDO" && !ativo) {
     acao = (
       <Botao
@@ -255,7 +296,11 @@ export default function AlunoHomeScreen() {
 
         {viagem.status === "AGUARDANDO" && (
           <View style={s.vagas}>
-            <BarraProgresso valor={viagem.resumo.ocupados / Math.max(1, viagem.vagas)} cor={cores.sobreDestaque} fundo="rgba(255,255,255,0.18)" />
+            <BarraProgresso
+              valor={viagem.resumo.ocupados / Math.max(1, viagem.vagas)}
+              cor={cores.sobreDestaque}
+              fundo="rgba(255,255,255,0.18)"
+            />
             <Texto variante="pequeno" cor="sobreDestaqueSuave">
               {lotado ? `Lotado • ${viagem.resumo.espera} na lista de espera` : `${viagem.vagasRestantes} de ${viagem.vagas} vagas livres`}
             </Texto>
@@ -307,20 +352,30 @@ export default function AlunoHomeScreen() {
         />
       )}
       {liberando && (
-      <LiberarVagaFolha
-        viagem={viagem}
-        visivel
-        onFechar={() => setLiberando(false)}
-        aoLiberar={async (liberouIrma) => {
-          setLiberando(false);
-          avisar("Vaga liberada", liberouIrma ? "Suas vagas de ida e volta de hoje foram liberadas. Obrigado por avisar!" : "Obrigado por avisar! Sua vaga foi para outro aluno.");
-          await recarregar();
-          atualizarAvisos();
-        }}
-      />
+        <LiberarVagaFolha
+          viagem={viagem}
+          visivel
+          onFechar={() => setLiberando(false)}
+          aoLiberar={async (liberouIrma) => {
+            setLiberando(false);
+            avisar(
+              "Vaga liberada",
+              liberouIrma
+                ? "Suas vagas de ida e volta de hoje foram liberadas. Obrigado por avisar!"
+                : "Obrigado por avisar! Sua vaga foi para outro aluno."
+            );
+            await recarregar();
+            atualizarAvisos();
+          }}
+        />
       )}
       {viagem.status === "EM_ANDAMENTO" && comVaga && (
-        <Botao titulo="Ver onde está o ônibus" icone="map-outline" variante="secundario" onPress={() => navegacao.navigate("OndeEstaOnibus", { viagemId: viagem.id })} />
+        <Botao
+          titulo="Ver onde está o ônibus"
+          icone="map-outline"
+          variante="secundario"
+          onPress={() => navegacao.navigate("OndeEstaOnibus", { viagemId: viagem.id })}
+        />
       )}
       {viagem.status === "EM_ANDAMENTO" && !ativo && (
         <Texto variante="pequeno" cor="textoSuave" alinhar="center">
@@ -336,7 +391,11 @@ export default function AlunoHomeScreen() {
               riscarInativas={viagem.status !== "AGUARDANDO"}
               paradas={pontos.map((p) => ({
                 nome: p.universidade,
-                detalhe: p.ativoNoDia ? `${p.alunosConfirmados} aluno(s) com vaga` : (viagem.status === "AGUARDANDO" ? "Ninguém com vaga ainda" : "Sem passageiros hoje"),
+                detalhe: p.ativoNoDia
+                  ? `${p.alunosConfirmados} aluno(s) com vaga`
+                  : viagem.status === "AGUARDANDO"
+                    ? "Ninguém com vaga ainda"
+                    : "Sem passageiros hoje",
                 ativa: p.ativoNoDia,
                 minha: p.universidade === minhaUniversidade,
               }))}
@@ -351,7 +410,14 @@ export default function AlunoHomeScreen() {
 const useEstilos = criarEstilos((t) => ({
   topoCartao: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: t.espaco.sm },
   rota: { flexDirection: "row", alignItems: "center", gap: t.espaco.sm, flexShrink: 1 },
-  horarioLinha: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: t.espaco.lg, flexWrap: "wrap", gap: t.espaco.sm },
+  horarioLinha: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    justifyContent: "space-between",
+    marginTop: t.espaco.lg,
+    flexWrap: "wrap",
+    gap: t.espaco.sm,
+  },
   vagas: { marginTop: t.espaco.lg, gap: t.espaco.sm },
   divisor: { height: 1, backgroundColor: "rgba(255,255,255,0.14)", marginVertical: t.espaco.lg },
   situacao: { flexDirection: "row", alignItems: "center", gap: t.espaco.sm },

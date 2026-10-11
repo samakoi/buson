@@ -7,11 +7,33 @@ import { api } from "../../services/api";
 import { PerfilAlunoAdmin, StatusConta } from "../../types";
 import { useCarregamento } from "../../hooks/useCarregamento";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
-import { Botao, Cabecalho, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista, Pilula, Secao, Tela, Texto, iniciaisDe } from "../../components/ui";
+import {
+  Botao,
+  Cabecalho,
+  Campo,
+  Card,
+  Carregando,
+  EstadoVazio,
+  Folha,
+  ItemLista,
+  Pilula,
+  Secao,
+  Tela,
+  Texto,
+  iniciaisDe,
+} from "../../components/ui";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { formatarTelefone } from "../../utils/formatos";
 import { DIAS_SEMANA_COMPLETOS, formatarDiaBR, diaISO, tempoRelativo } from "../../utils/datas";
-import { acaoAuditoria, motivoAusencia, mudancaAuditoria, rotuloValorAuditoria, situacaoDaFalta, situacaoFalta, statusConta } from "../../utils/rotulos";
+import {
+  acaoAuditoria,
+  motivoAusencia,
+  mudancaAuditoria,
+  rotuloValorAuditoria,
+  situacaoDaFalta,
+  situacaoFalta,
+  statusConta,
+} from "../../utils/rotulos";
 import type { PilhaAdmin } from "../../navigation/AdminTabs";
 import { DocumentosDoAluno } from "../../features/documentos/DocumentosDoAluno";
 import { DecisaoFaltaFolha } from "../../features/faltas/DecisaoFaltaFolha";
@@ -49,7 +71,11 @@ export default function PerfilAlunoScreen() {
 
   async function ativar() {
     if (!aluno) return;
-    const ok = await confirmar("Ativar conta", `Ativar a conta de ${aluno.usuario.nome}? O aluno será avisado e poderá usar o transporte.`, { textoConfirmar: "Ativar" });
+    const ok = await confirmar(
+      "Ativar conta",
+      `Ativar a conta de ${aluno.usuario.nome}? O aluno será avisado e poderá usar o transporte.`,
+      { textoConfirmar: "Ativar" }
+    );
     if (ok) alterarStatus("ATIVO");
   }
 
@@ -76,9 +102,17 @@ export default function PerfilAlunoScreen() {
           </View>
         </View>
         <View style={s.acoes}>
-          {aluno.statusConta !== "ATIVO" && <Botao titulo="Ativar conta" icone="checkmark-circle" onPress={ativar} carregando={salvando} style={{ flex: 1 }} />}
+          {aluno.statusConta !== "ATIVO" && (
+            <Botao titulo="Ativar conta" icone="checkmark-circle" onPress={ativar} carregando={salvando} style={{ flex: 1 }} />
+          )}
           {aluno.statusConta !== "INATIVO" && (
-            <Botao titulo="Inativar" icone="pause-circle-outline" variante="secundario" onPress={() => setInativarAberto(true)} style={{ flex: 1 }} />
+            <Botao
+              titulo="Inativar"
+              icone="pause-circle-outline"
+              variante="secundario"
+              onPress={() => setInativarAberto(true)}
+              style={{ flex: 1 }}
+            />
           )}
         </View>
       </Card>
@@ -95,7 +129,11 @@ export default function PerfilAlunoScreen() {
 
       <Secao
         titulo="Dias de uso"
-        acao={aluno.statusConta === "ATIVO" ? { texto: "Editar", onPress: () => navegacao.navigate("DiasAluno", { alunoId, nome: aluno.usuario.nome }) } : undefined}
+        acao={
+          aluno.statusConta === "ATIVO"
+            ? { texto: "Editar", onPress: () => navegacao.navigate("DiasAluno", { alunoId, nome: aluno.usuario.nome }) }
+            : undefined
+        }
       />
       <Card semPadding>
         {aluno.dias.map((d, i) => (
@@ -115,7 +153,9 @@ export default function PerfilAlunoScreen() {
             titulo="Sem dias fixos"
             subtitulo={aluno.statusConta === "ATIVO" ? "Toque para escolher os dias do aluno" : "Só contas ativas têm dias fixos"}
             direita={aluno.statusConta === "ATIVO" ? <Ionicons name="chevron-forward" size={18} color={cores.textoFraco} /> : undefined}
-            onPress={aluno.statusConta === "ATIVO" ? () => navegacao.navigate("DiasAluno", { alunoId, nome: aluno.usuario.nome }) : undefined}
+            onPress={
+              aluno.statusConta === "ATIVO" ? () => navegacao.navigate("DiasAluno", { alunoId, nome: aluno.usuario.nome }) : undefined
+            }
             ultimo
           />
         )}
@@ -144,11 +184,17 @@ export default function PerfilAlunoScreen() {
             icone="calendar-clear-outline"
             tomIcone="neutro"
             titulo={tituloViagem(a.viagem)}
-            subtitulo={a.motivoAusencia === "FALTOU_NA_IDA" ? motivoAusencia[a.motivoAusencia] : `Ausência avisada: ${motivoAusencia[a.motivoAusencia]}`}
+            subtitulo={
+              a.motivoAusencia === "FALTOU_NA_IDA"
+                ? motivoAusencia[a.motivoAusencia]
+                : `Ausência avisada: ${motivoAusencia[a.motivoAusencia]}`
+            }
             ultimo={i === arr.length - 1}
           />
         ))}
-        {aluno.faltas.length === 0 && aluno.ausenciasAvisadas.length === 0 && <EstadoVazio icone="checkmark-done-outline" titulo="Nenhuma falta" />}
+        {aluno.faltas.length === 0 && aluno.ausenciasAvisadas.length === 0 && (
+          <EstadoVazio icone="checkmark-done-outline" titulo="Nenhuma falta" />
+        )}
       </Card>
       <DecisaoFaltaFolha
         key={faltaAberta ?? "nenhuma"}
@@ -169,7 +215,12 @@ export default function PerfilAlunoScreen() {
               icone="time-outline"
               tomIcone="neutro"
               titulo={acaoAuditoria[h.acao] ?? h.acao}
-              subtitulo={[mudanca, d?.viagem ? `Falta na ${d.viagem}` : null, d?.motivo, `${h.usuario ? h.usuario.nome : "Sistema"} • ${tempoRelativo(h.criadoEm)}`]
+              subtitulo={[
+                mudanca,
+                d?.viagem ? `Falta na ${d.viagem}` : null,
+                d?.motivo,
+                `${h.usuario ? h.usuario.nome : "Sistema"} • ${tempoRelativo(h.criadoEm)}`,
+              ]
                 .filter(Boolean)
                 .join("\n")}
               ultimo={i === aluno.historico.length - 1}
@@ -184,7 +235,14 @@ export default function PerfilAlunoScreen() {
           O aluno não poderá usar o transporte enquanto estiver inativo e deixa de ocupar vagas. Ele será avisado.
         </Texto>
         <Campo rotulo="Motivo (opcional)" value={motivo} onChangeText={setMotivo} placeholder="Ex.: trancou o semestre" maxLength={200} />
-        <Botao titulo="Inativar conta" icone="pause-circle" variante="perigo" onPress={() => alterarStatus("INATIVO", motivo.trim())} carregando={salvando} style={{ marginTop: 24 }} />
+        <Botao
+          titulo="Inativar conta"
+          icone="pause-circle"
+          variante="perigo"
+          onPress={() => alterarStatus("INATIVO", motivo.trim())}
+          carregando={salvando}
+          style={{ marginTop: 24 }}
+        />
       </Folha>
     </Tela>
   );
@@ -192,6 +250,13 @@ export default function PerfilAlunoScreen() {
 
 const useEstilos = criarEstilos((t) => ({
   topo: { flexDirection: "row", alignItems: "center", gap: t.espaco.lg },
-  avatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: t.cores.primariaSuave, alignItems: "center", justifyContent: "center" },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: t.cores.primariaSuave,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   acoes: { flexDirection: "row", gap: t.espaco.sm, marginTop: t.espaco.lg },
 }));

@@ -79,7 +79,14 @@ export function ItemLista({
 }
 
 const useEstilos = criarEstilos((t) => ({
-  item: { minHeight: 56, flexDirection: "row", alignItems: "center", gap: t.espaco.md, paddingHorizontal: t.espaco.lg, paddingVertical: t.espaco.md },
+  item: {
+    minHeight: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: t.espaco.md,
+    paddingHorizontal: t.espaco.lg,
+    paddingVertical: t.espaco.md,
+  },
   separador: { borderBottomWidth: 1, borderBottomColor: t.cores.borda },
   icone: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   textos: { flex: 1, gap: t.espaco.xxs },

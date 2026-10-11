@@ -55,7 +55,13 @@ export function GradeEstatisticas({ children, colunas = 2 }: { children: React.R
 
 const useEstilos = criarEstilos((t) => ({
   grade: { flexDirection: "row", flexWrap: "wrap", gap: t.espaco.sm, marginBottom: t.espaco.md },
-  bloco: { backgroundColor: t.cores.superficie, borderRadius: t.raio.md, padding: t.espaco.md, gap: t.espaco.xs, ...elevacao(t.cores, t.escuro) },
+  bloco: {
+    backgroundColor: t.cores.superficie,
+    borderRadius: t.raio.md,
+    padding: t.espaco.md,
+    gap: t.espaco.xs,
+    ...elevacao(t.cores, t.escuro),
+  },
   compacta: { padding: t.espaco.sm + 2 },
   topo: { flexDirection: "row", alignItems: "center", gap: t.espaco.xs },
 }));

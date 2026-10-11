@@ -47,10 +47,31 @@ export function SeletorArquivo({
     return (
       <View>
         <View style={s.linha}>
-          <Botao titulo="Tirar foto" icone="camera-outline" variante="secundario" onPress={() => escolher(() => tirarFoto(prefixo), "Não foi possível abrir a câmera.")} style={s.opcao} desabilitado={desabilitado} />
-          <Botao titulo="Galeria" icone="images-outline" variante="secundario" onPress={() => escolher(() => daGaleria(prefixo), "Não foi possível abrir a galeria.")} style={s.opcao} desabilitado={desabilitado} />
+          <Botao
+            titulo="Tirar foto"
+            icone="camera-outline"
+            variante="secundario"
+            onPress={() => escolher(() => tirarFoto(prefixo), "Não foi possível abrir a câmera.")}
+            style={s.opcao}
+            desabilitado={desabilitado}
+          />
+          <Botao
+            titulo="Galeria"
+            icone="images-outline"
+            variante="secundario"
+            onPress={() => escolher(() => daGaleria(prefixo), "Não foi possível abrir a galeria.")}
+            style={s.opcao}
+            desabilitado={desabilitado}
+          />
         </View>
-        <Botao titulo="Anexar PDF" icone="document-attach-outline" variante="secundario" onPress={() => escolher(dePdf, "Não foi possível abrir os arquivos.")} style={{ marginTop: 8 }} desabilitado={desabilitado} />
+        <Botao
+          titulo="Anexar PDF"
+          icone="document-attach-outline"
+          variante="secundario"
+          onPress={() => escolher(dePdf, "Não foi possível abrir os arquivos.")}
+          style={{ marginTop: 8 }}
+          desabilitado={desabilitado}
+        />
       </View>
     );
   }
@@ -75,7 +96,14 @@ export function SeletorArquivo({
             {arquivo.tamanho ? ` • ${formatarTamanho(arquivo.tamanho)}` : ""}
           </Texto>
         </View>
-        <Botao titulo="Trocar" icone="swap-horizontal" variante="fantasma" onPress={() => onChange(null)} desabilitado={desabilitado} style={{ minHeight: 40, paddingHorizontal: 10 }} />
+        <Botao
+          titulo="Trocar"
+          icone="swap-horizontal"
+          variante="fantasma"
+          onPress={() => onChange(null)}
+          desabilitado={desabilitado}
+          style={{ minHeight: 40, paddingHorizontal: 10 }}
+        />
       </View>
       {imagem && (
         <Texto variante="legenda" cor="textoFraco" style={{ marginTop: 8 }}>

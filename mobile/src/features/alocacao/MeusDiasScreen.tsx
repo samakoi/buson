@@ -97,10 +97,12 @@ function FormularioDias({
   const opcao = data.opcoes.find((o) => o.rota.id === rotaAtiva) ?? null;
   const selecionadosDaRota = new Set([...escolhas].filter(([, r]) => r === rotaAtiva).map(([d]) => d));
   const pontoDaRota = rotaAtiva ? (pontos[rotaAtiva] ?? null) : null;
-  const precisaPonto = !doAdmin && [...new Set(escolhas.values())].some((r) => {
-    const o = data.opcoes.find((x) => x.rota.id === r);
-    return o && o.pontosEmbarque.length > 0 && !pontos[r];
-  });
+  const precisaPonto =
+    !doAdmin &&
+    [...new Set(escolhas.values())].some((r) => {
+      const o = data.opcoes.find((x) => x.rota.id === r);
+      return o && o.pontosEmbarque.length > 0 && !pontos[r];
+    });
 
   const alterado =
     JSON.stringify([...escolhas].sort()) !== JSON.stringify([...salvos.escolhas].sort()) ||
@@ -121,7 +123,11 @@ function FormularioDias({
   async function confirmarDias() {
     if (precisaPonto) return setErro("Escolha o ponto onde você embarca.");
     setErro(null);
-    const dias: DiaEscolhido[] = [...escolhas].map(([diaSemana, rotaId]) => ({ diaSemana, rotaId, pontoEmbarqueId: pontos[rotaId] ?? null }));
+    const dias: DiaEscolhido[] = [...escolhas].map(([diaSemana, rotaId]) => ({
+      diaSemana,
+      rotaId,
+      pontoEmbarqueId: pontos[rotaId] ?? null,
+    }));
     try {
       const salvo = await salvar.mutateAsync(dias);
       avisar(

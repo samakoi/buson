@@ -29,7 +29,11 @@ export async function req(method, path, token, body, headers = {}) {
   const ehForm = body instanceof FormData;
   const r = await fetch(BASE + path, {
     method,
-    headers: { ...(ehForm ? {} : { "Content-Type": "application/json" }), ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers },
+    headers: {
+      ...(ehForm ? {} : { "Content-Type": "application/json" }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
+    },
     body: body ? (ehForm ? body : JSON.stringify(body)) : undefined,
   });
   const tipo = r.headers.get("content-type") ?? "";
@@ -38,7 +42,8 @@ export async function req(method, path, token, body, headers = {}) {
   // Para os testes, "data" é o conteúdo e erros ficam em { erro, code } (formato legado dos scripts).
   let data = corpo;
   if (corpo && typeof corpo === "object" && "data" in corpo) data = corpo.data;
-  else if (corpo && typeof corpo === "object" && corpo.error) data = { erro: corpo.error.message, code: corpo.error.code, detalhes: corpo.error.details, requestId: corpo.error.requestId };
+  else if (corpo && typeof corpo === "object" && corpo.error)
+    data = { erro: corpo.error.message, code: corpo.error.code, detalhes: corpo.error.details, requestId: corpo.error.requestId };
   return { status: r.status, data, corpo, headers: r.headers };
 }
 

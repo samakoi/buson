@@ -166,10 +166,24 @@ export default function DashboardScreen() {
         <Card style={{ marginTop: 12 }}>
           <View style={s.linhaCampos}>
             <View style={{ flex: 1 }}>
-              <Campo rotulo="De" value={deTexto} onChangeText={(v) => setDeTexto(mascararDia(v))} placeholder="DD/MM/AAAA" keyboardType="number-pad" maxLength={10} />
+              <Campo
+                rotulo="De"
+                value={deTexto}
+                onChangeText={(v) => setDeTexto(mascararDia(v))}
+                placeholder="DD/MM/AAAA"
+                keyboardType="number-pad"
+                maxLength={10}
+              />
             </View>
             <View style={{ flex: 1 }}>
-              <Campo rotulo="Até" value={ateTexto} onChangeText={(v) => setAteTexto(mascararDia(v))} placeholder="DD/MM/AAAA" keyboardType="number-pad" maxLength={10} />
+              <Campo
+                rotulo="Até"
+                value={ateTexto}
+                onChangeText={(v) => setAteTexto(mascararDia(v))}
+                placeholder="DD/MM/AAAA"
+                keyboardType="number-pad"
+                maxLength={10}
+              />
             </View>
           </View>
           <Botao titulo="Aplicar período" icone="funnel-outline" onPress={aplicarPersonalizado} style={{ marginTop: 16 }} />
@@ -228,7 +242,14 @@ export default function DashboardScreen() {
 
           {relatorio.porDia.length > 1 && <GraficoPorDia dados={relatorio.porDia} />}
 
-          <Secao titulo={`Quem faltou${faltas.length ? ` (${faltas.length})` : ""}`} acao={faltas.length > FALTAS_VISIVEIS ? { texto: todasFaltas ? "Mostrar menos" : "Ver todas", onPress: () => setTodasFaltas((v) => !v) } : undefined} />
+          <Secao
+            titulo={`Quem faltou${faltas.length ? ` (${faltas.length})` : ""}`}
+            acao={
+              faltas.length > FALTAS_VISIVEIS
+                ? { texto: todasFaltas ? "Mostrar menos" : "Ver todas", onPress: () => setTodasFaltas((v) => !v) }
+                : undefined
+            }
+          />
           <Card semPadding>
             {faltasVisiveis.map((f, i) => (
               <ItemLista
@@ -253,11 +274,24 @@ export default function DashboardScreen() {
 
           {faltasPorUni.length > 0 && (
             <>
-              <Botao titulo="Gerenciar faltas e justificativas" icone="alert-circle-outline" variante="secundario" onPress={() => navegacao.navigate("Faltas")} style={{ marginTop: 12 }} />
+              <Botao
+                titulo="Gerenciar faltas e justificativas"
+                icone="alert-circle-outline"
+                variante="secundario"
+                onPress={() => navegacao.navigate("Faltas")}
+                style={{ marginTop: 12 }}
+              />
               <Secao titulo="Faltas por universidade" />
               <Card semPadding>
                 {faltasPorUni.map(([uni, qtd], i) => (
-                  <ItemLista key={uni} icone="school-outline" tomIcone="neutro" titulo={uni} ultimo={i === faltasPorUni.length - 1} direita={<Pilula texto={`${qtd} falta(s)`} tom="perigo" />} />
+                  <ItemLista
+                    key={uni}
+                    icone="school-outline"
+                    tomIcone="neutro"
+                    titulo={uni}
+                    ultimo={i === faltasPorUni.length - 1}
+                    direita={<Pilula texto={`${qtd} falta(s)`} tom="perigo" />}
+                  />
                 ))}
               </Card>
             </>
@@ -301,21 +335,45 @@ export default function DashboardScreen() {
       <GradeEstatisticas colunas={3}>
         <Estatistica compacta rotulo="Alunos ativos" valor={resumo.alunosAtivos} tom="sucesso" />
         <Estatistica compacta rotulo="Pendentes" valor={resumo.alunosPendentes} tom={resumo.alunosPendentes > 0 ? "alerta" : "neutro"} />
-        <Estatistica compacta rotulo="Documentos" valor={resumo.documentosPendentes} tom={resumo.documentosPendentes > 0 ? "alerta" : "neutro"} />
+        <Estatistica
+          compacta
+          rotulo="Documentos"
+          valor={resumo.documentosPendentes}
+          tom={resumo.documentosPendentes > 0 ? "alerta" : "neutro"}
+        />
         <Estatistica compacta rotulo="Motoristas" valor={resumo.totalMotoristas} />
         <Estatistica compacta rotulo="Universidades" valor={resumo.totalUniversidades} />
         <Estatistica compacta rotulo="Ônibus" valor={resumo.totalOnibus} />
-        <Estatistica compacta rotulo="Em manutenção" valor={resumo.onibusEmManutencao} tom={resumo.onibusEmManutencao > 0 ? "alerta" : "neutro"} />
+        <Estatistica
+          compacta
+          rotulo="Em manutenção"
+          valor={resumo.onibusEmManutencao}
+          tom={resumo.onibusEmManutencao > 0 ? "alerta" : "neutro"}
+        />
         <Estatistica compacta rotulo="Viagens ativas" valor={resumo.viagensAtivas} tom={resumo.viagensAtivas > 0 ? "sucesso" : "neutro"} />
       </GradeEstatisticas>
       {resumo.viagensAtivas > 0 && (
-        <Botao titulo="Ver ônibus no mapa (ao vivo)" icone="map-outline" variante="secundario" onPress={() => navegacao.navigate("AoVivo")} style={{ marginTop: 12 }} />
+        <Botao
+          titulo="Ver ônibus no mapa (ao vivo)"
+          icone="map-outline"
+          variante="secundario"
+          onPress={() => navegacao.navigate("AoVivo")}
+          style={{ marginTop: 12 }}
+        />
       )}
 
       {Object.keys(ocupacao).length > 0 && (
         <Card semPadding>
           {Object.entries(ocupacao).map(([uni, qtd], i, arr) => (
-            <ItemLista key={uni} icone="school-outline" tomIcone="info" titulo={uni} subtitulo="Alunos cadastrados" ultimo={i === arr.length - 1} direita={<Texto variante="subtitulo">{qtd}</Texto>} />
+            <ItemLista
+              key={uni}
+              icone="school-outline"
+              tomIcone="info"
+              titulo={uni}
+              subtitulo="Alunos cadastrados"
+              ultimo={i === arr.length - 1}
+              direita={<Texto variante="subtitulo">{qtd}</Texto>}
+            />
           ))}
         </Card>
       )}
@@ -347,10 +405,28 @@ function GraficoPorDia({ dados }: { dados: Relatorio["porDia"] }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={s.barras}>
           {dados.map((d, i) => (
-            <View key={d.dia} style={s.coluna} accessibilityLabel={`${formatarDiaBR(d.dia)}: ${d.embarcados} embarques, ${d.faltas} faltas`}>
+            <View
+              key={d.dia}
+              style={s.coluna}
+              accessibilityLabel={`${formatarDiaBR(d.dia)}: ${d.embarcados} embarques, ${d.faltas} faltas`}
+            >
               <View style={[s.trilho, { height: ALTURA }]}>
-                <View style={{ height: (d.faltas / maximo) * ALTURA, backgroundColor: cores.perigo, borderTopLeftRadius: 4, borderTopRightRadius: 4 }} />
-                <View style={{ height: (d.embarcados / maximo) * ALTURA, backgroundColor: cores.sucesso, borderTopLeftRadius: d.faltas ? 0 : 4, borderTopRightRadius: d.faltas ? 0 : 4 }} />
+                <View
+                  style={{
+                    height: (d.faltas / maximo) * ALTURA,
+                    backgroundColor: cores.perigo,
+                    borderTopLeftRadius: 4,
+                    borderTopRightRadius: 4,
+                  }}
+                />
+                <View
+                  style={{
+                    height: (d.embarcados / maximo) * ALTURA,
+                    backgroundColor: cores.sucesso,
+                    borderTopLeftRadius: d.faltas ? 0 : 4,
+                    borderTopRightRadius: d.faltas ? 0 : 4,
+                  }}
+                />
               </View>
               <Texto variante="micro" cor="textoFraco" style={s.colunaRotulo} numberOfLines={1}>
                 {i % passoRotulo === 0 ? `${d.dia.slice(8, 10)}/${d.dia.slice(5, 7)}` : ""}

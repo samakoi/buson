@@ -30,7 +30,11 @@ export const statusDocumento: Record<StatusDocumento, { rotulo: string; tom: Tom
   REPROVADO: { rotulo: "Reprovado", tom: "perigo", icone: "close-circle" },
 };
 
-export const tipoDocumento = { DECLARACAO: "Declaração de matrícula", COMPROVANTE: "Comprovante de matrícula", OUTRO: "Outro documento" } as const;
+export const tipoDocumento = {
+  DECLARACAO: "Declaração de matrícula",
+  COMPROVANTE: "Comprovante de matrícula",
+  OUTRO: "Outro documento",
+} as const;
 
 export const situacaoFalta: Record<SituacaoFalta, { rotulo: string; tom: Tom; icone: NomeIcone }> = {
   SEM_JUSTIFICATIVA: { rotulo: "Sem justificativa", tom: "perigo", icone: "alert-circle-outline" },
@@ -107,7 +111,9 @@ export function mudancaAuditoria(h: { valorAnterior: Record<string, unknown> | n
     return `${rotuloValorAuditoria(antes.falta)} → ${rotuloValorAuditoria(depois.falta)}`;
   }
   if ("documento" in depois) {
-    return "documento" in antes ? `${rotuloValorAuditoria(antes.documento)} → ${rotuloValorAuditoria(depois.documento)}` : rotuloValorAuditoria(depois.documento);
+    return "documento" in antes
+      ? `${rotuloValorAuditoria(antes.documento)} → ${rotuloValorAuditoria(depois.documento)}`
+      : rotuloValorAuditoria(depois.documento);
   }
   const dias = (v: unknown) => {
     if (!Array.isArray(v)) return null;

@@ -49,7 +49,17 @@ export default function OndeEstaOnibusScreen() {
       <Card style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <Pilula
-            texto={aoVivo ? (posicao ? (sinalAntigo ? "Sinal fraco" : "Ao vivo") : "Aguardando GPS") : viagem.status === "ENCERRADA" ? "Viagem encerrada" : "Ainda não saiu"}
+            texto={
+              aoVivo
+                ? posicao
+                  ? sinalAntigo
+                    ? "Sinal fraco"
+                    : "Ao vivo"
+                  : "Aguardando GPS"
+                : viagem.status === "ENCERRADA"
+                  ? "Viagem encerrada"
+                  : "Ainda não saiu"
+            }
             tom={aoVivo ? (posicao && !sinalAntigo ? "sucesso" : "alerta") : "neutro"}
             icone={aoVivo ? "radio-outline" : "time-outline"}
           />

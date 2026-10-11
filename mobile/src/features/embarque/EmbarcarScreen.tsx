@@ -96,13 +96,17 @@ export default function EmbarcarScreen() {
   // Situações em que ainda não dá para embarcar
   let bloqueio: { icone: React.ComponentProps<typeof EstadoVazio>["icone"]; titulo: string; texto: string } | null = null;
   if (!viagem) bloqueio = { icone: "calendar-outline", titulo: "Nenhuma viagem hoje", texto: "Não há viagem para a sua instituição hoje." };
-  else if (viagem.status === "ENCERRADA") bloqueio = { icone: "flag-outline", titulo: "Viagem encerrada", texto: "Esta viagem já terminou." };
+  else if (viagem.status === "ENCERRADA")
+    bloqueio = { icone: "flag-outline", titulo: "Viagem encerrada", texto: "Esta viagem já terminou." };
   // Programado (dia fixo) também embarca: a vaga já é dele
   else if (!meu || (meu.status !== "CONFIRMADO" && meu.status !== "PROGRAMADO"))
     bloqueio = {
       icone: "ticket-outline",
       titulo: "Sem vaga confirmada",
-      texto: meu?.status === "ESPERA" ? "Você está na lista de espera desta viagem." : "Confirme sua presença na tela Início para poder embarcar.",
+      texto:
+        meu?.status === "ESPERA"
+          ? "Você está na lista de espera desta viagem."
+          : "Confirme sua presença na tela Início para poder embarcar.",
     };
   else if (viagem.status === "AGUARDANDO")
     bloqueio = {
@@ -148,7 +152,12 @@ export default function EmbarcarScreen() {
     <View style={s.camera}>
       {/* Câmera ligada só com a aba visível (economiza bateria e libera a câmera) */}
       {focada && (
-        <CameraView style={StyleSheet.absoluteFill} facing="back" barcodeScannerSettings={{ barcodeTypes: ["qr"] }} onBarcodeScanned={aoLer} />
+        <CameraView
+          style={StyleSheet.absoluteFill}
+          facing="back"
+          barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
+          onBarcodeScanned={aoLer}
+        />
       )}
 
       <View style={[s.topo, { top: insets.top + 16 }]}>
@@ -170,7 +179,12 @@ export default function EmbarcarScreen() {
           <Ionicons name="close-circle" size={30} color={cores.perigo} />
           <View style={{ flex: 1, gap: 8 }}>
             <Texto variante="corpoForte">{erro}</Texto>
-            <Botao titulo="Tentar de novo" variante="secundario" onPress={() => setErro(null)} style={{ minHeight: 40, alignSelf: "flex-start" }} />
+            <Botao
+              titulo="Tentar de novo"
+              variante="secundario"
+              onPress={() => setErro(null)}
+              style={{ minHeight: 40, alignSelf: "flex-start" }}
+            />
           </View>
         </View>
       )}
@@ -192,7 +206,13 @@ const useEstilos = criarEstilos((t) => ({
     paddingVertical: t.espaco.sm,
   },
   moldura: { width: 240, height: 240, borderRadius: t.raio.xl, borderWidth: 3, borderColor: "rgba(255,255,255,0.92)" },
-  instrucao: { marginTop: t.espaco.lg, backgroundColor: "rgba(0,0,0,0.5)", borderRadius: t.raio.pill, paddingHorizontal: t.espaco.md, paddingVertical: t.espaco.xs + 2 },
+  instrucao: {
+    marginTop: t.espaco.lg,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    borderRadius: t.raio.pill,
+    paddingHorizontal: t.espaco.md,
+    paddingVertical: t.espaco.xs + 2,
+  },
   resultado: {
     position: "absolute",
     left: t.espaco.lg,

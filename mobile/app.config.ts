@@ -17,15 +17,10 @@ const ehStaging = variante === "staging";
 const googleServices = process.env.GOOGLE_SERVICES_JSON || undefined;
 
 // Um APK nunca sai sem o endereço https da API (sem isso o app cairia no IP da rede local)
-if (
-  process.env.EAS_BUILD === "true" &&
-  process.env.EAS_BUILD_PROFILE !== "development"
-) {
+if (process.env.EAS_BUILD === "true" && process.env.EAS_BUILD_PROFILE !== "development") {
   const url = process.env.EXPO_PUBLIC_API_URL ?? "";
   if (!/^https:\/\/[^/]+\/api\/v1$/.test(url)) {
-    throw new Error(
-      `EXPO_PUBLIC_API_URL inválida para o build "${process.env.EAS_BUILD_PROFILE}": "${url}" (use https://.../api/v1)`,
-    );
+    throw new Error(`EXPO_PUBLIC_API_URL inválida para o build "${process.env.EAS_BUILD_PROFILE}": "${url}" (use https://.../api/v1)`);
   }
 }
 

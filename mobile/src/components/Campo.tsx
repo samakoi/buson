@@ -5,51 +5,52 @@ import { Texto } from "./Texto";
 import { BotaoIcone } from "./BotaoIcone";
 
 /** Campo de texto com rótulo. Com `senha`, mostra o botão de exibir/ocultar. */
-export const Campo = React.forwardRef<TextInput, TextInputProps & { rotulo: string; senha?: boolean; ajuda?: string }>(
-  function Campo({ rotulo, senha, ajuda, style, onFocus, onBlur, ...props }, ref) {
-    const { cores } = useTema();
-    const s = useEstilos();
-    const [visivel, setVisivel] = useState(false);
-    const [focado, setFocado] = useState(false);
-    return (
-      <View style={s.bloco}>
-        <Texto variante="pequenoForte" style={s.rotulo}>
-          {rotulo}
-        </Texto>
-        <View>
-          <TextInput
-            ref={ref}
-            placeholderTextColor={cores.textoFraco}
-            secureTextEntry={senha && !visivel}
-            style={[s.input, focado && s.inputFocado, senha && { paddingRight: 48 }, style]}
-            onFocus={(e) => {
-              setFocado(true);
-              onFocus?.(e);
-            }}
-            onBlur={(e) => {
-              setFocado(false);
-              onBlur?.(e);
-            }}
-            {...props}
+export const Campo = React.forwardRef<TextInput, TextInputProps & { rotulo: string; senha?: boolean; ajuda?: string }>(function Campo(
+  { rotulo, senha, ajuda, style, onFocus, onBlur, ...props },
+  ref
+) {
+  const { cores } = useTema();
+  const s = useEstilos();
+  const [visivel, setVisivel] = useState(false);
+  const [focado, setFocado] = useState(false);
+  return (
+    <View style={s.bloco}>
+      <Texto variante="pequenoForte" style={s.rotulo}>
+        {rotulo}
+      </Texto>
+      <View>
+        <TextInput
+          ref={ref}
+          placeholderTextColor={cores.textoFraco}
+          secureTextEntry={senha && !visivel}
+          style={[s.input, focado && s.inputFocado, senha && { paddingRight: 48 }, style]}
+          onFocus={(e) => {
+            setFocado(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocado(false);
+            onBlur?.(e);
+          }}
+          {...props}
+        />
+        {senha && (
+          <BotaoIcone
+            icone={visivel ? "eye-off-outline" : "eye-outline"}
+            rotulo={visivel ? "Ocultar senha" : "Mostrar senha"}
+            onPress={() => setVisivel((v) => !v)}
+            style={s.olho}
           />
-          {senha && (
-            <BotaoIcone
-              icone={visivel ? "eye-off-outline" : "eye-outline"}
-              rotulo={visivel ? "Ocultar senha" : "Mostrar senha"}
-              onPress={() => setVisivel((v) => !v)}
-              style={s.olho}
-            />
-          )}
-        </View>
-        {ajuda ? (
-          <Texto variante="legenda" cor="textoFraco" style={s.ajuda}>
-            {ajuda}
-          </Texto>
-        ) : null}
+        )}
       </View>
-    );
-  }
-);
+      {ajuda ? (
+        <Texto variante="legenda" cor="textoFraco" style={s.ajuda}>
+          {ajuda}
+        </Texto>
+      ) : null}
+    </View>
+  );
+});
 
 const useEstilos = criarEstilos((t) => ({
   bloco: { marginTop: t.espaco.lg },

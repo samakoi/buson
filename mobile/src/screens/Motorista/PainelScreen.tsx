@@ -6,7 +6,20 @@ import { api } from "../../services/api";
 import { Viagem } from "../../types";
 import { useCarregamento } from "../../hooks/useCarregamento";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
-import { Aviso, BarraProgresso, Botao, Cabecalho, Card, Carregando, EstadoVazio, Estatistica, GradeEstatisticas, Pilula, Tela, Texto } from "../../components/ui";
+import {
+  Aviso,
+  BarraProgresso,
+  Botao,
+  Cabecalho,
+  Card,
+  Carregando,
+  EstadoVazio,
+  Estatistica,
+  GradeEstatisticas,
+  Pilula,
+  Tela,
+  Texto,
+} from "../../components/ui";
 import { avisar, mensagemDeErro } from "../../utils/feedback";
 import { statusViagem } from "../../utils/rotulos";
 import type { AbasMotorista } from "../../navigation/MotoristaTabs";
@@ -53,7 +66,6 @@ export default function PainelScreen() {
   });
   const encerrar = () => viagem && confirmarEncerramento(viagem);
 
-
   if (carregando) return <Carregando />;
 
   if (!viagem) {
@@ -61,7 +73,11 @@ export default function PainelScreen() {
       <Tela atualizando={atualizando} onAtualizar={atualizar}>
         <Cabecalho titulo="Painel" />
         <Card>
-          <EstadoVazio icone="calendar-outline" titulo="Nenhuma viagem hoje" texto="Não há viagem atribuída a você hoje. Puxe para baixo para atualizar." />
+          <EstadoVazio
+            icone="calendar-outline"
+            titulo="Nenhuma viagem hoje"
+            texto="Não há viagem atribuída a você hoje. Puxe para baixo para atualizar."
+          />
         </Card>
       </Tela>
     );
@@ -132,7 +148,13 @@ export default function PainelScreen() {
 
       {viagem.status === "EM_ANDAMENTO" && <StatusGps viagemId={viagem.id} />}
       {viagem.status === "EM_ANDAMENTO" && (
-        <Botao titulo="Mostrar QR de embarque" icone="qr-code" variante="secundario" tamanho="grande" onPress={() => navegacao.navigate("Embarque")} />
+        <Botao
+          titulo="Mostrar QR de embarque"
+          icone="qr-code"
+          variante="secundario"
+          tamanho="grande"
+          onPress={() => navegacao.navigate("Embarque")}
+        />
       )}
       {viagem.status === "AGUARDANDO" && !viagem.onibus.emManutencao && (
         <Texto variante="pequeno" cor="textoSuave" alinhar="center">

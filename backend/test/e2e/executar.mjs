@@ -58,7 +58,11 @@ function subirApi(porta, extra, arquivoLog) {
   // A API escreve direto no arquivo: enquanto uma suíte roda (spawnSync), este processo fica
   // parado e não conseguiria repassar a saída — e as suítes leem esse log.
   const saida = arquivoLog ? openSync(arquivoLog, "a") : "ignore";
-  return spawn(process.execPath, ["dist/server.js"], { cwd: RAIZ, env: { ...ambiente, PORT: String(porta), ...extra }, stdio: ["ignore", saida, "inherit"] });
+  return spawn(process.execPath, ["dist/server.js"], {
+    cwd: RAIZ,
+    env: { ...ambiente, PORT: String(porta), ...extra },
+    stdio: ["ignore", saida, "inherit"],
+  });
 }
 
 async function esperarSaude(porta) {

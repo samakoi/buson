@@ -26,7 +26,11 @@ export async function notificarAlunos(db: Db, alunoIds: string[], n: NovaNotific
   const unicos = [...new Set(alunoIds)];
   if (unicos.length === 0) return;
   const alunos = await db.aluno.findMany({ where: { id: { in: unicos } }, select: { usuarioId: true } });
-  await notificarUsuarios(db, alunos.map((a) => a.usuarioId), n);
+  await notificarUsuarios(
+    db,
+    alunos.map((a) => a.usuarioId),
+    n
+  );
 }
 
 export async function notificarAluno(db: Db, alunoId: string, n: NovaNotificacao) {
@@ -35,7 +39,11 @@ export async function notificarAluno(db: Db, alunoId: string, n: NovaNotificacao
 
 export async function notificarAdmins(db: Db, n: NovaNotificacao) {
   const admins = await db.usuario.findMany({ where: { papel: "ADMIN" }, select: { id: true } });
-  await notificarUsuarios(db, admins.map((a) => a.id), n);
+  await notificarUsuarios(
+    db,
+    admins.map((a) => a.id),
+    n
+  );
 }
 
 export async function listar(usuarioId: string) {

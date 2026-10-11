@@ -188,7 +188,12 @@ export async function justificar(usuarioId: string, faltaId: string, texto: stri
         data: {
           justificativa: texto,
           justificadaEm: new Date(),
-          ...(arquivo && { anexoArquivo: arquivo.chave, anexoNome: arquivo.nome, anexoMimeType: arquivo.mimeType, anexoTamanho: arquivo.tamanho }),
+          ...(arquivo && {
+            anexoArquivo: arquivo.chave,
+            anexoNome: arquivo.nome,
+            anexoMimeType: arquivo.mimeType,
+            anexoTamanho: arquivo.tamanho,
+          }),
         },
         select: faltaPublica,
       });
@@ -199,7 +204,10 @@ export async function justificar(usuarioId: string, faltaId: string, texto: stri
         entidadeId: aluno.id,
         detalhes: { faltaId, viagem: descreverViagem(atual.viagem), anexo: arquivo?.nome ?? null },
       });
-      await notificarAdmins(tx, { mensagem: `${aluno.usuario.nome} justificou a falta da ${descreverViagem(atual.viagem)}.`, categoria: "FALTA" });
+      await notificarAdmins(tx, {
+        mensagem: `${aluno.usuario.nome} justificou a falta da ${descreverViagem(atual.viagem)}.`,
+        categoria: "FALTA",
+      });
       return atualizada;
     });
   } catch (err) {
@@ -319,7 +327,10 @@ export async function gerarLinkAnexo(faltaId: string, usuario: JwtPayload) {
 
 export async function abrirAnexo(faltaId: string, expira: number, assinatura: string) {
   verificarLink("falta", faltaId, expira, assinatura);
-  const falta = await prisma.falta.findUnique({ where: { id: faltaId }, select: { anexoArquivo: true, anexoMimeType: true, anexoNome: true } });
+  const falta = await prisma.falta.findUnique({
+    where: { id: faltaId },
+    select: { anexoArquivo: true, anexoMimeType: true, anexoNome: true },
+  });
   if (!falta?.anexoArquivo) throw new AppError("ANEXO_NAO_ENCONTRADO");
   return { ...(await armazenamento.abrir(falta.anexoArquivo)), mimeType: falta.anexoMimeType!, nomeOriginal: falta.anexoNome! };
 }

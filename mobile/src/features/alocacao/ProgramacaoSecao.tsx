@@ -101,7 +101,15 @@ export function ProgramacaoSecao({
     setErro(null);
     setForm(
       p
-        ? { id: p.id, rotaId: p.rotaId, motoristaId: p.motoristaId, onibusId: p.onibusId, horarioIda: p.horarioIda, horarioVolta: p.horarioVolta ?? "", diasSemana: p.diasSemana }
+        ? {
+            id: p.id,
+            rotaId: p.rotaId,
+            motoristaId: p.motoristaId,
+            onibusId: p.onibusId,
+            horarioIda: p.horarioIda,
+            horarioVolta: p.horarioVolta ?? "",
+            diasSemana: p.diasSemana,
+          }
         : novo
     );
   }
@@ -174,7 +182,10 @@ export function ProgramacaoSecao({
     try {
       const { criadas } = await gerar.mutateAsync();
       aoMudarViagens();
-      avisar("Viagens em dia", criadas > 0 ? `${criadas} viagem(ns) criada(s) para os próximos dias.` : "Todas as viagens dos próximos 7 dias já estavam criadas.");
+      avisar(
+        "Viagens em dia",
+        criadas > 0 ? `${criadas} viagem(ns) criada(s) para os próximos dias.` : "Todas as viagens dos próximos 7 dias já estavam criadas."
+      );
     } catch (err) {
       avisar("Não foi possível gerar", mensagemDeErro(err, "Tente novamente."));
     }
@@ -194,7 +205,14 @@ export function ProgramacaoSecao({
       </View>
       <View style={s.acoes}>
         <Botao titulo="Nova" icone="add" onPress={() => abrir()} style={{ flex: 1 }} />
-        <Botao titulo="Gerar agora" icone="refresh" variante="secundario" onPress={gerarAgora} carregando={gerar.isPending} style={{ flex: 1 }} />
+        <Botao
+          titulo="Gerar agora"
+          icone="refresh"
+          variante="secundario"
+          onPress={gerarAgora}
+          carregando={gerar.isPending}
+          style={{ flex: 1 }}
+        />
       </View>
 
       {programacoes.length === 0 && (
@@ -229,7 +247,13 @@ export function ProgramacaoSecao({
           <OcupacaoDias dias={p.ocupacao} />
 
           <View style={[s.acoes, { marginTop: 16, marginBottom: 0 }]}>
-            <Botao titulo="Editar" icone="create-outline" variante="secundario" onPress={() => abrir(p)} style={{ flex: 1, minHeight: 44 }} />
+            <Botao
+              titulo="Editar"
+              icone="create-outline"
+              variante="secundario"
+              onPress={() => abrir(p)}
+              style={{ flex: 1, minHeight: 44 }}
+            />
             <Botao
               titulo={p.ativa ? "Suspender" : "Reativar"}
               icone={p.ativa ? "pause-circle-outline" : "play-circle-outline"}
@@ -238,7 +262,13 @@ export function ProgramacaoSecao({
               style={{ flex: 1, minHeight: 44 }}
             />
           </View>
-          <Botao titulo="Excluir programação" icone="trash-outline" variante="perigoFantasma" onPress={() => remover(p)} style={{ minHeight: 40 }} />
+          <Botao
+            titulo="Excluir programação"
+            icone="trash-outline"
+            variante="perigoFantasma"
+            onPress={() => remover(p)}
+            style={{ minHeight: 40 }}
+          />
         </Card>
       ))}
 
@@ -300,7 +330,11 @@ export function ProgramacaoSecao({
 
             <Rotulo>Ônibus</Rotulo>
             <Chips
-              opcoes={onibus.map((o) => ({ valor: o.id, rotulo: o.placa, detalhe: o.emManutencao ? "em manutenção" : `${o.capacidade} lugares` }))}
+              opcoes={onibus.map((o) => ({
+                valor: o.id,
+                rotulo: o.placa,
+                detalhe: o.emManutencao ? "em manutenção" : `${o.capacidade} lugares`,
+              }))}
               valor={form.onibusId}
               onChange={(onibusId) => setForm({ ...form, onibusId })}
               vazio="Cadastre um ônibus na aba Cadastros."
@@ -313,11 +347,18 @@ export function ProgramacaoSecao({
 
             {form.id && (
               <Aviso tipo="info" titulo="Vale também para as próximas viagens" style={{ marginTop: 16, marginBottom: 0 }}>
-                As viagens que ainda não começaram recebem os novos horários, ônibus e motorista. Dias removidos têm as viagens canceladas e os alunos avisados.
+                As viagens que ainda não começaram recebem os novos horários, ônibus e motorista. Dias removidos têm as viagens canceladas e
+                os alunos avisados.
               </Aviso>
             )}
 
-            <Botao titulo={form.id ? "Salvar programação" : "Criar programação"} icone="checkmark" onPress={confirmarFormulario} carregando={salvar.isPending} style={{ marginTop: 24 }} />
+            <Botao
+              titulo={form.id ? "Salvar programação" : "Criar programação"}
+              icone="checkmark"
+              onPress={confirmarFormulario}
+              carregando={salvar.isPending}
+              style={{ marginTop: 24 }}
+            />
           </>
         )}
       </Folha>

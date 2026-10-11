@@ -26,9 +26,13 @@ export default function PassageirosScreen() {
   // Emergência: aluno sem celular, câmera com defeito etc. (fica auditado no servidor)
   async function confirmarManualmente(item: Checkin) {
     if (!viagem) return;
-    const ok = await confirmar("Confirmar embarque manual", `${item.aluno.usuario.nome} não conseguiu escanear o QR? Confirmar o embarque manualmente (fica registrado)?`, {
-      textoConfirmar: "Confirmar",
-    });
+    const ok = await confirmar(
+      "Confirmar embarque manual",
+      `${item.aluno.usuario.nome} não conseguiu escanear o QR? Confirmar o embarque manualmente (fica registrado)?`,
+      {
+        textoConfirmar: "Confirmar",
+      }
+    );
     if (!ok) return;
     try {
       await api.post(`/viagens/${viagem.id}/embarque/manual`, { alunoId: item.alunoId });
@@ -49,10 +53,7 @@ export default function PassageirosScreen() {
 
   return (
     <Tela atualizando={atualizando} onAtualizar={atualizar}>
-      <Cabecalho
-        titulo="Passageiros"
-        subtitulo={viagem ? `${embarcaram.length} de ${confirmados.length} embarcaram` : undefined}
-      />
+      <Cabecalho titulo="Passageiros" subtitulo={viagem ? `${embarcaram.length} de ${confirmados.length} embarcaram` : undefined} />
 
       {!viagem ? (
         <Card>
@@ -62,13 +63,19 @@ export default function PassageirosScreen() {
         <>
           {!podeEmbarcar && (
             <Aviso tipo="info" titulo={viagem.status === "AGUARDANDO" ? "Viagem ainda não iniciada" : "Viagem encerrada"}>
-              {viagem.status === "AGUARDANDO" ? "Os embarques podem ser confirmados depois que você iniciar a viagem." : "Não é mais possível confirmar embarques."}
+              {viagem.status === "AGUARDANDO"
+                ? "Os embarques podem ser confirmados depois que você iniciar a viagem."
+                : "Não é mais possível confirmar embarques."}
             </Aviso>
           )}
 
           {confirmados.length === 0 && (
             <Card>
-              <EstadoVazio icone="people-outline" titulo="Nenhum passageiro ainda" texto="Os alunos aparecem aqui quando têm vaga na viagem (dia fixo ou check-in)." />
+              <EstadoVazio
+                icone="people-outline"
+                titulo="Nenhum passageiro ainda"
+                texto="Os alunos aparecem aqui quando têm vaga na viagem (dia fixo ou check-in)."
+              />
             </Card>
           )}
 
@@ -81,12 +88,24 @@ export default function PassageirosScreen() {
                     key={p.id}
                     iniciais={iniciaisDe(p.aluno.usuario.nome)}
                     titulo={p.aluno.usuario.nome}
-                    subtitulo={[p.aluno.universidade.nome, viagem.sentido === "IDA" && p.pontoEmbarque ? `embarca em ${p.pontoEmbarque.nome}` : null].filter(Boolean).join(" • ")}
-                    abaixo={p.status === "PROGRAMADO" ? <Pilula texto="Não confirmou" tom="neutro" icone="help-circle-outline" /> : undefined}
+                    subtitulo={[
+                      p.aluno.universidade.nome,
+                      viagem.sentido === "IDA" && p.pontoEmbarque ? `embarca em ${p.pontoEmbarque.nome}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" • ")}
+                    abaixo={
+                      p.status === "PROGRAMADO" ? <Pilula texto="Não confirmou" tom="neutro" icone="help-circle-outline" /> : undefined
+                    }
                     ultimo={i === faltam.length - 1}
                     direita={
                       podeEmbarcar ? (
-                        <Botao titulo="Confirmar" variante="secundario" onPress={() => confirmarManualmente(p)} style={{ minHeight: 44, paddingHorizontal: 14 }} />
+                        <Botao
+                          titulo="Confirmar"
+                          variante="secundario"
+                          onPress={() => confirmarManualmente(p)}
+                          style={{ minHeight: 44, paddingHorizontal: 14 }}
+                        />
                       ) : undefined
                     }
                   />

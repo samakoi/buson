@@ -30,7 +30,11 @@ export default function RotaScreen() {
     <Tela atualizando={atualizando} onAtualizar={atualizar}>
       <Cabecalho
         titulo="Rota do dia"
-        subtitulo={viagem ? `${viagem.sentido === "VOLTA" ? "Volta" : "Ida"} • ${viagem.rota.nome} • ${ativas} de ${universidades.length} instituições ativas` : undefined}
+        subtitulo={
+          viagem
+            ? `${viagem.sentido === "VOLTA" ? "Volta" : "Ida"} • ${viagem.rota.nome} • ${ativas} de ${universidades.length} instituições ativas`
+            : undefined
+        }
       />
 
       {!viagem || universidades.length === 0 ? (

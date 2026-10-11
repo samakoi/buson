@@ -44,13 +44,13 @@ motoristaRouter.post("/", async (req, res, next) => {
 
     const motorista = await prisma.$transaction(async (tx) => {
       const criado = await tx.motorista.create({
-      data: {
-        onibus: dados.onibusId ? { connect: { id: dados.onibusId } } : undefined,
-        usuario: {
-          create: { nome: dados.nome, email: dados.email, senhaHash: await hashPassword(dados.senha), papel: "MOTORISTA" },
+        data: {
+          onibus: dados.onibusId ? { connect: { id: dados.onibusId } } : undefined,
+          usuario: {
+            create: { nome: dados.nome, email: dados.email, senhaHash: await hashPassword(dados.senha), papel: "MOTORISTA" },
+          },
         },
-      },
-      select: motoristaSelect,
+        select: motoristaSelect,
       });
       await registrarAuditoria(tx, {
         usuarioId: req.usuario!.sub,

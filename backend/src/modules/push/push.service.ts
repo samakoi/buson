@@ -47,7 +47,10 @@ export async function processarFila() {
   processando = true;
   try {
     const vencimento = new Date(Date.now() - VALIDADE_HORAS * 3600_000);
-    await prisma.notificacao.updateMany({ where: { pushStatus: "PENDENTE", criadoEm: { lt: vencimento } }, data: { pushStatus: "IGNORADO" } });
+    await prisma.notificacao.updateMany({
+      where: { pushStatus: "PENDENTE", criadoEm: { lt: vencimento } },
+      data: { pushStatus: "IGNORADO" },
+    });
 
     const candidatos = await prisma.notificacao.findMany({
       where: { pushStatus: "PENDENTE" },
@@ -66,7 +69,9 @@ export async function processarFila() {
         mensagem: true,
         categoria: true,
         pushTentativas: true,
-        usuario: { select: { papel: true, pushDesligado: true, dispositivosPush: { where: { ativo: true }, select: { id: true, token: true } } } },
+        usuario: {
+          select: { papel: true, pushDesligado: true, dispositivosPush: { where: { ativo: true }, select: { id: true, token: true } } },
+        },
       },
     });
 
@@ -82,13 +87,19 @@ export async function processarFila() {
             avisoId: a.id,
             dispositivoId: d.id,
             // O app usa categoria + papel para abrir a tela certa ao tocar no aviso
-            mensagem: { para: d.token, titulo: TITULOS[a.categoria], corpo: a.mensagem, dados: { notificacaoId: a.id, categoria: a.categoria, papel: a.usuario.papel } },
+            mensagem: {
+              para: d.token,
+              titulo: TITULOS[a.categoria],
+              corpo: a.mensagem,
+              dados: { notificacaoId: a.id, categoria: a.categoria, papel: a.usuario.papel },
+            },
           });
         }
       }
     }
     if (desligados.length) await prisma.notificacao.updateMany({ where: { id: { in: desligados } }, data: { pushStatus: "DESLIGADO" } });
-    if (semDispositivo.length) await prisma.notificacao.updateMany({ where: { id: { in: semDispositivo } }, data: { pushStatus: "SEM_DISPOSITIVO" } });
+    if (semDispositivo.length)
+      await prisma.notificacao.updateMany({ where: { id: { in: semDispositivo } }, data: { pushStatus: "SEM_DISPOSITIVO" } });
     if (envio.length === 0) return 0;
 
     const tickets = await carteiro.enviar(envio.map((e) => e.mensagem));
@@ -104,7 +115,13 @@ export async function processarFila() {
         resultado.set(e.avisoId, r);
         return t.ok
           ? { notificacaoId: e.avisoId, dispositivoId: e.dispositivoId, status: "ENVIADO" as const, ticketId: t.ticketId }
-          : { notificacaoId: e.avisoId, dispositivoId: e.dispositivoId, status: "ERRO" as const, erro: t.erro.slice(0, 200), verificadoEm: new Date() };
+          : {
+              notificacaoId: e.avisoId,
+              dispositivoId: e.dispositivoId,
+              status: "ERRO" as const,
+              erro: t.erro.slice(0, 200),
+              verificadoEm: new Date(),
+            };
       }),
     });
     if (invalidos.size) await desativar({ id: { in: [...invalidos] } }, "DeviceNotRegistered");
@@ -137,7 +154,12 @@ export async function processarFila() {
 export async function conferirRecibos() {
   if (!carteiro) return 0;
   const pendentes = await prisma.envioPush.findMany({
-    where: { status: "ENVIADO", verificadoEm: null, ticketId: { not: null }, criadoEm: { lte: new Date(Date.now() - env.push.recibosEsperaMs) } },
+    where: {
+      status: "ENVIADO",
+      verificadoEm: null,
+      ticketId: { not: null },
+      criadoEm: { lte: new Date(Date.now() - env.push.recibosEsperaMs) },
+    },
     select: { id: true, ticketId: true, dispositivoId: true },
     take: 1000,
   });
@@ -150,7 +172,9 @@ export async function conferirRecibos() {
     conferidos++;
     await prisma.envioPush.update({
       where: { id: p.id },
-      data: r.ok ? { status: "ENTREGUE", verificadoEm: new Date() } : { status: "ERRO", erro: r.erro.slice(0, 200), verificadoEm: new Date() },
+      data: r.ok
+        ? { status: "ENTREGUE", verificadoEm: new Date() }
+        : { status: "ERRO", erro: r.erro.slice(0, 200), verificadoEm: new Date() },
     });
     if (!r.ok && r.tokenInvalido) await desativar({ id: p.dispositivoId }, "DeviceNotRegistered");
   }
@@ -198,7 +222,14 @@ export async function registrarDispositivo(usuarioId: string, dados: { token: st
     // Token já conhecido (ex.: outro usuário usou este celular antes): passa para quem entrou agora
     return tx.dispositivoPush.upsert({
       where: { token: dados.token },
-      update: { usuarioId, plataforma: dados.plataforma, deviceId: dados.deviceId ?? null, ativo: true, motivoDesativacao: null, ultimoUsoEm: new Date() },
+      update: {
+        usuarioId,
+        plataforma: dados.plataforma,
+        deviceId: dados.deviceId ?? null,
+        ativo: true,
+        motivoDesativacao: null,
+        ultimoUsoEm: new Date(),
+      },
       create: { usuarioId, token: dados.token, plataforma: dados.plataforma, deviceId: dados.deviceId ?? null },
       select: { id: true, plataforma: true, ativo: true, criadoEm: true },
     });

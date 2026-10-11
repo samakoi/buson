@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import * as authService from "./auth.service";
 
-
 const email = z.string().trim().toLowerCase().email("Informe um e-mail válido.");
 
 const cadastroSchema = z.object({

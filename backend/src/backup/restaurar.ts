@@ -30,13 +30,21 @@ function mysql(url: URL, args: string[], entrada?: NodeJS.ReadableStream) {
   return new Promise<void>((resolve, reject) => {
     const filho = spawn(
       "mysql",
-      [`--host=${url.hostname}`, `--port=${url.port || "3306"}`, `--user=${decodeURIComponent(url.username)}`, "--default-character-set=utf8mb4", ...args],
+      [
+        `--host=${url.hostname}`,
+        `--port=${url.port || "3306"}`,
+        `--user=${decodeURIComponent(url.username)}`,
+        "--default-character-set=utf8mb4",
+        ...args,
+      ],
       { env: { ...process.env, MYSQL_PWD: decodeURIComponent(url.password) }, stdio: [entrada ? "pipe" : "ignore", "inherit", "pipe"] }
     );
     let erro = "";
     filho.stderr!.on("data", (d) => (erro += d.toString()));
     filho.on("error", reject);
-    filho.on("close", (codigo) => (codigo === 0 ? resolve() : reject(new Error(`mysql saiu com código ${codigo}: ${erro.trim().slice(0, 500)}`))));
+    filho.on("close", (codigo) =>
+      codigo === 0 ? resolve() : reject(new Error(`mysql saiu com código ${codigo}: ${erro.trim().slice(0, 500)}`))
+    );
     if (entrada) pipeline(entrada, filho.stdin!).catch(reject);
   });
 }
@@ -45,7 +53,10 @@ async function restaurarBanco(databaseUrl: string, arquivo: string) {
   const url = new URL(databaseUrl);
   const banco = url.pathname.slice(1);
   if (!/^\w+$/.test(banco)) throw new Error("Nome de banco inválido na DATABASE_URL");
-  await mysql(url, ["-e", `DROP DATABASE IF EXISTS \`${banco}\`; CREATE DATABASE \`${banco}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`]);
+  await mysql(url, [
+    "-e",
+    `DROP DATABASE IF EXISTS \`${banco}\`; CREATE DATABASE \`${banco}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`,
+  ]);
   await mysql(url, [banco], createReadStream(arquivo).pipe(createGunzip()));
 }
 

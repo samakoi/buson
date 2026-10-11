@@ -52,7 +52,11 @@ export const ERROS = {
   VIAGEM_ENCERRADA: { status: 409, mensagem: "Esta viagem já foi encerrada." },
 
   // ---- Embarque (QR temporário do motorista)
-  QR_INVALIDO: { status: 400, mensagem: "Embarque não autorizado: este QR Code não é desta viagem ou já foi substituído. Escaneie o QR que está na tela do motorista." },
+  QR_INVALIDO: {
+    status: 400,
+    mensagem:
+      "Embarque não autorizado: este QR Code não é desta viagem ou já foi substituído. Escaneie o QR que está na tela do motorista.",
+  },
   QR_EXPIRADO: { status: 400, mensagem: "Embarque não autorizado: o QR Code expirou. Peça ao motorista para atualizar o QR." },
   ROTA_INCOMPATIVEL: { status: 403, mensagem: "Embarque não autorizado: sua instituição não faz parte da rota desta viagem." },
   SEM_VAGA_CONFIRMADA: { status: 400, mensagem: "Embarque não autorizado: não há vaga confirmada nesta viagem." },
@@ -76,7 +80,10 @@ export const ERROS = {
   ARQUIVO_OBRIGATORIO: { status: 400, mensagem: "Envie o arquivo do documento." },
   TIPO_ARQUIVO_INVALIDO: { status: 400, mensagem: "Formato não aceito. Envie um PDF ou uma foto (JPG ou PNG)." },
   ARQUIVO_MUITO_GRANDE: { status: 413, mensagem: "O arquivo passa de 10 MB. Envie um arquivo menor." },
-  DOCUMENTO_AGUARDANDO_ANALISE: { status: 409, mensagem: "Você já tem um documento aguardando análise. Espere o resultado antes de enviar outro." },
+  DOCUMENTO_AGUARDANDO_ANALISE: {
+    status: 409,
+    mensagem: "Você já tem um documento aguardando análise. Espere o resultado antes de enviar outro.",
+  },
   DOCUMENTO_JA_ANALISADO: { status: 409, mensagem: "Este documento já foi analisado." },
   LINK_INVALIDO: { status: 403, mensagem: "Link do documento inválido ou expirado. Abra o documento de novo pelo app." },
 
@@ -84,7 +91,10 @@ export const ERROS = {
   FALTA_NAO_ENCONTRADA: { status: 404, mensagem: "Falta não encontrada." },
   FALTA_JA_DECIDIDA: { status: 409, mensagem: "Esta falta já foi analisada pela administração." },
   JUSTIFICATIVA_JA_ENVIADA: { status: 409, mensagem: "Você já enviou a justificativa desta falta. Aguarde a análise." },
-  PRAZO_JUSTIFICATIVA_ENCERRADO: { status: 409, mensagem: "O prazo para justificar esta falta terminou. Procure a administração do transporte." },
+  PRAZO_JUSTIFICATIVA_ENCERRADO: {
+    status: 409,
+    mensagem: "O prazo para justificar esta falta terminou. Procure a administração do transporte.",
+  },
   ANEXO_NAO_ENCONTRADO: { status: 404, mensagem: "Esta falta não tem anexo." },
 
   // ---- GPS

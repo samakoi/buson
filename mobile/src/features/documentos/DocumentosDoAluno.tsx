@@ -9,7 +9,12 @@ import { formatarTamanho } from "../../utils/formatos";
 import { statusDocumento, tipoDocumento } from "../../utils/rotulos";
 import { abrirDocumento, useAnalisarDocumento } from "./api";
 
-const MOTIVOS = ["Documento ilegível", "Sem carimbo ou assinatura da instituição", "Documento de outro semestre", "Nome não confere com o cadastro"];
+const MOTIVOS = [
+  "Documento ilegível",
+  "Sem carimbo ou assinatura da instituição",
+  "Documento de outro semestre",
+  "Nome não confere com o cadastro",
+];
 
 const dataBR = (iso: string) => formatarDiaBR(diaISO(new Date(iso)));
 
@@ -47,7 +52,9 @@ export function DocumentosDoAluno({
     const ativa = statusConta === "PENDENTE";
     const ok = await confirmar(
       "Aprovar documento",
-      ativa ? `Aprovar o documento e ativar a conta de ${nome}? O aluno será avisado e já poderá escolher os dias.` : `Aprovar o documento de ${nome}?`,
+      ativa
+        ? `Aprovar o documento e ativar a conta de ${nome}? O aluno será avisado e já poderá escolher os dias.`
+        : `Aprovar o documento de ${nome}?`,
       { textoConfirmar: ativa ? "Aprovar e ativar" : "Aprovar" }
     );
     if (!ok) return;
@@ -81,15 +88,38 @@ export function DocumentosDoAluno({
             <Texto variante="corpoForte" style={{ flex: 1 }}>
               {tipoDocumento[atual.tipo]}
             </Texto>
-            <Pilula texto={statusDocumento[atual.status].rotulo} tom={statusDocumento[atual.status].tom} icone={statusDocumento[atual.status].icone} />
+            <Pilula
+              texto={statusDocumento[atual.status].rotulo}
+              tom={statusDocumento[atual.status].tom}
+              icone={statusDocumento[atual.status].icone}
+            />
           </View>
           <Texto variante="pequeno" cor="textoSuave">
             {atual.nomeOriginal} • {formatarTamanho(atual.tamanho)} • enviado em {dataBR(atual.criadoEm)}
           </Texto>
-          <Botao titulo="Ver documento" icone="eye-outline" variante="secundario" onPress={() => ver(atual)} style={{ marginTop: espaco.md }} />
+          <Botao
+            titulo="Ver documento"
+            icone="eye-outline"
+            variante="secundario"
+            onPress={() => ver(atual)}
+            style={{ marginTop: espaco.md }}
+          />
           <View style={{ flexDirection: "row", gap: espaco.sm, marginTop: espaco.sm }}>
-            <Botao titulo="Reprovar" icone="close-circle-outline" variante="perigoFantasma" onPress={() => setReprovando(atual)} style={{ flex: 1 }} desabilitado={analisar.isPending} />
-            <Botao titulo="Aprovar" icone="checkmark-circle" onPress={() => aprovar(atual)} carregando={analisar.isPending} style={{ flex: 1 }} />
+            <Botao
+              titulo="Reprovar"
+              icone="close-circle-outline"
+              variante="perigoFantasma"
+              onPress={() => setReprovando(atual)}
+              style={{ flex: 1 }}
+              desabilitado={analisar.isPending}
+            />
+            <Botao
+              titulo="Aprovar"
+              icone="checkmark-circle"
+              onPress={() => aprovar(atual)}
+              carregando={analisar.isPending}
+              style={{ flex: 1 }}
+            />
           </View>
         </Card>
       )}
@@ -120,7 +150,11 @@ export function DocumentosDoAluno({
 
       {documentos.length === 0 && (
         <Card>
-          <EstadoVazio icone="document-text-outline" titulo="Nenhum documento enviado" texto="O aluno envia o comprovante pelo app, em Perfil › Documentação." />
+          <EstadoVazio
+            icone="document-text-outline"
+            titulo="Nenhum documento enviado"
+            texto="O aluno envia o comprovante pelo app, em Perfil › Documentação."
+          />
         </Card>
       )}
 
@@ -130,10 +164,29 @@ export function DocumentosDoAluno({
           {nome} recebe o motivo e pode enviar um novo documento. A conta continua pendente.
         </Texto>
         <View style={{ marginTop: espaco.md }}>
-          <Chips opcoes={MOTIVOS.map((m) => ({ valor: m, rotulo: m }))} valor={MOTIVOS.includes(motivo) ? motivo : null} onChange={setMotivo} quebrarLinha />
+          <Chips
+            opcoes={MOTIVOS.map((m) => ({ valor: m, rotulo: m }))}
+            valor={MOTIVOS.includes(motivo) ? motivo : null}
+            onChange={setMotivo}
+            quebrarLinha
+          />
         </View>
-        <Campo rotulo="Motivo" value={motivo} onChangeText={setMotivo} placeholder="Ex.: a declaração está sem o carimbo da faculdade" maxLength={300} multiline />
-        <Botao titulo="Reprovar documento" icone="close-circle" variante="perigo" onPress={confirmarReprovacao} carregando={analisar.isPending} style={{ marginTop: 24 }} />
+        <Campo
+          rotulo="Motivo"
+          value={motivo}
+          onChangeText={setMotivo}
+          placeholder="Ex.: a declaração está sem o carimbo da faculdade"
+          maxLength={300}
+          multiline
+        />
+        <Botao
+          titulo="Reprovar documento"
+          icone="close-circle"
+          variante="perigo"
+          onPress={confirmarReprovacao}
+          carregando={analisar.isPending}
+          style={{ marginTop: 24 }}
+        />
       </Folha>
     </>
   );

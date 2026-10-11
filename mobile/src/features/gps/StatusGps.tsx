@@ -65,13 +65,14 @@ export function StatusGps({ viagemId }: { viagemId: string }) {
             icone: "navigate-circle-outline",
             cor: cores.alerta,
             titulo: "Localização com a tela aberta",
-            texto: "No navegador, mantenha esta tela aberta durante a viagem (ela fica acesa sozinha). Se trocar de aba ou bloquear o celular, o ônibus para de se mover no mapa.",
+            texto:
+              "No navegador, mantenha esta tela aberta durante a viagem (ela fica acesa sozinha). Se trocar de aba ou bloquear o celular, o ônibus para de se mover no mapa.",
           }
         : {
             icone: "navigate-circle-outline",
             cor: cores.alerta,
             titulo: "Localização só com o app aberto",
-            texto: "Se bloquear o celular, a posição para de atualizar. No app instalado (APK), permita a localização \"o tempo todo\".",
+            texto: 'Se bloquear o celular, a posição para de atualizar. No app instalado (APK), permita a localização "o tempo todo".',
           },
     "sem-permissao": {
       icone: "location-outline",
@@ -104,8 +105,16 @@ export function StatusGps({ viagemId }: { viagemId: string }) {
       </View>
       {modo === "sem-permissao" && (
         <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
-          {Platform.OS !== "web" && <Botao titulo="Abrir configurações" variante="fantasma" onPress={() => Linking.openSettings()} style={{ flex: 1 }} />}
-          <Botao titulo="Tentar de novo" icone="refresh" variante="secundario" onPress={() => iniciarRastreamento(viagemId)} style={{ flex: 1 }} />
+          {Platform.OS !== "web" && (
+            <Botao titulo="Abrir configurações" variante="fantasma" onPress={() => Linking.openSettings()} style={{ flex: 1 }} />
+          )}
+          <Botao
+            titulo="Tentar de novo"
+            icone="refresh"
+            variante="secundario"
+            onPress={() => iniciarRastreamento(viagemId)}
+            style={{ flex: 1 }}
+          />
         </View>
       )}
     </Card>

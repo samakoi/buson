@@ -199,7 +199,8 @@ export interface OcupacaoSemanal {
   rotas: { rota: string; dias: OcupacaoDia[] }[];
 }
 
-export type CategoriaNotificacao = "GERAL" | "CADASTRO" | "DOCUMENTO" | "LEMBRETE" | "DIAS" | "FALTA" | "TRANSPORTE" | "LIBERACAO" | "ROTA" | "VIAGEM";
+export type CategoriaNotificacao =
+  "GERAL" | "CADASTRO" | "DOCUMENTO" | "LEMBRETE" | "DIAS" | "FALTA" | "TRANSPORTE" | "LIBERACAO" | "ROTA" | "VIAGEM";
 
 export interface Notificacao {
   id: string;
@@ -254,7 +255,8 @@ export interface FilaDocumentos {
 export type StatusFalta = "REGISTRADA" | "JUSTIFICADA" | "INDEFERIDA";
 /** Situação para as telas: REGISTRADA se divide em "sem justificativa" e "aguardando decisão" */
 export type SituacaoFalta = "SEM_JUSTIFICATIVA" | "AGUARDANDO_DECISAO" | "JUSTIFICADA" | "INDEFERIDA";
-export type MotivoAusencia = "DOENCA" | "COMPROMISSO_ACADEMICO" | "COMPROMISSO_PESSOAL" | "TRABALHO" | "TRANSPORTE_PROPRIO" | "OUTRO" | "FALTOU_NA_IDA";
+export type MotivoAusencia =
+  "DOENCA" | "COMPROMISSO_ACADEMICO" | "COMPROMISSO_PESSOAL" | "TRABALHO" | "TRANSPORTE_PROPRIO" | "OUTRO" | "FALTOU_NA_IDA";
 
 export interface ViagemResumida {
   id: string;
@@ -345,7 +347,17 @@ export interface Relatorio {
   totais: { viagens: number; confirmados: number; embarcados: number; faltas: number; pendentes: number; taxaPresenca: number | null };
   porDia: { dia: string; viagens: number; confirmados: number; embarcados: number; faltas: number }[];
   faltasPorUniversidade: Record<string, number>;
-  viagens: { id: string; dia: string; horario: string; rota: string; placa: string; status: StatusViagem; confirmados: number; embarcados: number; faltas: number }[];
+  viagens: {
+    id: string;
+    dia: string;
+    horario: string;
+    rota: string;
+    placa: string;
+    status: StatusViagem;
+    confirmados: number;
+    embarcados: number;
+    faltas: number;
+  }[];
   faltas: {
     faltaId: string;
     alunoId: string;

@@ -107,8 +107,14 @@ export async function posicaoAtual(viagemId: string, usuario: JwtPayload) {
       rota: {
         select: {
           nome: true,
-          pontos: { orderBy: { ordem: "asc" }, select: { universidade: { select: { id: true, nome: true, latitude: true, longitude: true } } } },
-          pontosEmbarque: { orderBy: { ordem: "asc" }, select: { pontoEmbarque: { select: { id: true, nome: true, latitude: true, longitude: true } } } },
+          pontos: {
+            orderBy: { ordem: "asc" },
+            select: { universidade: { select: { id: true, nome: true, latitude: true, longitude: true } } },
+          },
+          pontosEmbarque: {
+            orderBy: { ordem: "asc" },
+            select: { pontoEmbarque: { select: { id: true, nome: true, latitude: true, longitude: true } } },
+          },
         },
       },
       onibus: { select: { placa: true } },
@@ -127,7 +133,8 @@ export async function posicaoAtual(viagemId: string, usuario: JwtPayload) {
           select: { status: true, pontoEmbarque: { select: { nome: true, latitude: true, longitude: true } } },
         })
       : null;
-    if (!aluno || !checkin || !(OCUPA_VAGA as readonly string[]).includes(checkin.status)) throw new AppError("ACOMPANHAMENTO_NAO_PERMITIDO");
+    if (!aluno || !checkin || !(OCUPA_VAGA as readonly string[]).includes(checkin.status))
+      throw new AppError("ACOMPANHAMENTO_NAO_PERMITIDO");
     // Na ida o aluno espera no ponto de embarque; na volta, na instituição
     const p = checkin.pontoEmbarque;
     const u = viagem.rota.pontos.find((x) => x.universidade.id === aluno.universidadeId)?.universidade;
@@ -144,11 +151,19 @@ export async function posicaoAtual(viagemId: string, usuario: JwtPayload) {
 
   // O aluno só vê o ônibus com a viagem em andamento
   const posicao = usuario.papel !== "ALUNO" || viagem.status === "EM_ANDAMENTO" ? await ultima(prisma, viagemId) : null;
-  const comCoordenadas = <T extends { latitude: number | null; longitude: number | null }>(x: T): x is T & { latitude: number; longitude: number } =>
-    x.latitude != null && x.longitude != null;
+  const comCoordenadas = <T extends { latitude: number | null; longitude: number | null }>(
+    x: T
+  ): x is T & { latitude: number; longitude: number } => x.latitude != null && x.longitude != null;
 
   return {
-    viagem: { id: viagem.id, status: viagem.status, sentido: viagem.sentido, horario: viagem.horario, rota: viagem.rota.nome, placa: viagem.onibus.placa },
+    viagem: {
+      id: viagem.id,
+      status: viagem.status,
+      sentido: viagem.sentido,
+      horario: viagem.horario,
+      rota: viagem.rota.nome,
+      placa: viagem.onibus.placa,
+    },
     posicao,
     atualizadoHaSegundos: posicao ? Math.max(0, Math.round((Date.now() - posicao.registradoEm.getTime()) / 1000)) : null,
     paradas: [

@@ -29,7 +29,13 @@ universidadeRouter.post("/", autenticar, exigir("instituicoes:gerenciar"), async
     const dados = schema.parse(req.body);
     const universidade = await prisma.$transaction(async (tx) => {
       const criada = await tx.universidade.create({ data: dados });
-      await registrarAuditoria(tx, { usuarioId: req.usuario!.sub, acao: "INSTITUICAO_CADASTRADA", entidade: "Universidade", entidadeId: criada.id, valorNovo: dados });
+      await registrarAuditoria(tx, {
+        usuarioId: req.usuario!.sub,
+        acao: "INSTITUICAO_CADASTRADA",
+        entidade: "Universidade",
+        entidadeId: criada.id,
+        valorNovo: dados,
+      });
       return criada;
     });
     res.status(201).json(universidade);
@@ -46,7 +52,14 @@ universidadeRouter.patch("/:id", autenticar, exigir("instituicoes:gerenciar"), a
       const atualizada = await tx.universidade.update({ where: { id: antes.id }, data: dados });
       const { valorAnterior, valorNovo, mudou } = diferenca(antes, dados);
       if (mudou) {
-        await registrarAuditoria(tx, { usuarioId: req.usuario!.sub, acao: "INSTITUICAO_ALTERADA", entidade: "Universidade", entidadeId: antes.id, valorAnterior, valorNovo });
+        await registrarAuditoria(tx, {
+          usuarioId: req.usuario!.sub,
+          acao: "INSTITUICAO_ALTERADA",
+          entidade: "Universidade",
+          entidadeId: antes.id,
+          valorAnterior,
+          valorNovo,
+        });
       }
       return atualizada;
     });
@@ -60,7 +73,13 @@ universidadeRouter.delete("/:id", autenticar, exigir("instituicoes:gerenciar"), 
   try {
     await prisma.$transaction(async (tx) => {
       const removida = await tx.universidade.delete({ where: { id: req.params.id } });
-      await registrarAuditoria(tx, { usuarioId: req.usuario!.sub, acao: "INSTITUICAO_REMOVIDA", entidade: "Universidade", entidadeId: removida.id, valorAnterior: { nome: removida.nome } });
+      await registrarAuditoria(tx, {
+        usuarioId: req.usuario!.sub,
+        acao: "INSTITUICAO_REMOVIDA",
+        entidade: "Universidade",
+        entidadeId: removida.id,
+        valorAnterior: { nome: removida.nome },
+      });
     });
     res.status(204).send();
   } catch (err) {

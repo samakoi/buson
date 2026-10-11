@@ -76,7 +76,7 @@ export default function OnibusScreen() {
               icone="bus"
               tomIcone={o.emManutencao ? "alerta" : "info"}
               titulo={o.placa}
-              subtitulo={o.emManutencao ? o.observacaoManutencao ?? undefined : undefined}
+              subtitulo={o.emManutencao ? (o.observacaoManutencao ?? undefined) : undefined}
               direita={<Pilula texto={st.rotulo} tom={st.tom} icone={st.icone} />}
               ultimo={i === frota.length - 1}
             />

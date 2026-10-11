@@ -25,7 +25,11 @@ export default function UniversidadesCadastro() {
 
   function abrir(u?: Universidade) {
     setErro(null);
-    setForm(u ? { id: u.id, nome: u.nome, endereco: u.endereco ?? "", coordenadas: escreverCoordenadas(u) } : { nome: "", endereco: "", coordenadas: "" });
+    setForm(
+      u
+        ? { id: u.id, nome: u.nome, endereco: u.endereco ?? "", coordenadas: escreverCoordenadas(u) }
+        : { nome: "", endereco: "", coordenadas: "" }
+    );
   }
 
   async function salvar() {
@@ -60,7 +64,10 @@ export default function UniversidadesCadastro() {
       await api.delete(`/universidades/${u.id}`);
       await recarregar();
     } catch (err) {
-      avisar("Não foi possível excluir", mensagemDeErro(err, "Tente novamente.") + " Universidades com alunos ou em rotas não podem ser excluídas.");
+      avisar(
+        "Não foi possível excluir",
+        mensagemDeErro(err, "Tente novamente.") + " Universidades com alunos ou em rotas não podem ser excluídas."
+      );
     }
   }
 
@@ -87,7 +94,11 @@ export default function UniversidadesCadastro() {
           />
         ))}
         {universidades.length === 0 && (
-          <EstadoVazio icone="school-outline" titulo="Nenhuma universidade" acao={{ titulo: "Adicionar universidade", icone: "add", onPress: () => abrir() }} />
+          <EstadoVazio
+            icone="school-outline"
+            titulo="Nenhuma universidade"
+            acao={{ titulo: "Adicionar universidade", icone: "add", onPress: () => abrir() }}
+          />
         )}
       </Card>
 
@@ -95,10 +106,27 @@ export default function UniversidadesCadastro() {
         {form && (
           <>
             {erro && <Aviso tipo="erro" titulo={erro} />}
-            <Campo rotulo="Nome" value={form.nome} onChangeText={(nome) => setForm({ ...form, nome })} placeholder="Ex.: UEMA" autoFocus={!form.id} />
-            <Campo rotulo="Endereço (opcional)" value={form.endereco} onChangeText={(endereco) => setForm({ ...form, endereco })} placeholder="Ex.: Rua Godofredo Viana, 1300" />
+            <Campo
+              rotulo="Nome"
+              value={form.nome}
+              onChangeText={(nome) => setForm({ ...form, nome })}
+              placeholder="Ex.: UEMA"
+              autoFocus={!form.id}
+            />
+            <Campo
+              rotulo="Endereço (opcional)"
+              value={form.endereco}
+              onChangeText={(endereco) => setForm({ ...form, endereco })}
+              placeholder="Ex.: Rua Godofredo Viana, 1300"
+            />
             <CampoCoordenadas valor={form.coordenadas} onChange={(coordenadas) => setForm({ ...form, coordenadas })} />
-            <Botao titulo={form.id ? "Salvar" : "Adicionar universidade"} icone="checkmark" onPress={salvar} carregando={salvando} style={{ marginTop: 24 }} />
+            <Botao
+              titulo={form.id ? "Salvar" : "Adicionar universidade"}
+              icone="checkmark"
+              onPress={salvar}
+              carregando={salvando}
+              style={{ marginTop: 24 }}
+            />
           </>
         )}
       </Folha>

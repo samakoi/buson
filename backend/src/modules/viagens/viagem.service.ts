@@ -113,7 +113,13 @@ export async function listarViagens(usuario: JwtPayload, filtro: FiltroViagensAd
       ...viagemInclude,
       checkins: {
         where: { alunoId: aluno.id },
-        select: { status: true, embarcado: true, criadoEm: true, motivoAusencia: true, pontoEmbarque: { select: { id: true, nome: true } } },
+        select: {
+          status: true,
+          embarcado: true,
+          criadoEm: true,
+          motivoAusencia: true,
+          pontoEmbarque: { select: { id: true, nome: true } },
+        },
       },
       embarques: { where: { alunoId: aluno.id }, select: { dataHora: true, metodo: true } },
     },
@@ -196,7 +202,14 @@ export async function criarViagem(dados: NovaViagem, adminId: string) {
       acao: "VIAGEM_CRIADA",
       entidade: "Viagem",
       entidadeId: viagem.id,
-      valorNovo: { data: dados.data, horario: dados.horario, sentido: viagem.sentido, rota: viagem.rota.nome, onibus: viagem.onibus.placa, vagas },
+      valorNovo: {
+        data: dados.data,
+        horario: dados.horario,
+        sentido: viagem.sentido,
+        rota: viagem.rota.nome,
+        onibus: viagem.onibus.placa,
+        vagas,
+      },
     });
     return viagem;
   });
@@ -214,10 +227,14 @@ export async function excluirViagem(viagemId: string, adminId: string) {
       select: { alunoId: true },
     });
     const [ano, mes, dia] = formatarDia(viagem.data).split("-");
-    await notificarAlunos(tx, ativos.map((c) => c.alunoId), {
-      mensagem: `A viagem de ${dia}/${mes}/${ano} às ${viagem.horario} foi cancelada pela administração.`,
-      categoria: "VIAGEM",
-    });
+    await notificarAlunos(
+      tx,
+      ativos.map((c) => c.alunoId),
+      {
+        mensagem: `A viagem de ${dia}/${mes}/${ano} às ${viagem.horario} foi cancelada pela administração.`,
+        categoria: "VIAGEM",
+      }
+    );
     const rota = await tx.rota.findUnique({ where: { id: viagem.rotaId }, select: { nome: true } });
     await tx.viagem.delete({ where: { id: viagemId } });
     // Viagem da programação semanal: a geração automática não pode recriá-la
@@ -271,10 +288,14 @@ export async function excluirViagensComAviso(tx: Tx, viagemIds: string[], motivo
     },
   });
   for (const v of viagens) {
-    await notificarAlunos(tx, v.checkins.map((c) => c.alunoId), {
-      mensagem: `A viagem de ${v.sentido === "VOLTA" ? "volta" : "ida"} de ${diaMes(v.data)} às ${v.horario} foi cancelada: ${motivo}`,
-      categoria: "VIAGEM",
-    });
+    await notificarAlunos(
+      tx,
+      v.checkins.map((c) => c.alunoId),
+      {
+        mensagem: `A viagem de ${v.sentido === "VOLTA" ? "volta" : "ida"} de ${diaMes(v.data)} às ${v.horario} foi cancelada: ${motivo}`,
+        categoria: "VIAGEM",
+      }
+    );
   }
   await tx.viagem.deleteMany({ where: { id: { in: viagens.map((v) => v.id) } } });
 }
@@ -485,7 +506,6 @@ async function alterarStatusViagem(viagemId: string, motoristaId: string, de: St
     return { ...atualizada, faltasRegistradas };
   }, OPCOES_TX);
 }
-
 
 async function buscarViagemDoMotorista(viagemId: string, motoristaId: string) {
   const viagem = await prisma.viagem.findUnique({ where: { id: viagemId } });

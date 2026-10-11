@@ -32,7 +32,11 @@ export default function AvisosScreen() {
   // Guarda quais estavam não lidas ao abrir a tela, para destacá-las mesmo depois de marcar como lidas
   const [destacadas, setDestacadas] = useState<Set<string>>(new Set());
 
-  useFocusEffect(useCallback(() => { atualizar(); }, [atualizar]));
+  useFocusEffect(
+    useCallback(() => {
+      atualizar();
+    }, [atualizar])
+  );
 
   // Ao ver a lista, marca tudo como lido (o badge da aba some). Só com a aba visível:
   // as abas continuam montadas em segundo plano depois da primeira visita.

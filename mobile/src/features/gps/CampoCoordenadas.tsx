@@ -51,11 +51,21 @@ export function CampoCoordenadas({ valor, onChange }: { valor: string; onChange:
         value={valor}
         onChangeText={onChange}
         placeholder="-5.526300, -47.477700"
-        ajuda={invalido ? "Use o formato: latitude, longitude (com ponto decimal)." : "No Google Maps: toque e segure no local e copie os números."}
+        ajuda={
+          invalido
+            ? "Use o formato: latitude, longitude (com ponto decimal)."
+            : "No Google Maps: toque e segure no local e copie os números."
+        }
         autoCapitalize="none"
         keyboardType="numbers-and-punctuation"
       />
-      <Botao titulo="Usar minha localização atual" icone="locate-outline" variante="fantasma" onPress={usarMinhaLocalizacao} carregando={buscando} />
+      <Botao
+        titulo="Usar minha localização atual"
+        icone="locate-outline"
+        variante="fantasma"
+        onPress={usarMinhaLocalizacao}
+        carregando={buscando}
+      />
     </View>
   );
 }

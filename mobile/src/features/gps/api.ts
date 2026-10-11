@@ -25,7 +25,11 @@ export function useTrajeto(viagemId: string | null) {
   return useQuery({
     queryKey: ["gps", "trajeto", viagemId],
     queryFn: async () =>
-      (await api.get<{ total: number; distanciaMetros: number; pontos: { latitude: number; longitude: number }[] }>(`/viagens/${viagemId}/trajeto`)).data,
+      (
+        await api.get<{ total: number; distanciaMetros: number; pontos: { latitude: number; longitude: number }[] }>(
+          `/viagens/${viagemId}/trajeto`
+        )
+      ).data,
     enabled: !!viagemId,
     refetchInterval: 30_000,
   });
@@ -41,6 +45,7 @@ export function dadosDoAcompanhamento(a: AcompanhamentoViagem): DadosMapa {
     rotulo: p.nome,
     tipo: destino && destino.nome === p.nome && destino.tipo === p.tipo ? "DESTINO" : p.tipo,
   }));
-  if (a.posicao) marcadores.push({ id: "onibus", latitude: a.posicao.latitude, longitude: a.posicao.longitude, rotulo: a.viagem.placa, tipo: "ONIBUS" });
+  if (a.posicao)
+    marcadores.push({ id: "onibus", latitude: a.posicao.latitude, longitude: a.posicao.longitude, rotulo: a.viagem.placa, tipo: "ONIBUS" });
   return { marcadores };
 }

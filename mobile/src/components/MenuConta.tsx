@@ -95,7 +95,13 @@ export function MenuConta() {
           <Texto variante="pequeno" cor="textoFraco" alinhar="center">
             Bus On {infoDaVersao().texto}
           </Texto>
-          <Botao titulo="Procurar atualização" icone="refresh-outline" variante="fantasma" carregando={procurando} onPress={procurarAtualizacao} />
+          <Botao
+            titulo="Procurar atualização"
+            icone="refresh-outline"
+            variante="fantasma"
+            carregando={procurando}
+            onPress={procurarAtualizacao}
+          />
         </View>
       </Folha>
     </>
@@ -103,8 +109,22 @@ export function MenuConta() {
 }
 
 const useEstilos = criarEstilos((t) => ({
-  avatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: t.cores.primariaSuave, alignItems: "center", justifyContent: "center" },
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: t.cores.primariaSuave,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   perfil: { flexDirection: "row", alignItems: "center", gap: t.espaco.lg, paddingVertical: t.espaco.md },
   versao: { marginTop: t.espaco.md, paddingTop: t.espaco.md, borderTopWidth: 1, borderTopColor: t.cores.borda, gap: t.espaco.xs },
-  avatarGrande: { width: 64, height: 64, borderRadius: 32, backgroundColor: t.cores.primariaSuave, alignItems: "center", justifyContent: "center" },
+  avatarGrande: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: t.cores.primariaSuave,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 }));

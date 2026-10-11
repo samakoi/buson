@@ -51,12 +51,17 @@ const carimbo = (d = new Date()) =>
 /** Roda um programa e falha com a saída de erro se ele terminar com código diferente de 0. */
 export function executar(comando: string, args: string[], opcoes: { env?: NodeJS.ProcessEnv; saida?: NodeJS.WritableStream } = {}) {
   return new Promise<void>((resolve, reject) => {
-    const filho = spawn(comando, args, { env: { ...process.env, ...opcoes.env }, stdio: ["ignore", opcoes.saida ? "pipe" : "ignore", "pipe"] });
+    const filho = spawn(comando, args, {
+      env: { ...process.env, ...opcoes.env },
+      stdio: ["ignore", opcoes.saida ? "pipe" : "ignore", "pipe"],
+    });
     let erro = "";
     filho.stderr!.on("data", (d) => (erro += d.toString()));
     if (opcoes.saida) filho.stdout!.pipe(opcoes.saida);
     filho.on("error", reject);
-    filho.on("close", (codigo) => (codigo === 0 ? resolve() : reject(new Error(`${comando} saiu com código ${codigo}: ${erro.trim().slice(0, 500)}`))));
+    filho.on("close", (codigo) =>
+      codigo === 0 ? resolve() : reject(new Error(`${comando} saiu com código ${codigo}: ${erro.trim().slice(0, 500)}`))
+    );
   });
 }
 
@@ -129,7 +134,9 @@ async function enviarParaR2(config: ConfigBackup, arquivos: string[]) {
   const antigos: string[] = [];
   let continuacao: string | undefined;
   do {
-    const pagina = await s3.send(new ListObjectsV2Command({ Bucket: r2.bucket, Prefix: `${config.ambiente}/`, ContinuationToken: continuacao }));
+    const pagina = await s3.send(
+      new ListObjectsV2Command({ Bucket: r2.bucket, Prefix: `${config.ambiente}/`, ContinuationToken: continuacao })
+    );
     for (const o of pagina.Contents ?? []) if (o.Key && o.LastModified && o.LastModified.getTime() < limite) antigos.push(o.Key);
     continuacao = pagina.IsTruncated ? pagina.NextContinuationToken : undefined;
   } while (continuacao);

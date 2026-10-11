@@ -4,7 +4,20 @@ import { api } from "../../../services/api";
 import { Motorista, Onibus } from "../../../types";
 import { useCarregamento } from "../../../hooks/useCarregamento";
 import { useTema } from "../../../theme/TemaProvider";
-import { Aviso, Botao, BotaoIcone, Campo, Card, Carregando, Chips, EstadoVazio, Folha, ItemLista, Rotulo, iniciaisDe } from "../../../components/ui";
+import {
+  Aviso,
+  Botao,
+  BotaoIcone,
+  Campo,
+  Card,
+  Carregando,
+  Chips,
+  EstadoVazio,
+  Folha,
+  ItemLista,
+  Rotulo,
+  iniciaisDe,
+} from "../../../components/ui";
 import { avisar, confirmar, mensagemDeErro } from "../../../utils/feedback";
 import { BarraSecao } from "./BarraSecao";
 
@@ -53,7 +66,10 @@ export default function MotoristasCadastro() {
   }
 
   async function remover(m: Motorista) {
-    const ok = await confirmar("Remover motorista", `Remover ${m.usuario.nome}? Ele não poderá mais entrar no app.`, { textoConfirmar: "Remover", destrutivo: true });
+    const ok = await confirmar("Remover motorista", `Remover ${m.usuario.nome}? Ele não poderá mais entrar no app.`, {
+      textoConfirmar: "Remover",
+      destrutivo: true,
+    });
     if (!ok) return;
     try {
       await api.delete(`/motoristas/${m.id}`);
@@ -77,21 +93,46 @@ export default function MotoristasCadastro() {
             titulo={m.usuario.nome}
             subtitulo={`${m.usuario.email}${m.onibus ? ` • ${m.onibus.placa}` : ""}`}
             ultimo={i === motoristas.length - 1}
-            direita={<BotaoIcone icone="trash-outline" rotulo={`Remover ${m.usuario.nome}`} cor={cores.perigo} onPress={() => remover(m)} />}
+            direita={
+              <BotaoIcone icone="trash-outline" rotulo={`Remover ${m.usuario.nome}`} cor={cores.perigo} onPress={() => remover(m)} />
+            }
           />
         ))}
         {motoristas.length === 0 && (
-          <EstadoVazio icone="person-outline" titulo="Nenhum motorista" acao={{ titulo: "Adicionar motorista", icone: "person-add", onPress: () => setAberto(true) }} />
+          <EstadoVazio
+            icone="person-outline"
+            titulo="Nenhum motorista"
+            acao={{ titulo: "Adicionar motorista", icone: "person-add", onPress: () => setAberto(true) }}
+          />
         )}
       </Card>
 
       <Folha visivel={aberto} onFechar={fechar} titulo="Novo motorista">
         {erro && <Aviso tipo="erro" titulo={erro} />}
         <Campo rotulo="Nome" value={nome} onChangeText={setNome} placeholder="Nome completo" autoFocus />
-        <Campo rotulo="E-mail (login)" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholder="motorista@email.com" />
-        <Campo rotulo="Senha inicial" senha value={senha} onChangeText={setSenha} placeholder="Mínimo de 6 caracteres" ajuda="Passe a senha ao motorista; ele entra com o e-mail e esta senha." />
+        <Campo
+          rotulo="E-mail (login)"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          placeholder="motorista@email.com"
+        />
+        <Campo
+          rotulo="Senha inicial"
+          senha
+          value={senha}
+          onChangeText={setSenha}
+          placeholder="Mínimo de 6 caracteres"
+          ajuda="Passe a senha ao motorista; ele entra com o e-mail e esta senha."
+        />
         <Rotulo>Ônibus habitual (opcional)</Rotulo>
-        <Chips opcoes={onibus.map((o) => ({ valor: o.id, rotulo: o.placa }))} valor={onibusId} onChange={(id) => setOnibusId(id === onibusId ? null : id)} vazio="Nenhum ônibus cadastrado." />
+        <Chips
+          opcoes={onibus.map((o) => ({ valor: o.id, rotulo: o.placa }))}
+          valor={onibusId}
+          onChange={(id) => setOnibusId(id === onibusId ? null : id)}
+          vazio="Nenhum ônibus cadastrado."
+        />
         <Botao titulo="Adicionar motorista" icone="person-add" onPress={adicionar} carregando={salvando} style={{ marginTop: 24 }} />
       </Folha>
     </View>

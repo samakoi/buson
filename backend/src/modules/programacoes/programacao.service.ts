@@ -36,13 +36,22 @@ const include = {
 type ProgramacaoCompleta = Prisma.ProgramacaoGetPayload<{ include: typeof include }>;
 
 async function comOcupacao(programacoes: ProgramacaoCompleta[]) {
-  const ocupacao = await ocupacaoPorDia(prisma, programacoes.map((p) => p.rotaId));
+  const ocupacao = await ocupacaoPorDia(
+    prisma,
+    programacoes.map((p) => p.rotaId)
+  );
   return programacoes.map((p) => ({
     ...p,
     diasSemana: lerDiasSemana(p.diasSemana),
     ocupacao: lerDiasSemana(p.diasSemana).map((diaSemana) => {
       const alocados = ocupacao.get(`${p.rotaId}:${diaSemana}`) ?? 0;
-      return { diaSemana, nome: NOMES_DIAS[diaSemana], alocados, capacidade: p.onibus.capacidade, disponiveis: Math.max(0, p.onibus.capacidade - alocados) };
+      return {
+        diaSemana,
+        nome: NOMES_DIAS[diaSemana],
+        alocados,
+        capacidade: p.onibus.capacidade,
+        disponiveis: Math.max(0, p.onibus.capacidade - alocados),
+      };
     }),
   }));
 }
@@ -171,14 +180,24 @@ export async function atualizar(id: string, mudancas: Partial<Omit<DadosPrograma
 
     const onibus = await tx.onibus.findUniqueOrThrow({ where: { id: novo.onibusId }, select: { placa: true, capacidade: true } });
     const futuras = await viagensFuturas(tx, id);
-    await travarViagens(tx, futuras.map((v) => v.id));
+    await travarViagens(
+      tx,
+      futuras.map((v) => v.id)
+    );
 
     // Viagens que deixam de existir: programação desativada, dia removido ou volta removida
     const saem = futuras.filter(
       (v) => !novo.ativa || !novo.diasSemana.includes(v.data.getDay()) || (v.sentido === "VOLTA" && !novo.horarioVolta)
     );
     const ficam = futuras.filter((v) => !saem.includes(v));
-    if (novo.ativa) await conferirCapacidade(tx, atual.rotaId, novo.diasSemana, onibus.capacidade, ficam.map((v) => v.id));
+    if (novo.ativa)
+      await conferirCapacidade(
+        tx,
+        atual.rotaId,
+        novo.diasSemana,
+        onibus.capacidade,
+        ficam.map((v) => v.id)
+      );
 
     await tx.programacao.update({ where: { id }, data: novo });
     await excluirViagensComAviso(
@@ -203,7 +222,14 @@ export async function atualizar(id: string, mudancas: Partial<Omit<DadosPrograma
     const depois = await tx.programacao.findUniqueOrThrow({ where: { id }, include });
     const { valorAnterior, valorNovo, mudou } = diferenca(resumo(atual), resumo(depois));
     if (mudou) {
-      await registrarAuditoria(tx, { usuarioId: adminId, acao: "PROGRAMACAO_ALTERADA", entidade: "Programacao", entidadeId: id, valorAnterior, valorNovo });
+      await registrarAuditoria(tx, {
+        usuarioId: adminId,
+        acao: "PROGRAMACAO_ALTERADA",
+        entidade: "Programacao",
+        entidadeId: id,
+        valorAnterior,
+        valorNovo,
+      });
     }
     // Dias que a rota deixou de atender: os alunos alocados neles são avisados
     await revisarAlocacoes(tx, { rotaId: atual.rotaId }, adminId);
@@ -220,9 +246,19 @@ export async function excluir(id: string, adminId: string) {
     const atual = await tx.programacao.findUnique({ where: { id }, include });
     if (!atual) throw new AppError("PROGRAMACAO_NAO_ENCONTRADA");
     const futuras = await viagensFuturas(tx, id);
-    await excluirViagensComAviso(tx, futuras.map((v) => v.id), "a programação da rota foi encerrada.");
+    await excluirViagensComAviso(
+      tx,
+      futuras.map((v) => v.id),
+      "a programação da rota foi encerrada."
+    );
     await tx.programacao.delete({ where: { id } });
-    await registrarAuditoria(tx, { usuarioId: adminId, acao: "PROGRAMACAO_EXCLUIDA", entidade: "Programacao", entidadeId: id, valorAnterior: resumo(atual) });
+    await registrarAuditoria(tx, {
+      usuarioId: adminId,
+      acao: "PROGRAMACAO_EXCLUIDA",
+      entidade: "Programacao",
+      entidadeId: id,
+      valorAnterior: resumo(atual),
+    });
     await revisarAlocacoes(tx, { rotaId: atual.rotaId }, adminId);
   }, OPCOES_TX);
 }
@@ -232,13 +268,25 @@ export async function excluir(id: string, adminId: string) {
  * usam e atualiza as vagas das viagens futuras delas.
  */
 export async function aplicarNovaCapacidade(tx: Tx, onibusId: string, capacidade: number) {
-  const programacoes = await tx.programacao.findMany({ where: { onibusId, ativa: true }, select: { id: true, rotaId: true, diasSemana: true } });
+  const programacoes = await tx.programacao.findMany({
+    where: { onibusId, ativa: true },
+    select: { id: true, rotaId: true, diasSemana: true },
+  });
   if (programacoes.length === 0) return;
   await tx.$queryRaw`SELECT id FROM programacoes WHERE id IN (${Prisma.join(programacoes.map((p) => p.id).sort())}) ORDER BY id FOR UPDATE`;
   for (const p of programacoes) {
     const futuras = await viagensFuturas(tx, p.id);
-    await travarViagens(tx, futuras.map((v) => v.id));
-    await conferirCapacidade(tx, p.rotaId, lerDiasSemana(p.diasSemana), capacidade, futuras.map((v) => v.id));
+    await travarViagens(
+      tx,
+      futuras.map((v) => v.id)
+    );
+    await conferirCapacidade(
+      tx,
+      p.rotaId,
+      lerDiasSemana(p.diasSemana),
+      capacidade,
+      futuras.map((v) => v.id)
+    );
     await tx.viagem.updateMany({ where: { id: { in: futuras.map((v) => v.id) } }, data: { vagas: capacidade } });
   }
 }
@@ -298,7 +346,10 @@ async function gerarDaProgramacao(id: string, dias: number) {
         orderBy: { criadoEm: "asc" },
         take: p.onibus.capacidade,
       });
-      const sentidos = [["IDA", p.horarioIda], ["VOLTA", p.horarioVolta]] as const;
+      const sentidos = [
+        ["IDA", p.horarioIda],
+        ["VOLTA", p.horarioVolta],
+      ] as const;
       for (const [sentido, horario] of sentidos) {
         if (!horario || jaExiste.has(chaveDataCancelada(sentido, dia))) continue;
         const data = comHorario(dia, horario);
@@ -342,4 +393,3 @@ export function iniciarAgendadorDeViagens() {
   void rodar();
   setInterval(rodar, 60 * 60 * 1000).unref();
 }
-

@@ -25,7 +25,12 @@ const esquema = z
     RATE_LIMIT_REFRESH_MAX: z.coerce.number().int().positive().default(60),
     UPLOADS_DIR: z.string().optional(),
     /** Validade do QR de embarque exibido pelo motorista, em minutos */
-    BOARDING_QR_MINUTOS: z.coerce.number().int().min(1).max(24 * 60).default(60),
+    BOARDING_QR_MINUTOS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(24 * 60)
+      .default(60),
     // Quantos dias à frente a programação semanal gera viagens (0 = desliga o agendador)
     DIAS_GERACAO_VIAGENS: z.coerce.number().int().min(0).max(31).default(7),
     // Push: "expo" envia pelo Expo Push; "teste" usa um carteiro falso (testes); "desligado" não envia
@@ -33,16 +38,33 @@ const esquema = z
     // Opcional: só se "Enhanced security for push notifications" estiver ligado no projeto Expo
     EXPO_ACCESS_TOKEN: z.string().optional(),
     PUSH_INTERVALO_MS: z.coerce.number().int().min(200).default(5000),
-    RECIBOS_INTERVALO_MS: z.coerce.number().int().min(500).default(15 * 60 * 1000),
+    RECIBOS_INTERVALO_MS: z.coerce
+      .number()
+      .int()
+      .min(500)
+      .default(15 * 60 * 1000),
     // O Expo recomenda conferir os recibos ~15 min depois do envio
-    RECIBOS_ESPERA_MS: z.coerce.number().int().min(0).default(15 * 60 * 1000),
+    RECIBOS_ESPERA_MS: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .default(15 * 60 * 1000),
     // Lembretes: X minutos antes da saída (0 desliga) e na véspera, no horário HH:MM (vazio desliga)
-    LEMBRETE_SAIDA_MINUTOS: z.coerce.number().int().min(0).max(24 * 60).default(60),
+    LEMBRETE_SAIDA_MINUTOS: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(24 * 60)
+      .default(60),
     LEMBRETE_VESPERA_HORARIO: z
       .string()
       .regex(/^(([01]\d|2[0-3]):[0-5]\d)?$/, "use HH:MM ou deixe vazio")
       .default("20:00"),
-    LEMBRETES_INTERVALO_MS: z.coerce.number().int().min(500).default(60 * 1000),
+    LEMBRETES_INTERVALO_MS: z.coerce
+      .number()
+      .int()
+      .min(500)
+      .default(60 * 1000),
     // GPS: por quantos dias guardar as posições dos ônibus (LGPD)
     GPS_RETENCAO_DIAS: z.coerce.number().int().min(1).max(3650).default(90),
     // Monitoramento de erros (opcional): chave pública do projeto no Sentry
@@ -61,7 +83,11 @@ const esquema = z
         ctx.addIssue({ code: "custom", path: ["CORS_ORIGINS"], message: "em produção/staging liste as origens permitidas (não use *)" });
       }
       if (v.PUSH_MODO === "teste") {
-        ctx.addIssue({ code: "custom", path: ["PUSH_MODO"], message: "o modo teste é só para os testes automáticos (use expo ou desligado)" });
+        ctx.addIssue({
+          code: "custom",
+          path: ["PUSH_MODO"],
+          message: "o modo teste é só para os testes automáticos (use expo ou desligado)",
+        });
       }
     }
   });
@@ -81,7 +107,9 @@ export const env = {
   jwtSecret: v.JWT_SECRET,
   jwtExpiresIn: v.JWT_EXPIRES_IN,
   refreshTokenDias: v.REFRESH_TOKEN_DIAS,
-  corsOrigins: v.CORS_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean),
+  corsOrigins: v.CORS_ORIGINS.split(",")
+    .map((o) => o.trim())
+    .filter(Boolean),
   trustProxy: v.TRUST_PROXY,
   // Testes ficam em silêncio, a não ser que LOG_LEVEL seja informado (os E2E conferem os logs)
   logLevel: v.NODE_ENV === "test" && !process.env.LOG_LEVEL ? "silent" : v.LOG_LEVEL,

@@ -60,7 +60,9 @@ export function NotificacoesProvider({ children }: { children: React.ReactNode }
       atualizar();
     };
     // App aberto pelo toque no aviso (estava fechado)
-    Notifications.getLastNotificationResponseAsync().then((r) => r && abrir(r)).catch(() => undefined);
+    Notifications.getLastNotificationResponseAsync()
+      .then((r) => r && abrir(r))
+      .catch(() => undefined);
     const chegou = Notifications.addNotificationReceivedListener(() => atualizar());
     const tocou = Notifications.addNotificationResponseReceivedListener(abrir);
     return () => {
@@ -85,9 +87,7 @@ export function NotificacoesProvider({ children }: { children: React.ReactNode }
   }, [atualizar, aplicar]);
 
   return (
-    <NotificacoesContext.Provider value={{ itens, naoLidas, atualizar, marcarTodasComoLidas }}>
-      {children}
-    </NotificacoesContext.Provider>
+    <NotificacoesContext.Provider value={{ itens, naoLidas, atualizar, marcarTodasComoLidas }}>{children}</NotificacoesContext.Provider>
   );
 }
 

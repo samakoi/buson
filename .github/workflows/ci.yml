@@ -45,6 +45,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npx prisma validate
+      - run: npm run format:check
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run build
@@ -68,6 +69,7 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
       - run: npm ci
+      - run: npm run format:check
       - run: npm run typecheck
       - run: npm run lint
       - run: npx expo-doctor

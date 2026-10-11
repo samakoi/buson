@@ -47,7 +47,13 @@ onibusRouter.post("/", async (req, res, next) => {
     const dados = schema.parse(req.body);
     const onibus = await prisma.$transaction(async (tx) => {
       const criado = await tx.onibus.create({ data: dados });
-      await registrarAuditoria(tx, { usuarioId: req.usuario!.sub, acao: "ONIBUS_CADASTRADO", entidade: "Onibus", entidadeId: criado.id, valorNovo: dados });
+      await registrarAuditoria(tx, {
+        usuarioId: req.usuario!.sub,
+        acao: "ONIBUS_CADASTRADO",
+        entidade: "Onibus",
+        entidadeId: criado.id,
+        valorNovo: dados,
+      });
       return criado;
     });
     res.status(201).json(onibus);
@@ -68,7 +74,15 @@ onibusRouter.patch("/:id", async (req, res, next) => {
       }
       const atualizado = await tx.onibus.update({ where: { id: antes.id }, data: dados });
       const { valorAnterior, valorNovo, mudou } = diferenca(antes, dados);
-      if (mudou) await registrarAuditoria(tx, { usuarioId: req.usuario!.sub, acao: "ONIBUS_ALTERADO", entidade: "Onibus", entidadeId: antes.id, valorAnterior, valorNovo });
+      if (mudou)
+        await registrarAuditoria(tx, {
+          usuarioId: req.usuario!.sub,
+          acao: "ONIBUS_ALTERADO",
+          entidade: "Onibus",
+          entidadeId: antes.id,
+          valorAnterior,
+          valorNovo,
+        });
       return atualizado;
     }, OPCOES_TX);
     res.json(onibus);
@@ -113,7 +127,11 @@ onibusRouter.patch("/:id/manutencao", async (req, res, next) => {
     const mensagem = emManutencao
       ? `O ônibus ${onibus.placa} da sua viagem entrou em manutenção${onibus.observacaoManutencao ? `: ${onibus.observacaoManutencao}` : "."}`
       : `O ônibus ${onibus.placa} da sua viagem saiu da manutenção e voltou a operar.`;
-    await notificarAlunos(prisma, afetados.map((c) => c.alunoId), { mensagem, categoria: "VIAGEM" });
+    await notificarAlunos(
+      prisma,
+      afetados.map((c) => c.alunoId),
+      { mensagem, categoria: "VIAGEM" }
+    );
 
     res.json(onibus);
   } catch (err) {

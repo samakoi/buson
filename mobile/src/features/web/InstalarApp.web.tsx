@@ -89,6 +89,12 @@ export function InstalarApp({ compacto = false }: { compacto?: boolean }) {
 }
 
 const useEstilos = criarEstilos((t) => ({
-  cartao: { gap: t.espaco.sm, padding: t.espaco.lg, borderRadius: t.raio.lg, backgroundColor: t.cores.primariaSuave, marginTop: t.espaco.xl },
+  cartao: {
+    gap: t.espaco.sm,
+    padding: t.espaco.lg,
+    borderRadius: t.raio.lg,
+    backgroundColor: t.cores.primariaSuave,
+    marginTop: t.espaco.xl,
+  },
   linha: { flexDirection: "row", alignItems: "center", gap: t.espaco.sm },
 }));

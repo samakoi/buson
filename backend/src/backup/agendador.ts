@@ -9,7 +9,9 @@ import { configDoAmbiente, fazerBackup } from "./backup";
  */
 
 const log = (nivel: "info" | "error", msg: string, extra: object = {}) =>
-  console.log(JSON.stringify({ level: nivel === "info" ? 30 : 50, time: new Date().toISOString(), servico: "bus-on-backup", msg, ...extra }));
+  console.log(
+    JSON.stringify({ level: nivel === "info" ? 30 : 50, time: new Date().toISOString(), servico: "bus-on-backup", msg, ...extra })
+  );
 
 async function rodar() {
   const inicio = Date.now();

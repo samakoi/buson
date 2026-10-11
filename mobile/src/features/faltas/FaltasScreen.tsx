@@ -37,9 +37,20 @@ export default function FaltasScreen() {
     <Tela atualizando={fila.isRefetching} onAtualizar={() => fila.refetch()}>
       <Cabecalho titulo="Faltas" subtitulo="Justificativas e histórico" onVoltar={() => navegacao.goBack()} />
 
-      <Campo rotulo="Buscar aluno" value={busca} onChangeText={setBusca} placeholder="Nome ou matrícula" autoCapitalize="none" returnKeyType="search" />
+      <Campo
+        rotulo="Buscar aluno"
+        value={busca}
+        onChangeText={setBusca}
+        placeholder="Nome ou matrícula"
+        autoCapitalize="none"
+        returnKeyType="search"
+      />
       <View style={{ marginTop: espaco.md, marginBottom: espaco.md }}>
-        <Chips opcoes={ORDEM.map((s) => ({ valor: s, rotulo: `${ROTULO[s]} (${fila.data?.contagens[s] ?? 0})` }))} valor={situacao} onChange={setSituacao} />
+        <Chips
+          opcoes={ORDEM.map((s) => ({ valor: s, rotulo: `${ROTULO[s]} (${fila.data?.contagens[s] ?? 0})` }))}
+          valor={situacao}
+          onChange={setSituacao}
+        />
       </View>
 
       {fila.isLoading ? (
@@ -54,7 +65,11 @@ export default function FaltasScreen() {
                 icone={f.anexoNome ? "attach" : st.icone}
                 tomIcone={st.tom}
                 titulo={f.aluno.usuario.nome}
-                subtitulo={[`${descreverViagem(f.viagem)} • ${f.viagem.rota.nome}`, f.aluno.universidade.nome, f.justificativa ? `“${f.justificativa}”` : null]
+                subtitulo={[
+                  `${descreverViagem(f.viagem)} • ${f.viagem.rota.nome}`,
+                  f.aluno.universidade.nome,
+                  f.justificativa ? `“${f.justificativa}”` : null,
+                ]
                   .filter(Boolean)
                   .join("\n")}
                 abaixo={<Pilula texto={st.rotulo} tom={st.tom} />}
@@ -66,13 +81,22 @@ export default function FaltasScreen() {
           {itens.length === 0 && (
             <EstadoVazio
               icone={situacao === "AGUARDANDO_DECISAO" ? "checkmark-done-outline" : "calendar-clear-outline"}
-              titulo={situacao === "AGUARDANDO_DECISAO" ? "Nenhuma justificativa para decidir" : `Nenhuma falta: ${ROTULO[situacao].toLowerCase()}`}
+              titulo={
+                situacao === "AGUARDANDO_DECISAO"
+                  ? "Nenhuma justificativa para decidir"
+                  : `Nenhuma falta: ${ROTULO[situacao].toLowerCase()}`
+              }
             />
           )}
         </Card>
       )}
 
-      <DecisaoFaltaFolha key={selecionada?.id ?? "nenhuma"} falta={selecionada} nomeAluno={selecionada?.aluno.usuario.nome ?? ""} onFechar={() => setAberta(null)} />
+      <DecisaoFaltaFolha
+        key={selecionada?.id ?? "nenhuma"}
+        falta={selecionada}
+        nomeAluno={selecionada?.aluno.usuario.nome ?? ""}
+        onFechar={() => setAberta(null)}
+      />
     </Tela>
   );
 }

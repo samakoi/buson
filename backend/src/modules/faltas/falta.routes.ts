@@ -90,7 +90,11 @@ faltaRouter.post("/:id/justificar", exigir("alunos:gerenciar"), async (req, res,
 });
 
 const indeferirSchema = z.object({
-  motivo: z.string().trim().min(5, "Informe o motivo do indeferimento (o aluno vai ler).").max(300, "O motivo pode ter até 300 caracteres."),
+  motivo: z
+    .string()
+    .trim()
+    .min(5, "Informe o motivo do indeferimento (o aluno vai ler).")
+    .max(300, "O motivo pode ter até 300 caracteres."),
 });
 
 faltaRouter.post("/:id/indeferir", exigir("alunos:gerenciar"), async (req, res, next) => {

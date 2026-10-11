@@ -71,7 +71,10 @@ export function DecisaoFaltaFolha({
       <Card>
         <Texto variante="pequenoForte">Justificativa do aluno</Texto>
         <Texto variante="pequeno" cor="textoSuave">
-          {falta.justificativa ?? (new Date(falta.prazoJustificativa) >= new Date() ? `Ainda não enviou (prazo até ${diaMes(falta.prazoJustificativa)}).` : "Não enviou dentro do prazo.")}
+          {falta.justificativa ??
+            (new Date(falta.prazoJustificativa) >= new Date()
+              ? `Ainda não enviou (prazo até ${diaMes(falta.prazoJustificativa)}).`
+              : "Não enviou dentro do prazo.")}
         </Texto>
         {falta.anexoNome && (
           <Botao
@@ -95,19 +98,66 @@ export function DecisaoFaltaFolha({
           {erro && <Aviso tipo="erro" titulo={erro} />}
           {modo === "indeferir" ? (
             <>
-              <Chips opcoes={MOTIVOS_INDEFERIR.map((m) => ({ valor: m, rotulo: m }))} valor={MOTIVOS_INDEFERIR.includes(texto) ? texto : null} onChange={setTexto} quebrarLinha />
-              <Campo rotulo="Motivo do indeferimento" value={texto} onChangeText={setTexto} maxLength={300} multiline placeholder="O aluno recebe este texto" />
+              <Chips
+                opcoes={MOTIVOS_INDEFERIR.map((m) => ({ valor: m, rotulo: m }))}
+                valor={MOTIVOS_INDEFERIR.includes(texto) ? texto : null}
+                onChange={setTexto}
+                quebrarLinha
+              />
+              <Campo
+                rotulo="Motivo do indeferimento"
+                value={texto}
+                onChangeText={setTexto}
+                maxLength={300}
+                multiline
+                placeholder="O aluno recebe este texto"
+              />
               <View style={{ flexDirection: "row", gap: espaco.sm, marginTop: espaco.lg }}>
-                <Botao titulo="Voltar" variante="secundario" onPress={() => setModo("ver")} style={{ flex: 1 }} desabilitado={decidir.isPending} />
-                <Botao titulo="Indeferir" icone="close-circle" variante="perigo" onPress={() => confirmar("indeferir")} carregando={decidir.isPending} style={{ flex: 1 }} />
+                <Botao
+                  titulo="Voltar"
+                  variante="secundario"
+                  onPress={() => setModo("ver")}
+                  style={{ flex: 1 }}
+                  desabilitado={decidir.isPending}
+                />
+                <Botao
+                  titulo="Indeferir"
+                  icone="close-circle"
+                  variante="perigo"
+                  onPress={() => confirmar("indeferir")}
+                  carregando={decidir.isPending}
+                  style={{ flex: 1 }}
+                />
               </View>
             </>
           ) : (
             <>
-              <Campo rotulo="Observação (opcional)" value={texto} onChangeText={setTexto} maxLength={300} placeholder="Ex.: motorista confirmou que ele embarcou" />
+              <Campo
+                rotulo="Observação (opcional)"
+                value={texto}
+                onChangeText={setTexto}
+                maxLength={300}
+                placeholder="Ex.: motorista confirmou que ele embarcou"
+              />
               <View style={{ flexDirection: "row", gap: espaco.sm, marginTop: espaco.lg }}>
-                <Botao titulo="Indeferir" icone="close-circle-outline" variante="perigoFantasma" onPress={() => { setTexto(""); setModo("indeferir"); }} style={{ flex: 1 }} desabilitado={decidir.isPending} />
-                <Botao titulo="Justificar" icone="checkmark-circle" onPress={() => confirmar("justificar")} carregando={decidir.isPending} style={{ flex: 1 }} />
+                <Botao
+                  titulo="Indeferir"
+                  icone="close-circle-outline"
+                  variante="perigoFantasma"
+                  onPress={() => {
+                    setTexto("");
+                    setModo("indeferir");
+                  }}
+                  style={{ flex: 1 }}
+                  desabilitado={decidir.isPending}
+                />
+                <Botao
+                  titulo="Justificar"
+                  icone="checkmark-circle"
+                  onPress={() => confirmar("justificar")}
+                  carregando={decidir.isPending}
+                  style={{ flex: 1 }}
+                />
               </View>
             </>
           )}

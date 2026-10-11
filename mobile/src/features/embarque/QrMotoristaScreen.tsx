@@ -67,7 +67,11 @@ export default function QrMotoristaScreen() {
                   ? "O QR de embarque aparece aqui assim que você iniciar a viagem."
                   : "O QR desta viagem não vale mais."
             }
-            acao={aguardando ? { titulo: "Ir para o Painel", icone: "speedometer-outline", onPress: () => navegacao.navigate("Painel") } : undefined}
+            acao={
+              aguardando
+                ? { titulo: "Ir para o Painel", icone: "speedometer-outline", onPress: () => navegacao.navigate("Painel") }
+                : undefined
+            }
           />
         </Card>
       </Tela>
@@ -82,7 +86,16 @@ export default function QrMotoristaScreen() {
     <Tela
       atualizando={isRefetching}
       onAtualizar={refetch}
-      rodape={<Botao titulo="Encerrar viagem" icone="stop-circle" variante="perigo" tamanho="grande" onPress={() => encerrar(viagem)} carregando={encerrando} />}
+      rodape={
+        <Botao
+          titulo="Encerrar viagem"
+          icone="stop-circle"
+          variante="perigo"
+          tamanho="grande"
+          onPress={() => encerrar(viagem)}
+          carregando={encerrando}
+        />
+      }
     >
       <TelaAcesa />
       <Cabecalho titulo="Embarque" subtitulo={`${viagem.onibus.placa} • ${viagem.rota.nome}`} />

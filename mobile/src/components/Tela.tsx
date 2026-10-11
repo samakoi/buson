@@ -30,7 +30,9 @@ export function Tela({
         contentContainerStyle={[s.conteudo, { paddingTop: insets.top + 12 }]}
         keyboardShouldPersistTaps="handled"
         refreshControl={
-          onAtualizar ? <RefreshControl refreshing={!!atualizando} onRefresh={onAtualizar} tintColor={cores.primaria} colors={[cores.primaria]} /> : undefined
+          onAtualizar ? (
+            <RefreshControl refreshing={!!atualizando} onRefresh={onAtualizar} tintColor={cores.primaria} colors={[cores.primaria]} />
+          ) : undefined
         }
       >
         <View style={s.coluna}>{children}</View>

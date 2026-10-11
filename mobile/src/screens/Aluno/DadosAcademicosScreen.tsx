@@ -43,7 +43,13 @@ export default function DadosAcademicosScreen() {
     setErro(null);
     setSalvando(true);
     try {
-      await api.patch("/alunos/me", { nome: nome.trim(), matricula: matricula.trim(), curso: curso.trim(), telefone: digitos, universidadeId: universidadeId ?? undefined });
+      await api.patch("/alunos/me", {
+        nome: nome.trim(),
+        matricula: matricula.trim(),
+        curso: curso.trim(),
+        telefone: digitos,
+        universidadeId: universidadeId ?? undefined,
+      });
       avisar("Dados salvos", "Seus dados acadêmicos foram atualizados.");
       navegacao.goBack();
     } catch (err) {
@@ -62,12 +68,30 @@ export default function DadosAcademicosScreen() {
       {erro && <Aviso tipo="erro" titulo={erro} />}
 
       <Campo rotulo="Nome completo" value={nome} onChangeText={setNome} autoComplete="name" />
-      <Campo rotulo="Matrícula" value={matricula} onChangeText={setMatricula} autoCapitalize="characters" placeholder="Como aparece na declaração da faculdade" />
+      <Campo
+        rotulo="Matrícula"
+        value={matricula}
+        onChangeText={setMatricula}
+        autoCapitalize="characters"
+        placeholder="Como aparece na declaração da faculdade"
+      />
       <Campo rotulo="Curso" value={curso} onChangeText={setCurso} placeholder="Ex.: Engenharia Civil" />
-      <Campo rotulo="Telefone (WhatsApp)" value={telefone} onChangeText={(t) => setTelefone(mascararTelefone(t))} keyboardType="phone-pad" placeholder="(99) 98888-7777" autoComplete="tel" />
+      <Campo
+        rotulo="Telefone (WhatsApp)"
+        value={telefone}
+        onChangeText={(t) => setTelefone(mascararTelefone(t))}
+        keyboardType="phone-pad"
+        placeholder="(99) 98888-7777"
+        autoComplete="tel"
+      />
 
       <Rotulo>Universidade</Rotulo>
-      <Chips opcoes={universidades.map((u) => ({ valor: u.id, rotulo: u.nome }))} valor={universidadeId} onChange={setUniversidadeId} quebrarLinha />
+      <Chips
+        opcoes={universidades.map((u) => ({ valor: u.id, rotulo: u.nome }))}
+        valor={universidadeId}
+        onChange={setUniversidadeId}
+        quebrarLinha
+      />
       {universidadeId !== universidadeOriginal && (
         <Aviso tipo="alerta" titulo="Troca de universidade" style={{ marginTop: 12, marginBottom: 0 }}>
           Sua parada na rota muda para a nova universidade. A alteração fica registrada.

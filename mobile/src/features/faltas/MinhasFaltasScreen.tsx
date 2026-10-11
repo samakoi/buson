@@ -2,7 +2,21 @@ import React, { useState } from "react";
 import { View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Falta } from "../../types";
-import { Aviso, Botao, Cabecalho, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista, Pilula, Secao, Tela, Texto } from "../../components/ui";
+import {
+  Aviso,
+  Botao,
+  Cabecalho,
+  Campo,
+  Card,
+  Carregando,
+  EstadoVazio,
+  Folha,
+  ItemLista,
+  Pilula,
+  Secao,
+  Tela,
+  Texto,
+} from "../../components/ui";
 import { avisar, mensagemDeErro } from "../../utils/feedback";
 import { diaMes } from "../../utils/datas";
 import { motivoAusencia, situacaoDaFalta, situacaoFalta } from "../../utils/rotulos";
@@ -88,7 +102,13 @@ export default function MinhasFaltasScreen() {
             />
           );
         })}
-        {faltas.length === 0 && <EstadoVazio icone="checkmark-done-outline" titulo="Nenhuma falta" texto="Continue assim! Se não puder ir, avise antes na tela Início — avisar não conta como falta." />}
+        {faltas.length === 0 && (
+          <EstadoVazio
+            icone="checkmark-done-outline"
+            titulo="Nenhuma falta"
+            texto="Continue assim! Se não puder ir, avise antes na tela Início — avisar não conta como falta."
+          />
+        )}
       </Card>
 
       {ausencias.length > 0 && (
@@ -125,12 +145,20 @@ export default function MinhasFaltasScreen() {
                 <Texto variante="pequeno" cor="textoSuave">
                   {aberta.justificativa}
                 </Texto>
-                {aberta.anexoNome && <Botao titulo={`Ver anexo (${aberta.anexoNome})`} icone="attach" variante="fantasma" onPress={() => verAnexo(aberta)} />}
+                {aberta.anexoNome && (
+                  <Botao titulo={`Ver anexo (${aberta.anexoNome})`} icone="attach" variante="fantasma" onPress={() => verAnexo(aberta)} />
+                )}
               </Card>
             )}
             {aberta.status !== "REGISTRADA" && (
-              <Aviso tipo={aberta.status === "JUSTIFICADA" ? "sucesso" : "info"} titulo={aberta.status === "JUSTIFICADA" ? "Falta justificada" : "Justificativa indeferida"} style={{ marginTop: 12 }}>
-                {[aberta.observacaoDecisao, aberta.decididoPor ? `Analisada por ${aberta.decididoPor.nome}` : null].filter(Boolean).join(" • ") || undefined}
+              <Aviso
+                tipo={aberta.status === "JUSTIFICADA" ? "sucesso" : "info"}
+                titulo={aberta.status === "JUSTIFICADA" ? "Falta justificada" : "Justificativa indeferida"}
+                style={{ marginTop: 12 }}
+              >
+                {[aberta.observacaoDecisao, aberta.decididoPor ? `Analisada por ${aberta.decididoPor.nome}` : null]
+                  .filter(Boolean)
+                  .join(" • ") || undefined}
               </Aviso>
             )}
             {aberta.status === "REGISTRADA" && !aberta.justificativa && !podeJustificar(aberta) && (
@@ -153,8 +181,20 @@ export default function MinhasFaltasScreen() {
                 <Texto variante="pequenoForte" style={{ marginTop: 16, marginBottom: 8 }}>
                   Atestado ou declaração (opcional)
                 </Texto>
-                <SeletorArquivo arquivo={anexo} onChange={setAnexo} onErro={setErro} prefixo="atestado" desabilitado={justificar.isPending} />
-                <Botao titulo="Enviar justificativa" icone="send" onPress={enviar} carregando={justificar.isPending} style={{ marginTop: 24 }} />
+                <SeletorArquivo
+                  arquivo={anexo}
+                  onChange={setAnexo}
+                  onErro={setErro}
+                  prefixo="atestado"
+                  desabilitado={justificar.isPending}
+                />
+                <Botao
+                  titulo="Enviar justificativa"
+                  icone="send"
+                  onPress={enviar}
+                  carregando={justificar.isPending}
+                  style={{ marginTop: 24 }}
+                />
               </>
             )}
           </>

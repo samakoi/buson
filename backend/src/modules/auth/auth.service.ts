@@ -161,7 +161,10 @@ export async function renovar(refreshToken: string, ctx: ContextoSessao = {}) {
 
 /** Sair deste dispositivo: revoga a sessão do refresh token informado. */
 export async function logout(refreshToken: string) {
-  const sessao = await prisma.refreshToken.findUnique({ where: { tokenHash: hashToken(refreshToken) }, select: { usuarioId: true, deviceId: true } });
+  const sessao = await prisma.refreshToken.findUnique({
+    where: { tokenHash: hashToken(refreshToken) },
+    select: { usuarioId: true, deviceId: true },
+  });
   await prisma.refreshToken.updateMany({
     where: { tokenHash: hashToken(refreshToken), revogadoEm: null },
     data: { revogadoEm: new Date() },

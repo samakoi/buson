@@ -12,7 +12,12 @@ import type { PilhaAdmin } from "../../navigation/AdminTabs";
 import { useFilaDocumentos } from "./api";
 
 const ORDEM: StatusDocumento[] = ["PENDENTE", "EM_ANALISE", "APROVADO", "REPROVADO"];
-const PLURAL: Record<StatusDocumento, string> = { PENDENTE: "Pendentes", EM_ANALISE: "Em análise", APROVADO: "Aprovados", REPROVADO: "Reprovados" };
+const PLURAL: Record<StatusDocumento, string> = {
+  PENDENTE: "Pendentes",
+  EM_ANALISE: "Em análise",
+  APROVADO: "Aprovados",
+  REPROVADO: "Reprovados",
+};
 
 /** Painel de documentos: contagens por status e a fila (mais antigos primeiro). Toque → perfil do aluno. */
 export default function DocumentosScreen() {
@@ -33,7 +38,14 @@ export default function DocumentosScreen() {
     <Tela atualizando={fila.isRefetching} onAtualizar={() => fila.refetch()}>
       <Cabecalho titulo="Documentos" subtitulo="Comprovantes de matrícula" onVoltar={() => navegacao.goBack()} />
 
-      <Campo rotulo="Buscar" value={busca} onChangeText={setBusca} placeholder="Nome, matrícula ou universidade" autoCapitalize="none" returnKeyType="search" />
+      <Campo
+        rotulo="Buscar"
+        value={busca}
+        onChangeText={setBusca}
+        placeholder="Nome, matrícula ou universidade"
+        autoCapitalize="none"
+        returnKeyType="search"
+      />
       <View style={{ marginTop: espaco.md, marginBottom: espaco.md }}>
         <Chips opcoes={ORDEM.map((s) => ({ valor: s, rotulo: `${PLURAL[s]} (${c?.[s] ?? 0})` }))} valor={status} onChange={setStatus} />
       </View>
@@ -50,7 +62,11 @@ export default function DocumentosScreen() {
                 icone={d.mimeType === "application/pdf" ? "document-text-outline" : "image-outline"}
                 tomIcone={st.tom}
                 titulo={d.aluno.usuario.nome}
-                subtitulo={[d.aluno.universidade.nome, d.aluno.matricula ? `Matrícula ${d.aluno.matricula}` : null, `enviado ${tempoRelativo(d.criadoEm)}`]
+                subtitulo={[
+                  d.aluno.universidade.nome,
+                  d.aluno.matricula ? `Matrícula ${d.aluno.matricula}` : null,
+                  `enviado ${tempoRelativo(d.criadoEm)}`,
+                ]
                   .filter(Boolean)
                   .join(" • ")}
                 abaixo={

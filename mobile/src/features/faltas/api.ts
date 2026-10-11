@@ -62,7 +62,8 @@ export function useDecidirFalta(aoConcluir?: () => void) {
   const cliente = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, decisao, texto }: { id: string; decisao: "justificar" | "indeferir"; texto?: string }) =>
-      (await api.post<Falta>(`/faltas/${id}/${decisao}`, decisao === "indeferir" ? { motivo: texto } : { observacao: texto || undefined })).data,
+      (await api.post<Falta>(`/faltas/${id}/${decisao}`, decisao === "indeferir" ? { motivo: texto } : { observacao: texto || undefined }))
+        .data,
     onSuccess: () => {
       cliente.invalidateQueries({ queryKey: ["faltas"] });
       aoConcluir?.();

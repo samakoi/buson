@@ -7,7 +7,20 @@ import { api } from "../../services/api";
 import { AlunoResumo, ListaAlunos, StatusConta } from "../../types";
 import { useCarregamento } from "../../hooks/useCarregamento";
 import { useTema } from "../../theme/TemaProvider";
-import { Botao, BotaoIcone, Cabecalho, Campo, Card, Carregando, Chips, EstadoVazio, ItemLista, Pilula, Tela, iniciaisDe } from "../../components/ui";
+import {
+  Botao,
+  BotaoIcone,
+  Cabecalho,
+  Campo,
+  Card,
+  Carregando,
+  Chips,
+  EstadoVazio,
+  ItemLista,
+  Pilula,
+  Tela,
+  iniciaisDe,
+} from "../../components/ui";
 import { statusConta } from "../../utils/rotulos";
 import type { PilhaAdmin } from "../../navigation/AdminTabs";
 
@@ -130,13 +143,22 @@ export default function AlunosScreen() {
           <EstadoVazio
             icone="people-outline"
             titulo={buscaAplicada || filtro !== "TODOS" ? "Nenhum aluno encontrado" : "Nenhum aluno cadastrado"}
-            texto={buscaAplicada || filtro !== "TODOS" ? "Tente outra busca ou outro filtro." : "Os alunos aparecem aqui quando criam a conta pelo app."}
+            texto={
+              buscaAplicada || filtro !== "TODOS"
+                ? "Tente outra busca ou outro filtro."
+                : "Os alunos aparecem aqui quando criam a conta pelo app."
+            }
           />
         )}
       </Card>
 
       {lista && itens.length < lista.total && (
-        <Botao titulo={`Carregar mais (${lista.total - itens.length})`} variante="fantasma" onPress={carregarMais} carregando={carregandoMais} />
+        <Botao
+          titulo={`Carregar mais (${lista.total - itens.length})`}
+          variante="fantasma"
+          onPress={carregarMais}
+          carregando={carregandoMais}
+        />
       )}
     </Tela>
   );

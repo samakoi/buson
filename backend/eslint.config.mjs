@@ -11,7 +11,10 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node } },
     rules: {
       // Variáveis descartadas de propósito começam com "_"
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", destructuredArrayIgnorePattern: "^_" },
+      ],
     },
   },
   {

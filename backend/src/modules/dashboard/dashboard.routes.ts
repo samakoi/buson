@@ -12,18 +12,27 @@ dashboardRouter.use(autenticar, exigir("dashboard:ler"));
 
 dashboardRouter.get("/resumo", async (_req, res, next) => {
   try {
-    const [totalAlunos, totalMotoristas, totalOnibus, totalUniversidades, viagensAtivas, onibusEmManutencao, alunosAtivos, alunosPendentes, documentosPendentes] =
-      await Promise.all([
-        prisma.aluno.count(),
-        prisma.motorista.count(),
-        prisma.onibus.count(),
-        prisma.universidade.count(),
-        prisma.viagem.count({ where: { status: "EM_ANDAMENTO" } }),
-        prisma.onibus.count({ where: { emManutencao: true } }),
-        prisma.aluno.count({ where: { statusConta: "ATIVO" } }),
-        prisma.aluno.count({ where: { statusConta: "PENDENTE" } }),
-        prisma.documento.count({ where: { status: { in: ["PENDENTE", "EM_ANALISE"] } } }),
-      ]);
+    const [
+      totalAlunos,
+      totalMotoristas,
+      totalOnibus,
+      totalUniversidades,
+      viagensAtivas,
+      onibusEmManutencao,
+      alunosAtivos,
+      alunosPendentes,
+      documentosPendentes,
+    ] = await Promise.all([
+      prisma.aluno.count(),
+      prisma.motorista.count(),
+      prisma.onibus.count(),
+      prisma.universidade.count(),
+      prisma.viagem.count({ where: { status: "EM_ANDAMENTO" } }),
+      prisma.onibus.count({ where: { emManutencao: true } }),
+      prisma.aluno.count({ where: { statusConta: "ATIVO" } }),
+      prisma.aluno.count({ where: { statusConta: "PENDENTE" } }),
+      prisma.documento.count({ where: { status: { in: ["PENDENTE", "EM_ANALISE"] } } }),
+    ]);
 
     res.json({
       totalAlunos,
@@ -52,7 +61,10 @@ dashboardRouter.get("/ocupacao-semanal", async (_req, res, next) => {
       select: { rotaId: true, diasSemana: true, rota: { select: { nome: true } }, onibus: { select: { capacidade: true } } },
       orderBy: { rota: { nome: "asc" } },
     });
-    const ocupacao = await ocupacaoPorDia(prisma, programacoes.map((p) => p.rotaId));
+    const ocupacao = await ocupacaoPorDia(
+      prisma,
+      programacoes.map((p) => p.rotaId)
+    );
     const dias = NOMES_DIAS.map((nome, diaSemana) => ({ diaSemana, nome, alocados: 0, capacidade: 0 }));
     const rotas = programacoes.map((p) => ({
       rota: p.rota.nome,
@@ -205,8 +217,7 @@ dashboardRouter.get("/relatorio", async (req, res, next) => {
       for (const f of v.faltas) {
         const universidade = f.aluno.universidade.nome;
         faltasPorUniversidade[universidade] = (faltasPorUniversidade[universidade] ?? 0) + 1;
-        const situacao =
-          f.status === "REGISTRADA" ? (f.justificativa ? "AGUARDANDO_DECISAO" : "SEM_JUSTIFICATIVA") : f.status;
+        const situacao = f.status === "REGISTRADA" ? (f.justificativa ? "AGUARDANDO_DECISAO" : "SEM_JUSTIFICATIVA") : f.status;
         if (situacao === "JUSTIFICADA") totais.faltasJustificadas += 1;
         else if (situacao === "INDEFERIDA") totais.faltasIndeferidas += 1;
         else if (situacao === "AGUARDANDO_DECISAO") totais.faltasAguardandoDecisao += 1;
@@ -238,12 +249,8 @@ dashboardRouter.get("/relatorio", async (req, res, next) => {
     });
 
     // Presença só considera viagens encerradas (as outras ainda podem ter embarques)
-    const baseEncerradas = resumoViagens
-      .filter((v) => v.status === "ENCERRADA")
-      .reduce((s, v) => s + v.confirmados, 0);
-    const embarcadosEncerradas = resumoViagens
-      .filter((v) => v.status === "ENCERRADA")
-      .reduce((s, v) => s + v.embarcados, 0);
+    const baseEncerradas = resumoViagens.filter((v) => v.status === "ENCERRADA").reduce((s, v) => s + v.confirmados, 0);
+    const embarcadosEncerradas = resumoViagens.filter((v) => v.status === "ENCERRADA").reduce((s, v) => s + v.embarcados, 0);
 
     faltas.sort((a, b) => b.dia.localeCompare(a.dia) || a.horario.localeCompare(b.horario) || a.aluno.localeCompare(b.aluno));
 

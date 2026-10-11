@@ -93,7 +93,9 @@ rotaRouter.patch("/:id", autenticar, exigir("rotas:gerenciar"), async (req, res,
       if (dados.nome) await tx.rota.update({ where: { id: antes.id }, data: { nome: dados.nome } });
       if (dados.universidadeIds) {
         await tx.pontoRota.deleteMany({ where: { rotaId: antes.id } });
-        await tx.pontoRota.createMany({ data: dados.universidadeIds.map((universidadeId, i) => ({ rotaId: antes.id, universidadeId, ordem: i + 1 })) });
+        await tx.pontoRota.createMany({
+          data: dados.universidadeIds.map((universidadeId, i) => ({ rotaId: antes.id, universidadeId, ordem: i + 1 })),
+        });
       }
       if (dados.pontosEmbarqueIds) {
         await tx.rotaPontoEmbarque.deleteMany({ where: { rotaId: antes.id } });
@@ -105,7 +107,14 @@ rotaRouter.patch("/:id", autenticar, exigir("rotas:gerenciar"), async (req, res,
       const depois = await tx.rota.findUniqueOrThrow({ where: { id: antes.id }, include: includeRota });
       const [a, d] = [descrever(antes), descrever(depois)];
       if (JSON.stringify(a) !== JSON.stringify(d)) {
-        await registrarAuditoria(tx, { usuarioId: req.usuario!.sub, acao: "ROTA_ALTERADA", entidade: "Rota", entidadeId: antes.id, valorAnterior: a, valorNovo: d });
+        await registrarAuditoria(tx, {
+          usuarioId: req.usuario!.sub,
+          acao: "ROTA_ALTERADA",
+          entidade: "Rota",
+          entidadeId: antes.id,
+          valorAnterior: a,
+          valorNovo: d,
+        });
       }
       await revisarAlocacoes(tx, { rotaId: antes.id }, req.usuario!.sub);
       return depois;
@@ -120,7 +129,13 @@ rotaRouter.delete("/:id", autenticar, exigir("rotas:gerenciar"), async (req, res
   try {
     await prisma.$transaction(async (tx) => {
       const removida = await tx.rota.delete({ where: { id: req.params.id } });
-      await registrarAuditoria(tx, { usuarioId: req.usuario!.sub, acao: "ROTA_REMOVIDA", entidade: "Rota", entidadeId: removida.id, valorAnterior: { nome: removida.nome } });
+      await registrarAuditoria(tx, {
+        usuarioId: req.usuario!.sub,
+        acao: "ROTA_REMOVIDA",
+        entidade: "Rota",
+        entidadeId: removida.id,
+        valorAnterior: { nome: removida.nome },
+      });
     });
     res.status(204).send();
   } catch (err) {

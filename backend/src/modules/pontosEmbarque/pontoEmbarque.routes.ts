@@ -66,7 +66,14 @@ pontoEmbarqueRouter.patch("/:id", async (req, res, next) => {
       const atualizado = await tx.pontoEmbarque.update({ where: { id: antes.id }, data: dados });
       const { valorAnterior, valorNovo, mudou } = diferenca(antes, dados);
       if (mudou) {
-        await registrarAuditoria(tx, { usuarioId: req.usuario!.sub, acao: "PONTO_EMBARQUE_ALTERADO", entidade: "PontoEmbarque", entidadeId: antes.id, valorAnterior, valorNovo });
+        await registrarAuditoria(tx, {
+          usuarioId: req.usuario!.sub,
+          acao: "PONTO_EMBARQUE_ALTERADO",
+          entidade: "PontoEmbarque",
+          entidadeId: antes.id,
+          valorAnterior,
+          valorNovo,
+        });
       }
       // Ponto desativado sai das rotas: quem embarcava nele escolhe outro
       if (antes.ativo && dados.ativo === false) {

@@ -27,7 +27,10 @@ export async function promoverProximoDaEspera(tx: Tx, viagemId: string) {
   });
   if (!proximo) return;
   await tx.checkin.update({ where: { id: proximo.id }, data: { status: "CONFIRMADO" } });
-  await notificarAluno(tx, proximo.alunoId, { mensagem: "Boas notícias! Sua vaga foi confirmada automaticamente.", categoria: "TRANSPORTE" });
+  await notificarAluno(tx, proximo.alunoId, {
+    mensagem: "Boas notícias! Sua vaga foi confirmada automaticamente.",
+    categoria: "TRANSPORTE",
+  });
 }
 
 /** A outra viagem (ida ↔ volta) da mesma programação no mesmo dia, se ainda não começou. */

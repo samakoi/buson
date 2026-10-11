@@ -3,7 +3,24 @@ import { View } from "react-native";
 import { api } from "../../services/api";
 import { Motorista, Onibus, Rota, SentidoViagem, Viagem } from "../../types";
 import { useCarregamento } from "../../hooks/useCarregamento";
-import { Aviso, Botao, BotaoIcone, Cabecalho, Campo, Card, Carregando, Chips, EstadoVazio, Folha, ItemLista, Pilula, Rotulo, Secao, Tela, Texto } from "../../components/ui";
+import {
+  Aviso,
+  Botao,
+  BotaoIcone,
+  Cabecalho,
+  Campo,
+  Card,
+  Carregando,
+  Chips,
+  EstadoVazio,
+  Folha,
+  ItemLista,
+  Pilula,
+  Rotulo,
+  Secao,
+  Tela,
+  Texto,
+} from "../../components/ui";
 import { useTema } from "../../theme/TemaProvider";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { diaISO, formatarDiaCurto, mascararDia, mascararHora, parseDiaBR, somarDias } from "../../utils/datas";
@@ -121,7 +138,14 @@ export default function ViagensScreen() {
         subtitulo={aba === "viagens" ? "De hoje em diante" : "Rotas que se repetem toda semana"}
         acoes={
           aba === "viagens" ? (
-            <BotaoIcone icone="add" rotulo="Nova viagem avulsa" onPress={() => setFormAberto(true)} cor={cores.sobrePrimaria} tamanho={24} style={{ backgroundColor: cores.primariaForte }} />
+            <BotaoIcone
+              icone="add"
+              rotulo="Nova viagem avulsa"
+              onPress={() => setFormAberto(true)}
+              cor={cores.sobrePrimaria}
+              tamanho={24}
+              style={{ backgroundColor: cores.primariaForte }}
+            />
           ) : undefined
         }
       />
@@ -150,44 +174,50 @@ export default function ViagensScreen() {
         </Card>
       )}
 
-      {aba === "viagens" && [...porDia.entries()].map(([dia, lista]) => (
-        <View key={dia}>
-          <Secao titulo={dia === diaISO() ? `Hoje • ${formatarDiaCurto(dia)}` : formatarDiaCurto(dia)} />
-          <Card semPadding>
-            {lista.map((v, i) => {
-              const st = statusViagem[v.status];
-              const manutencao = v.onibus.emManutencao && v.status !== "ENCERRADA";
-              return (
-                <ItemLista
-                  key={v.id}
-                  icone={manutencao ? "construct" : st.icone}
-                  tomIcone={manutencao ? "alerta" : st.tom}
-                  titulo={`${v.horario} • ${v.sentido === "VOLTA" ? "Volta" : "Ida"} • ${v.rota.nome}`}
-                  subtitulo={
-                    `${v.onibus.placa} • ${v.motorista?.usuario.nome ?? "—"} • ${v.resumo.ocupados}/${v.vagas} vagas` +
-                    (v.resumo.programados ? ` (${v.resumo.programados} sem confirmar)` : "") +
-                    (v.resumo.espera ? ` • ${v.resumo.espera} na espera` : "") +
-                    (v.status !== "AGUARDANDO" ? ` • ${v.resumo.embarcados} embarcaram` : "")
-                  }
-                  abaixo={
-                    <>
-                      <Pilula texto={st.rotulo} tom={st.tom} />
-                      {v.programacaoId && <Pilula texto="Programada" tom="info" icone="repeat" />}
-                      {manutencao && <Pilula texto="Ônibus em manutenção" tom="alerta" icone="construct" />}
-                    </>
-                  }
-                  ultimo={i === lista.length - 1}
-                  direita={
-                    v.status === "AGUARDANDO" ? (
-                      <BotaoIcone icone="trash-outline" rotulo={`Excluir viagem das ${v.horario}`} cor={cores.perigo} onPress={() => excluir(v)} />
-                    ) : undefined
-                  }
-                />
-              );
-            })}
-          </Card>
-        </View>
-      ))}
+      {aba === "viagens" &&
+        [...porDia.entries()].map(([dia, lista]) => (
+          <View key={dia}>
+            <Secao titulo={dia === diaISO() ? `Hoje • ${formatarDiaCurto(dia)}` : formatarDiaCurto(dia)} />
+            <Card semPadding>
+              {lista.map((v, i) => {
+                const st = statusViagem[v.status];
+                const manutencao = v.onibus.emManutencao && v.status !== "ENCERRADA";
+                return (
+                  <ItemLista
+                    key={v.id}
+                    icone={manutencao ? "construct" : st.icone}
+                    tomIcone={manutencao ? "alerta" : st.tom}
+                    titulo={`${v.horario} • ${v.sentido === "VOLTA" ? "Volta" : "Ida"} • ${v.rota.nome}`}
+                    subtitulo={
+                      `${v.onibus.placa} • ${v.motorista?.usuario.nome ?? "—"} • ${v.resumo.ocupados}/${v.vagas} vagas` +
+                      (v.resumo.programados ? ` (${v.resumo.programados} sem confirmar)` : "") +
+                      (v.resumo.espera ? ` • ${v.resumo.espera} na espera` : "") +
+                      (v.status !== "AGUARDANDO" ? ` • ${v.resumo.embarcados} embarcaram` : "")
+                    }
+                    abaixo={
+                      <>
+                        <Pilula texto={st.rotulo} tom={st.tom} />
+                        {v.programacaoId && <Pilula texto="Programada" tom="info" icone="repeat" />}
+                        {manutencao && <Pilula texto="Ônibus em manutenção" tom="alerta" icone="construct" />}
+                      </>
+                    }
+                    ultimo={i === lista.length - 1}
+                    direita={
+                      v.status === "AGUARDANDO" ? (
+                        <BotaoIcone
+                          icone="trash-outline"
+                          rotulo={`Excluir viagem das ${v.horario}`}
+                          cor={cores.perigo}
+                          onPress={() => excluir(v)}
+                        />
+                      ) : undefined
+                    }
+                  />
+                );
+              })}
+            </Card>
+          </View>
+        ))}
 
       <Folha visivel={formAberto} onFechar={fecharFormulario} titulo="Nova viagem avulsa">
         {erro && <Aviso tipo="erro" titulo={erro} />}
@@ -206,7 +236,14 @@ export default function ViagensScreen() {
           onChange={(v) => setOpcaoData(v as OpcaoData)}
         />
         {opcaoData === "outra" && (
-          <Campo rotulo="Qual data?" value={outraData} onChangeText={(t) => setOutraData(mascararDia(t))} placeholder="DD/MM/AAAA" keyboardType="number-pad" maxLength={10} />
+          <Campo
+            rotulo="Qual data?"
+            value={outraData}
+            onChangeText={(t) => setOutraData(mascararDia(t))}
+            placeholder="DD/MM/AAAA"
+            keyboardType="number-pad"
+            maxLength={10}
+          />
         )}
 
         <Rotulo>Sentido</Rotulo>
@@ -219,7 +256,14 @@ export default function ViagensScreen() {
           onChange={setSentido}
         />
 
-        <Campo rotulo="Horário de saída" value={horario} onChangeText={(t) => setHorario(mascararHora(t))} placeholder="HH:MM" keyboardType="number-pad" maxLength={5} />
+        <Campo
+          rotulo="Horário de saída"
+          value={horario}
+          onChangeText={(t) => setHorario(mascararHora(t))}
+          placeholder="HH:MM"
+          keyboardType="number-pad"
+          maxLength={5}
+        />
 
         <Rotulo>Rota</Rotulo>
         <Chips
@@ -239,7 +283,11 @@ export default function ViagensScreen() {
 
         <Rotulo>Ônibus</Rotulo>
         <Chips
-          opcoes={onibus.map((o) => ({ valor: o.id, rotulo: o.placa, detalhe: o.emManutencao ? "em manutenção" : `${o.capacidade} lugares` }))}
+          opcoes={onibus.map((o) => ({
+            valor: o.id,
+            rotulo: o.placa,
+            detalhe: o.emManutencao ? "em manutenção" : `${o.capacidade} lugares`,
+          }))}
           valor={onibusId}
           onChange={setOnibusId}
           vazio="Cadastre um ônibus na aba Cadastros."

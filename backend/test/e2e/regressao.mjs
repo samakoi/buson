@@ -15,18 +15,30 @@ async function req(method, path, token, body) {
 }
 const login = async (email, senha = "123456") => (await req("POST", "/auth/login", null, { email, senha })).data.accessToken;
 let falhas = 0;
-const ok = (cond, msg, extra) => { if (!cond) falhas++; console.log(`${cond ? "✅" : "❌"} ${msg}${!cond && extra !== undefined ? "  → " + JSON.stringify(extra) : ""}`); };
-const hoje = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
-const ontem = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; })();
+const ok = (cond, msg, extra) => {
+  if (!cond) falhas++;
+  console.log(`${cond ? "✅" : "❌"} ${msg}${!cond && extra !== undefined ? "  → " + JSON.stringify(extra) : ""}`);
+};
+const hoje = (() => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+})();
+const ontem = (() => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+})();
 
 function limpar() {
-  sql([
-    "DELETE c FROM checkins c JOIN viagens v ON v.id=c.viagemId JOIN onibus o ON o.id=v.onibusId WHERE o.placa LIKE 'TST-%'",
-    "DELETE v FROM viagens v JOIN onibus o ON o.id=v.onibusId WHERE o.placa LIKE 'TST-%'",
-    "DELETE FROM rotas WHERE nome LIKE 'TST %'",
-    "DELETE FROM usuarios WHERE email LIKE 'tst.%@buson.com'",
-    "DELETE FROM onibus WHERE placa LIKE 'TST-%'",
-  ].join("; "));
+  sql(
+    [
+      "DELETE c FROM checkins c JOIN viagens v ON v.id=c.viagemId JOIN onibus o ON o.id=v.onibusId WHERE o.placa LIKE 'TST-%'",
+      "DELETE v FROM viagens v JOIN onibus o ON o.id=v.onibusId WHERE o.placa LIKE 'TST-%'",
+      "DELETE FROM rotas WHERE nome LIKE 'TST %'",
+      "DELETE FROM usuarios WHERE email LIKE 'tst.%@buson.com'",
+      "DELETE FROM onibus WHERE placa LIKE 'TST-%'",
+    ].join("; ")
+  );
 }
 limpar();
 
@@ -38,12 +50,20 @@ const bus = await req("POST", "/onibus", adm, { placa: "tst-0001", capacidade: 3
 ok(bus.status === 201 && bus.data.placa === "TST-0001", "cria ônibus (placa em maiúsculas)", bus);
 const dup = await req("POST", "/onibus", adm, { placa: "TST-0001", capacidade: 3 });
 ok(dup.status === 409, "placa duplicada → 409 com mensagem clara", dup);
-const mot = await req("POST", "/motoristas", adm, { nome: "TST Motorista", email: "tst.motorista@buson.com", senha: "123456", onibusId: bus.data.id });
+const mot = await req("POST", "/motoristas", adm, {
+  nome: "TST Motorista",
+  email: "tst.motorista@buson.com",
+  senha: "123456",
+  onibusId: bus.data.id,
+});
 ok(mot.status === 201 && mot.data.onibus.placa === "TST-0001", "cria motorista vinculado ao ônibus", mot);
 ok(!JSON.stringify((await req("GET", "/motoristas", adm)).data).includes("senhaHash"), "lista de motoristas não vaza senhaHash");
 const rota = await req("POST", "/rotas", adm, { nome: "TST Rota", universidadeIds: [facimp] });
 ok(rota.status === 201 && rota.data.pontos[0].ordem === 1, "cria rota com ordem automática", rota);
-ok((await req("POST", "/rotas", adm, { nome: "TST Rota 2", universidadeIds: [facimp, facimp] })).status === 400, "rota com universidade repetida → 400");
+ok(
+  (await req("POST", "/rotas", adm, { nome: "TST Rota 2", universidadeIds: [facimp, facimp] })).status === 400,
+  "rota com universidade repetida → 400"
+);
 
 const base = { rotaId: rota.data.id, onibusId: bus.data.id, motoristaId: mot.data.id, data: hoje, horario: "23:50" };
 const muitas = await req("POST", "/viagens", adm, { ...base, vagas: 5 });
@@ -54,13 +74,21 @@ ok(horaRuim.status === 400 && horaRuim.data.erro.includes("HH:MM"), "horário in
 const viagem = await req("POST", "/viagens", adm, base);
 ok(viagem.status === 201 && viagem.data.vagas === 3, "cria viagem com vagas = capacidade do ônibus", viagem);
 const viagemId = viagem.data.id;
-ok((await req("GET", `/viagens?desde=${hoje}`, adm)).data.some((v) => v.id === viagemId && v.resumo), "admin lista viagens desde hoje com resumo");
+ok(
+  (await req("GET", `/viagens?desde=${hoje}`, adm)).data.some((v) => v.id === viagemId && v.resumo),
+  "admin lista viagens desde hoje com resumo"
+);
 
 // ---- Alunos: cadastro, vagas restantes, posição na fila
 const alunos = [];
 for (let i = 0; i < 4; i++) {
   const email = `tst.aluno${i}@buson.com`;
-  const cad = await req("POST", "/auth/cadastro", null, { nome: `TST Aluno ${i}`, email: ` ${email.toUpperCase()} `, senha: "123456", universidadeId: facimp });
+  const cad = await req("POST", "/auth/cadastro", null, {
+    nome: `TST Aluno ${i}`,
+    email: ` ${email.toUpperCase()} `,
+    senha: "123456",
+    universidadeId: facimp,
+  });
   if (i === 0) ok(cad.status === 201 && cad.data.email === email, "cadastro normaliza o e-mail", cad);
   alunos.push(await login(email));
 }
@@ -70,7 +98,11 @@ ok(cadRuim.status === 400 && /nome|e-mail|senha/i.test(cadRuim.data.erro), "cada
 for (const t of alunos) await req("POST", `/viagens/${viagemId}/checkin`, t);
 const minha = (t) => req("GET", "/viagens", t).then((r) => r.data.find((v) => v.id === viagemId));
 const v0 = await minha(alunos[0]);
-ok(v0.vagasRestantes === 0 && v0.resumo.confirmados === 3 && v0.resumo.espera === 1, "resumo: 3 confirmados, 1 na espera, 0 vagas", v0 && { r: v0.resumo, vr: v0.vagasRestantes });
+ok(
+  v0.vagasRestantes === 0 && v0.resumo.confirmados === 3 && v0.resumo.espera === 1,
+  "resumo: 3 confirmados, 1 na espera, 0 vagas",
+  v0 && { r: v0.resumo, vr: v0.vagasRestantes }
+);
 const v3 = await minha(alunos[3]);
 ok(v3.meuCheckin.status === "ESPERA" && v3.meuCheckin.posicaoFila === 1, "aluno na espera vê posição 1 na fila", v3.meuCheckin);
 ok(v0.meuCheckin.posicaoFila === null, "confirmado não tem posição na fila");
@@ -84,11 +116,18 @@ const status = (await req("GET", "/onibus/status", alunos[0])).data.find((o) => 
 ok(status.emManutencao && status.observacaoManutencao === "Troca de pneus", "aluno vê o status de manutenção da frota", status);
 ok((await minha(alunos[0])).onibus.emManutencao === true, "viagem do aluno mostra ônibus em manutenção");
 const depois = (await req("GET", "/notificacoes", alunos[3])).data;
-ok(depois.naoLidas === antes.naoLidas + 1 && depois.itens[0].mensagem.includes("manutenção"), "aluno afetado recebe notificação de manutenção", depois.itens[0]);
+ok(
+  depois.naoLidas === antes.naoLidas + 1 && depois.itens[0].mensagem.includes("manutenção"),
+  "aluno afetado recebe notificação de manutenção",
+  depois.itens[0]
+);
 const ini = await req("POST", `/viagens/${viagemId}/iniciar`, motT);
 ok(ini.status === 409 && ini.data.erro.includes("manutenção"), "motorista não inicia viagem com ônibus em manutenção", ini);
 await req("PATCH", `/onibus/${bus.data.id}/manutencao`, adm, { emManutencao: false });
-ok((await req("GET", "/notificacoes", alunos[3])).data.itens[0].mensagem.includes("voltou a operar"), "aluno é avisado quando sai da manutenção");
+ok(
+  (await req("GET", "/notificacoes", alunos[3])).data.itens[0].mensagem.includes("voltou a operar"),
+  "aluno é avisado quando sai da manutenção"
+);
 await req("POST", "/notificacoes/lidas", alunos[3]);
 ok((await req("GET", "/notificacoes", alunos[3])).data.naoLidas === 0, "marcar como lidas zera o contador");
 ok((await req("GET", "/notificacoes", motT)).status === 200, "motorista acessa os próprios avisos (3 perfis)");
@@ -107,13 +146,27 @@ ok((await req("GET", "/viagens/atual", motT)).data.resumo.embarcados === 1, "pai
 // ---- Relatório: pendentes antes de encerrar, faltas depois
 let rel = (await req("GET", `/dashboard/relatorio?inicio=${hoje}&fim=${hoje}`, adm)).data;
 let minhaRel = rel.viagens.find((v) => v.id === viagemId);
-ok(minhaRel.faltas === 0 && rel.totais.pendentes >= 2, "antes de encerrar: não embarcados são pendentes, não faltas", { minhaRel, t: rel.totais });
+ok(minhaRel.faltas === 0 && rel.totais.pendentes >= 2, "antes de encerrar: não embarcados são pendentes, não faltas", {
+  minhaRel,
+  t: rel.totais,
+});
 await req("POST", `/viagens/${viagemId}/encerrar`, motT);
 rel = (await req("GET", `/dashboard/relatorio?inicio=${hoje}&fim=${hoje}`, adm)).data;
 minhaRel = rel.viagens.find((v) => v.id === viagemId);
-const faltasMinhas = rel.faltas.filter((f) => f.viagemId === viagemId).map((f) => f.aluno).sort();
-ok(minhaRel.faltas === 2 && faltasMinhas.join() === "TST Aluno 1,TST Aluno 2", "depois de encerrar: 2 faltas (quem estava na espera não conta)", faltasMinhas);
-ok(rel.porDia.length === 1 && rel.porDia[0].faltas >= 2 && rel.faltasPorUniversidade.FACIMP >= 2, "faltas agregadas por dia e por universidade", rel.porDia);
+const faltasMinhas = rel.faltas
+  .filter((f) => f.viagemId === viagemId)
+  .map((f) => f.aluno)
+  .sort();
+ok(
+  minhaRel.faltas === 2 && faltasMinhas.join() === "TST Aluno 1,TST Aluno 2",
+  "depois de encerrar: 2 faltas (quem estava na espera não conta)",
+  faltasMinhas
+);
+ok(
+  rel.porDia.length === 1 && rel.porDia[0].faltas >= 2 && rel.faltasPorUniversidade.FACIMP >= 2,
+  "faltas agregadas por dia e por universidade",
+  rel.porDia
+);
 ok(typeof rel.totais.taxaPresenca === "number", "taxa de presença calculada com viagens encerradas", rel.totais);
 const semana = (await req("GET", `/dashboard/relatorio?inicio=${ontem}&fim=${hoje}`, adm)).data;
 ok(semana.porDia.length === 2 && semana.periodo.dias === 2, "filtro por período devolve um ponto por dia", semana.periodo);
@@ -129,7 +182,10 @@ ok((await req("DELETE", `/motoristas/${mot.data.id}`, adm)).status === 409, "nã
 const v2 = await req("POST", "/viagens", adm, { ...base, horario: "23:55" });
 await req("POST", `/viagens/${v2.data.id}/checkin`, alunos[1]);
 ok((await req("DELETE", `/viagens/${v2.data.id}`, adm)).status === 200, "exclui viagem que ainda não começou");
-ok((await req("GET", "/notificacoes", alunos[1])).data.itens[0].mensagem.includes("cancelada"), "aluno é avisado do cancelamento da viagem");
+ok(
+  (await req("GET", "/notificacoes", alunos[1])).data.itens[0].mensagem.includes("cancelada"),
+  "aluno é avisado do cancelamento da viagem"
+);
 
 limpar();
 console.log(falhas ? `\n${falhas} falha(s)` : "\nTudo certo. Dados de teste removidos.");

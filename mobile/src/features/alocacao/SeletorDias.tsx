@@ -39,7 +39,11 @@ export function SeletorDias({
         const ocupadosComigo = d.ocupados + (marcado ? 1 : 0);
         const livres = d.capacidade - ocupadosComigo;
         const bloqueado = desabilitado || lotado;
-        const detalhe = lotado ? "Lotado — escolha outro dia" : marcado ? "Seu dia" : `${livres} ${livres === 1 ? "vaga livre" : "vagas livres"}`;
+        const detalhe = lotado
+          ? "Lotado — escolha outro dia"
+          : marcado
+            ? "Seu dia"
+            : `${livres} ${livres === 1 ? "vaga livre" : "vagas livres"}`;
         return (
           <Pressable
             key={d.diaSemana}
@@ -81,7 +85,14 @@ export function SeletorDias({
 
 const useEstilos = criarEstilos((t) => ({
   lista: { borderRadius: t.raio.lg, borderWidth: 1, borderColor: t.cores.borda, backgroundColor: t.cores.superficie, overflow: "hidden" },
-  linha: { flexDirection: "row", alignItems: "center", gap: t.espaco.md, paddingHorizontal: t.espaco.lg, paddingVertical: t.espaco.md, minHeight: 64 },
+  linha: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: t.espaco.md,
+    paddingHorizontal: t.espaco.lg,
+    paddingVertical: t.espaco.md,
+    minHeight: 64,
+  },
   separador: { borderBottomWidth: 1, borderBottomColor: t.cores.borda },
   marcado: { backgroundColor: t.cores.primariaSuave },
   pressionado: { opacity: 0.85 },

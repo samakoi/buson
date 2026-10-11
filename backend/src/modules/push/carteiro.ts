@@ -29,17 +29,15 @@ class CarteiroExpo implements Carteiro {
   async enviar(mensagens: Mensagem[]) {
     const tickets: Ticket[] = [];
     const lotes = this.expo.chunkPushNotifications(
-      mensagens.map(
-        (m): ExpoPushMessage => ({
-          to: m.para,
-          title: m.titulo,
-          body: m.corpo,
-          data: m.dados,
-          sound: "default",
-          priority: "high",
-          channelId: "avisos", // canal criado pelo app no Android
-        })
-      )
+      mensagens.map((m): ExpoPushMessage => ({
+        to: m.para,
+        title: m.titulo,
+        body: m.corpo,
+        data: m.dados,
+        sound: "default",
+        priority: "high",
+        channelId: "avisos", // canal criado pelo app no Android
+      }))
     );
     for (const lote of lotes) {
       try {
@@ -52,7 +50,8 @@ class CarteiroExpo implements Carteiro {
         }
       } catch (err) {
         // Falha de rede/serviço: o lote inteiro volta para a fila
-        for (let i = 0; i < lote.length; i++) tickets.push({ ok: false, erro: String((err as Error).message).slice(0, 180), tokenInvalido: false });
+        for (let i = 0; i < lote.length; i++)
+          tickets.push({ ok: false, erro: String((err as Error).message).slice(0, 180), tokenInvalido: false });
       }
     }
     return tickets;

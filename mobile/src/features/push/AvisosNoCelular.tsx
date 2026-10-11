@@ -6,14 +6,27 @@ import { CategoriaNotificacao } from "../../types";
 import { useTema } from "../../theme/TemaProvider";
 import { Aviso, Botao, Card, Folha, ItemLista, Texto } from "../../components/ui";
 import { avisar, mensagemDeErro } from "../../utils/feedback";
-import { ativarPush, convitePushDispensado, disponibilidadePush, dispensarConvitePush, explicacaoIndisponivel, permissaoPush } from "./push";
+import {
+  ativarPush,
+  convitePushDispensado,
+  disponibilidadePush,
+  dispensarConvitePush,
+  explicacaoIndisponivel,
+  permissaoPush,
+} from "./push";
 
 type Permissao = Awaited<ReturnType<typeof permissaoPush>>;
 
 /** Situação da permissão de push neste aparelho (recarregável). */
 function usePermissao() {
   const [permissao, setPermissao] = useState<Permissao | null>(null);
-  const recarregar = useCallback(() => permissaoPush().then(setPermissao).catch(() => setPermissao("indisponivel")), []);
+  const recarregar = useCallback(
+    () =>
+      permissaoPush()
+        .then(setPermissao)
+        .catch(() => setPermissao("indisponivel")),
+    []
+  );
   useEffect(() => {
     recarregar();
   }, [recarregar]);
@@ -73,7 +86,8 @@ export function PreferenciasAvisos({ visivel, onFechar }: { visivel: boolean; on
   const { permissao, recarregar } = usePermissao();
   const pref = useQuery({
     queryKey: ["notificacoes", "preferencias"],
-    queryFn: async () => (await api.get<{ desligaveis: CategoriaNotificacao[]; desligadas: CategoriaNotificacao[] }>("/notificacoes/preferencias")).data,
+    queryFn: async () =>
+      (await api.get<{ desligaveis: CategoriaNotificacao[]; desligadas: CategoriaNotificacao[] }>("/notificacoes/preferencias")).data,
     enabled: visivel,
   });
   const salvar = useMutation({
@@ -106,7 +120,9 @@ export function PreferenciasAvisos({ visivel, onFechar }: { visivel: boolean; on
       ) : (
         <Botao titulo="Ativar avisos no celular" icone="notifications-outline" onPress={() => ativar().then(recarregar)} />
       )}
-      {permissao === "denied" && <Botao titulo="Abrir configurações" variante="secundario" onPress={() => Linking.openSettings()} style={{ marginTop: 8 }} />}
+      {permissao === "denied" && (
+        <Botao titulo="Abrir configurações" variante="secundario" onPress={() => Linking.openSettings()} style={{ marginTop: 8 }} />
+      )}
 
       <Texto variante="pequeno" cor="textoSuave" style={{ marginTop: 16, marginBottom: 8 }}>
         Escolha o que chega no celular. Cadastro, documentos, faltas e viagem cancelada sempre chegam. Tudo continua na aba Avisos.

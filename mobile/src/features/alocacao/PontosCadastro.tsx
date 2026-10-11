@@ -2,7 +2,20 @@ import React, { useState } from "react";
 import { View } from "react-native";
 import { PontoEmbarque } from "../../types";
 import { useTema } from "../../theme/TemaProvider";
-import { Aviso, Botao, BotaoIcone, Campo, Card, Carregando, Chips, EstadoVazio, Folha, ItemLista, Pilula, Rotulo } from "../../components/ui";
+import {
+  Aviso,
+  Botao,
+  BotaoIcone,
+  Campo,
+  Card,
+  Carregando,
+  Chips,
+  EstadoVazio,
+  Folha,
+  ItemLista,
+  Pilula,
+  Rotulo,
+} from "../../components/ui";
 import { avisar, codigoDeErro, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { BarraSecao } from "../../screens/Admin/cadastros/BarraSecao";
 import { CampoCoordenadas, escreverCoordenadas, lerCoordenadas } from "../gps/CampoCoordenadas";
@@ -63,7 +76,9 @@ export default function PontosCadastro() {
     } catch (err) {
       avisar(
         "Não foi possível excluir",
-        codigoDeErro(err) === "EM_USO" ? "Este ponto faz parte de uma rota. Desative-o em vez de excluir." : mensagemDeErro(err, "Tente novamente.")
+        codigoDeErro(err) === "EM_USO"
+          ? "Este ponto faz parte de uma rota. Desative-o em vez de excluir."
+          : mensagemDeErro(err, "Tente novamente.")
       );
     }
   }
@@ -83,7 +98,13 @@ export default function PontosCadastro() {
               icone="location-outline"
               tomIcone={p.ativo ? "info" : "neutro"}
               titulo={p.nome}
-              subtitulo={[p.endereco, rotas ? `em ${rotas} rota(s)` : "fora das rotas", p.latitude == null ? "sem localização no mapa" : null].filter(Boolean).join(" • ")}
+              subtitulo={[
+                p.endereco,
+                rotas ? `em ${rotas} rota(s)` : "fora das rotas",
+                p.latitude == null ? "sem localização no mapa" : null,
+              ]
+                .filter(Boolean)
+                .join(" • ")}
               abaixo={!p.ativo ? <Pilula texto="Inativo" tom="neutro" /> : undefined}
               apagado={!p.ativo}
               ultimo={i === pontos.length - 1}
@@ -110,7 +131,13 @@ export default function PontosCadastro() {
         {form && (
           <>
             {erro && <Aviso tipo="erro" titulo={erro} />}
-            <Campo rotulo="Nome" value={form.nome} onChangeText={(nome) => setForm({ ...form, nome })} placeholder="Ex.: Praça da Cultura" autoFocus={!form.id} />
+            <Campo
+              rotulo="Nome"
+              value={form.nome}
+              onChangeText={(nome) => setForm({ ...form, nome })}
+              placeholder="Ex.: Praça da Cultura"
+              autoFocus={!form.id}
+            />
             <Campo
               rotulo="Endereço ou referência (opcional)"
               value={form.endereco}
@@ -131,7 +158,13 @@ export default function PontosCadastro() {
                 />
               </>
             )}
-            <Botao titulo={form.id ? "Salvar" : "Adicionar ponto"} icone="checkmark" onPress={confirmarFormulario} carregando={salvar.isPending} style={{ marginTop: 24 }} />
+            <Botao
+              titulo={form.id ? "Salvar" : "Adicionar ponto"}
+              icone="checkmark"
+              onPress={confirmarFormulario}
+              carregando={salvar.isPending}
+              style={{ marginTop: 24 }}
+            />
           </>
         )}
       </Folha>

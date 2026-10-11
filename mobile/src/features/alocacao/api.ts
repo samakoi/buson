@@ -64,8 +64,7 @@ export function useSalvarPonto() {
       ativo?: boolean;
       latitude?: number | null;
       longitude?: number | null;
-    }) =>
-      id ? (await api.patch(`/pontos-embarque/${id}`, dados)).data : (await api.post("/pontos-embarque", dados)).data,
+    }) => (id ? (await api.patch(`/pontos-embarque/${id}`, dados)).data : (await api.post("/pontos-embarque", dados)).data),
     onSuccess: () => cliente.invalidateQueries({ queryKey: ["pontos-embarque"] }),
   });
 }

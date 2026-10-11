@@ -129,7 +129,10 @@ export default function RotasCadastro() {
       await api.delete(`/rotas/${r.id}`);
       await recarregar();
     } catch (err) {
-      avisar("Não foi possível excluir", mensagemDeErro(err, "Tente novamente.") + " Rotas com viagens cadastradas não podem ser excluídas.");
+      avisar(
+        "Não foi possível excluir",
+        mensagemDeErro(err, "Tente novamente.") + " Rotas com viagens cadastradas não podem ser excluídas."
+      );
     }
   }
 
@@ -162,7 +165,13 @@ export default function RotasCadastro() {
             }
           />
         ))}
-        {rotas.length === 0 && <EstadoVazio icone="map-outline" titulo="Nenhuma rota" acao={{ titulo: "Adicionar rota", icone: "add", onPress: () => abrir() }} />}
+        {rotas.length === 0 && (
+          <EstadoVazio
+            icone="map-outline"
+            titulo="Nenhuma rota"
+            acao={{ titulo: "Adicionar rota", icone: "add", onPress: () => abrir() }}
+          />
+        )}
       </Card>
 
       <Folha visivel={aberto} onFechar={fechar} titulo={editandoId ? "Editar rota" : "Nova rota"}>
@@ -187,7 +196,13 @@ export default function RotasCadastro() {
           </Aviso>
         )}
 
-        <Botao titulo={editandoId ? "Salvar rota" : "Adicionar rota"} icone={editandoId ? "checkmark" : "add"} onPress={salvar} carregando={salvando} style={{ marginTop: 24 }} />
+        <Botao
+          titulo={editandoId ? "Salvar rota" : "Adicionar rota"}
+          icone={editandoId ? "checkmark" : "add"}
+          onPress={salvar}
+          carregando={salvando}
+          style={{ marginTop: 24 }}
+        />
       </Folha>
     </View>
   );

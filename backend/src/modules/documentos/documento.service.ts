@@ -25,11 +25,13 @@ export { TAMANHO_MAXIMO };
 const AGUARDANDO: StatusDocumento[] = ["PENDENTE", "EM_ANALISE"];
 
 async function alunoDoUsuario(usuarioId: string) {
-  const aluno = await prisma.aluno.findUnique({ where: { usuarioId }, select: { id: true, statusConta: true, usuario: { select: { nome: true } } } });
+  const aluno = await prisma.aluno.findUnique({
+    where: { usuarioId },
+    select: { id: true, statusConta: true, usuario: { select: { nome: true } } },
+  });
   if (!aluno) throw new AppError("PERFIL_ALUNO_NAO_ENCONTRADO");
   return aluno;
 }
-
 
 export async function enviar(usuarioId: string, arquivo: Express.Multer.File | undefined, tipo: TipoDocumento) {
   const aluno = await alunoDoUsuario(usuarioId);
@@ -66,7 +68,10 @@ export async function enviar(usuarioId: string, arquivo: Express.Multer.File | u
         detalhes: { documentoId: documento.id, arquivo: documento.nomeOriginal },
         valorNovo: { documento: "PENDENTE" },
       });
-      await notificarAdmins(tx, { mensagem: `${aluno.usuario.nome} enviou um documento de matrícula para análise.`, categoria: "DOCUMENTO" });
+      await notificarAdmins(tx, {
+        mensagem: `${aluno.usuario.nome} enviou um documento de matrícula para análise.`,
+        categoria: "DOCUMENTO",
+      });
       return documento;
     }, OPCOES_TX);
   } catch (err) {
@@ -107,7 +112,15 @@ export async function listar(f: FiltroDocumentos) {
       where,
       select: {
         ...documentoPublico,
-        aluno: { select: { id: true, matricula: true, statusConta: true, usuario: { select: { nome: true } }, universidade: { select: { nome: true } } } },
+        aluno: {
+          select: {
+            id: true,
+            matricula: true,
+            statusConta: true,
+            usuario: { select: { nome: true } },
+            universidade: { select: { nome: true } },
+          },
+        },
       },
       // Fila: os mais antigos primeiro (quem espera há mais tempo)
       orderBy: { criadoEm: f.status && !AGUARDANDO.includes(f.status) ? "desc" : "asc" },
@@ -167,7 +180,10 @@ export async function gerarLink(documentoId: string, usuario: JwtPayload) {
 export async function abrirArquivo(documentoId: string, expira: number, recebida: string) {
   verificarLink("documento", documentoId, expira, recebida);
 
-  const documento = await prisma.documento.findUnique({ where: { id: documentoId }, select: { arquivo: true, mimeType: true, nomeOriginal: true } });
+  const documento = await prisma.documento.findUnique({
+    where: { id: documentoId },
+    select: { arquivo: true, mimeType: true, nomeOriginal: true },
+  });
   if (!documento) throw new AppError("DOCUMENTO_NAO_ENCONTRADO");
   return { ...(await armazenamento.abrir(documento.arquivo)), mimeType: documento.mimeType, nomeOriginal: documento.nomeOriginal };
 }
@@ -176,7 +192,10 @@ export async function abrirArquivo(documentoId: string, expira: number, recebida
 
 async function travarParaAnalise(tx: Prisma.TransactionClient, documentoId: string) {
   await tx.$queryRaw`SELECT id FROM documentos WHERE id = ${documentoId} FOR UPDATE`;
-  const documento = await tx.documento.findUnique({ where: { id: documentoId }, select: { id: true, status: true, alunoId: true, nomeOriginal: true } });
+  const documento = await tx.documento.findUnique({
+    where: { id: documentoId },
+    select: { id: true, status: true, alunoId: true, nomeOriginal: true },
+  });
   if (!documento) throw new AppError("DOCUMENTO_NAO_ENCONTRADO");
   if (!AGUARDANDO.includes(documento.status)) throw new AppError("DOCUMENTO_JA_ANALISADO");
   return documento;
@@ -186,7 +205,10 @@ async function travarParaAnalise(tx: Prisma.TransactionClient, documentoId: stri
 export async function aprovar(documentoId: string, adminId: string) {
   return prisma.$transaction(async (tx) => {
     const documento = await travarParaAnalise(tx, documentoId);
-    await tx.documento.update({ where: { id: documento.id }, data: { status: "APROVADO", analisadoPorId: adminId, analisadoEm: new Date(), motivoReprovacao: null } });
+    await tx.documento.update({
+      where: { id: documento.id },
+      data: { status: "APROVADO", analisadoPorId: adminId, analisadoEm: new Date(), motivoReprovacao: null },
+    });
     await registrarAuditoria(tx, {
       usuarioId: adminId,
       acao: "DOCUMENTO_APROVADO",
@@ -199,7 +221,8 @@ export async function aprovar(documentoId: string, adminId: string) {
     await notificarAluno(tx, documento.alunoId, { mensagem: "Seu documento de matrícula foi aprovado.", categoria: "DOCUMENTO" });
 
     const aluno = await tx.aluno.findUniqueOrThrow({ where: { id: documento.alunoId }, select: { statusConta: true } });
-    if (aluno.statusConta === "PENDENTE") await alterarStatusNaTransacao(tx, documento.alunoId, "ATIVO", "Documento de matrícula aprovado", adminId);
+    if (aluno.statusConta === "PENDENTE")
+      await alterarStatusNaTransacao(tx, documento.alunoId, "ATIVO", "Documento de matrícula aprovado", adminId);
     return tx.documento.findUniqueOrThrow({ where: { id: documento.id }, select: documentoPublico });
   }, OPCOES_TX);
 }
@@ -207,7 +230,10 @@ export async function aprovar(documentoId: string, adminId: string) {
 export async function reprovar(documentoId: string, adminId: string, motivo: string) {
   return prisma.$transaction(async (tx) => {
     const documento = await travarParaAnalise(tx, documentoId);
-    await tx.documento.update({ where: { id: documento.id }, data: { status: "REPROVADO", motivoReprovacao: motivo, analisadoPorId: adminId, analisadoEm: new Date() } });
+    await tx.documento.update({
+      where: { id: documento.id },
+      data: { status: "REPROVADO", motivoReprovacao: motivo, analisadoPorId: adminId, analisadoEm: new Date() },
+    });
     await registrarAuditoria(tx, {
       usuarioId: adminId,
       acao: "DOCUMENTO_REPROVADO",

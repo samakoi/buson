@@ -41,7 +41,11 @@ export function diferenca<T extends Record<string, unknown>>(antes: T, depois: P
       novo[chave] = depois[chave] ?? null;
     }
   }
-  return { valorAnterior: anterior as Prisma.InputJsonValue, valorNovo: novo as Prisma.InputJsonValue, mudou: Object.keys(novo).length > 0 };
+  return {
+    valorAnterior: anterior as Prisma.InputJsonValue,
+    valorNovo: novo as Prisma.InputJsonValue,
+    mudou: Object.keys(novo).length > 0,
+  };
 }
 
 export async function historico(entidade: string, entidadeId: string, limite = 30) {
