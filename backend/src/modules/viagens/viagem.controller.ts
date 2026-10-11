@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma";
 import * as viagemService from "./viagem.service";
+import * as historicoService from "./historico.service";
 import * as localizacaoService from "../gps/localizacao.service";
 import { AppError } from "../../errors/AppError";
 
@@ -181,6 +182,35 @@ export async function trajeto(req: Request, res: Response, next: NextFunction) {
 export async function aoVivo(_req: Request, res: Response, next: NextFunction) {
   try {
     res.json(await localizacaoService.aoVivo());
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ---- Histórico (administração)
+
+export const historicoQuerySchema = z.object({
+  inicio: dia.optional(),
+  fim: dia.optional(),
+  rotaId: z.string().uuid().optional(),
+  motoristaId: z.string().uuid().optional(),
+  sentido: z.enum(["IDA", "VOLTA"]).optional(),
+  status: z.enum(["AGUARDANDO", "EM_ANDAMENTO", "ENCERRADA"]).optional(),
+  pagina: z.coerce.number().int().min(1).default(1),
+  porPagina: z.coerce.number().int().min(1).max(50).default(20),
+});
+
+export async function historico(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await historicoService.historico(historicoQuerySchema.parse(req.query)));
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function detalhe(req: Request, res: Response, next: NextFunction) {
+  try {
+    res.json(await historicoService.detalhe(req.params.id));
   } catch (err) {
     next(err);
   }

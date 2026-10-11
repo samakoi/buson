@@ -319,6 +319,9 @@ model Viagem {
   /// Viagem gerada pela programação semanal (null = criada avulsa pelo admin)
   programacaoId String?
   programacao   Programacao?  @relation(fields: [programacaoId], references: [id], onDelete: SetNull)
+  /// Quando o motorista iniciou e encerrou (vazio nas viagens anteriores a este registro)
+  iniciadaEm    DateTime?
+  encerradaEm   DateTime?
   criadoEm      DateTime      @default(now())
 
   checkins          Checkin[]
@@ -331,6 +334,8 @@ model Viagem {
   lembreteSaidaEm   DateTime?
 
   @@unique([programacaoId, sentido, data])
+  // Histórico do admin: período (+ rota) em ordem de data
+  @@index([data, horario])
   @@map("viagens")
 }
 

@@ -12,6 +12,9 @@ viagemRouter.get("/", viagemController.listar);
 viagemRouter.get("/atual", exigir("viagem:atual"), viagemController.atual);
 // GPS: viagens em andamento no mapa (administração)
 viagemRouter.get("/ao-vivo", exigir("dashboard:ler"), viagemController.aoVivo);
+// Histórico e detalhe de viagens passadas (administração)
+viagemRouter.get("/historico", exigir("dashboard:ler"), viagemController.historico);
+viagemRouter.get("/:id/detalhe", exigir("dashboard:ler"), viagemController.detalhe);
 viagemRouter.get("/:id/passageiros", exigir("viagem:passageiros"), viagemController.passageiros);
 viagemRouter.get("/:id/rota", viagemController.rotaDoDia);
 

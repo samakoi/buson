@@ -74,6 +74,15 @@ export const documentacaoDasRotas: Record<string, DocRota> = {
     resumo: "Viagem do dia (aluno/motorista)",
     descricao: "A próxima não encerrada ou, se todas acabaram, a última.",
   },
+  "GET /viagens/historico": {
+    resumo: "Histórico de viagens (paginado)",
+    descricao: "Mais recentes primeiro; padrão: últimos 30 dias (máximo 366). Traz o resumo de cada viagem e os totais do período.",
+    consulta: viagens.historicoQuerySchema,
+  },
+  "GET /viagens/{id}/detalhe": {
+    resumo: "Detalhe de uma viagem",
+    descricao: "Horários de início e fim, números e a situação de cada passageiro (embarcou, faltou, avisou, cancelou, espera).",
+  },
   "GET /viagens/ao-vivo": { resumo: "Viagens em andamento com a última posição de GPS" },
   "GET /viagens/{id}/passageiros": { resumo: "Lista de passageiros da viagem" },
   "GET /viagens/{id}/rota": { resumo: "Rota do dia com as paradas e quantos alunos em cada uma" },

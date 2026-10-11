@@ -28,7 +28,7 @@ type Tx = Prisma.TransactionClient;
 // Nunca devolver o usuário inteiro (tem senhaHash) — só o que as telas usam
 const usuarioPublico = { select: { id: true, nome: true } } as const;
 
-const viagemInclude = {
+export const viagemInclude = {
   rota: true,
   onibus: true,
   motorista: { include: { usuario: usuarioPublico } },
@@ -45,7 +45,7 @@ export interface ResumoViagem {
 }
 
 /** Quantos confirmados / embarcados / em espera cada viagem tem. */
-async function resumirViagens(viagemIds: string[]) {
+export async function resumirViagens(viagemIds: string[]) {
   const resumos = new Map<string, ResumoViagem>(
     viagemIds.map((id) => [id, { confirmados: 0, programados: 0, ocupados: 0, embarcados: 0, espera: 0 }])
   );
@@ -498,7 +498,11 @@ async function alterarStatusViagem(viagemId: string, motoristaId: string, de: St
   await buscarViagemDoMotorista(viagemId, motoristaId);
   return prisma.$transaction(async (tx) => {
     // Só muda se ainda estiver no status esperado (dois toques em "Encerrar" não registram faltas duas vezes)
-    const { count } = await tx.viagem.updateMany({ where: { id: viagemId, status: de }, data: { status: para } });
+    const agora = new Date();
+    const { count } = await tx.viagem.updateMany({
+      where: { id: viagemId, status: de },
+      data: { status: para, ...(para === "EM_ANDAMENTO" ? { iniciadaEm: agora } : { encerradaEm: agora }) },
+    });
     if (count === 0) throw new AppError(erroTransicaoInvalida[para]);
     let faltasRegistradas = 0;
     if (para === "ENCERRADA") {
