@@ -2,6 +2,7 @@ import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api, definirAoExpirarSessao, STORAGE_KEYS } from "../services/api";
 import { obterDeviceId } from "../services/dispositivo";
+import { apagarTokens, lerToken, salvarTokens } from "../services/tokens";
 import { Usuario } from "../types";
 
 interface EstadoSessao {
@@ -17,7 +18,7 @@ interface EstadoSessao {
 }
 
 async function limparLocal() {
-  await AsyncStorage.multiRemove(Object.values(STORAGE_KEYS));
+  await Promise.all([AsyncStorage.multiRemove(Object.values(STORAGE_KEYS)), apagarTokens()]);
 }
 
 /** Sessão do usuário (estado global com Zustand). */
@@ -36,16 +37,15 @@ export const useSessao = create<EstadoSessao>((set) => ({
       senha,
       deviceId: await obterDeviceId(),
     });
-    await AsyncStorage.multiSet([
-      [STORAGE_KEYS.accessToken, data.accessToken],
-      [STORAGE_KEYS.refreshToken, data.refreshToken],
-      [STORAGE_KEYS.usuario, JSON.stringify(data.usuario)],
+    await Promise.all([
+      salvarTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken }),
+      AsyncStorage.setItem(STORAGE_KEYS.usuario, JSON.stringify(data.usuario)),
     ]);
     set({ usuario: data.usuario });
   },
 
   logout: async () => {
-    const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.refreshToken);
+    const refreshToken = await lerToken("refreshToken");
     // Mesmo sem internet o app sai; a sessão no servidor expira sozinha depois
     if (refreshToken) await api.post("/auth/logout", { refreshToken }).catch(() => undefined);
     await limparLocal();

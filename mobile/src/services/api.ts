@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { obterDeviceId } from "./dispositivo";
+import { lerToken, salvarTokens } from "./tokens";
 
 /**
  * IMPORTANTE:
@@ -12,9 +12,8 @@ import { obterDeviceId } from "./dispositivo";
  */
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.3.126:3333/api/v1";
 
+/** Dados não sensíveis no AsyncStorage; os tokens ficam em ./tokens (SecureStore no celular) */
 export const STORAGE_KEYS = {
-  accessToken: "@busOn:accessToken",
-  refreshToken: "@busOn:refreshToken",
   usuario: "@busOn:usuario",
 } as const;
 
@@ -23,7 +22,7 @@ export const STORAGE_KEYS = {
 export const api = axios.create({ baseURL: API_URL });
 
 api.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem(STORAGE_KEYS.accessToken);
+  const token = await lerToken("accessToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -45,16 +44,13 @@ export function definirAoExpirarSessao(callback: (() => void) | null) {
 let renovacaoEmAndamento: Promise<string> | null = null;
 
 async function renovarSessao(): Promise<string> {
-  const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.refreshToken);
+  const refreshToken = await lerToken("refreshToken");
   if (!refreshToken) throw new Error("Sem refresh token salvo.");
   // axios "puro", sem os interceptors, para não entrar em loop
   const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken, deviceId: await obterDeviceId() });
   // Rotação: a API devolve um NOVO par; o refresh antigo deixa de valer
   const par = desembrulhar<{ accessToken: string; refreshToken: string }>(data);
-  await AsyncStorage.multiSet([
-    [STORAGE_KEYS.accessToken, par.accessToken],
-    [STORAGE_KEYS.refreshToken, par.refreshToken],
-  ]);
+  await salvarTokens(par);
   return par.accessToken;
 }
 
