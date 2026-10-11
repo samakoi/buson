@@ -203,27 +203,52 @@ model Motorista {
 }
 
 model Rota {
-  id       String   @id @default(uuid())
-  nome     String
-  criadoEm DateTime @default(now())
+  id           String    @id @default(uuid())
+  nome         String
+  criadoEm     DateTime  @default(now())
+  /// Muda a cada edição (a tela de edição usa para não sobrescrever a alteração de outra pessoa)
+  atualizadoEm DateTime  @default(now()) @updatedAt
+  /// Exclusão lógica: some das listas e das novas escolhas, mas as viagens já feitas continuam no histórico
+  excluidaEm   DateTime?
 
+  trechos        TrechoRota[]
   pontos         PontoRota[]
   viagens        Viagem[]
   pontosEmbarque RotaPontoEmbarque[]
   programacoes   Programacao[]
   alocacoes      AlocacaoAluno[]
 
+  @@index([excluidaEm])
   @@map("rotas")
 }
 
+/// Os dois trechos de toda rota: IDA (dos pontos de embarque às instituições) e VOLTA (o inverso).
+/// O horário de saída de cada trecho fica na programação (horarioIda / horarioVolta).
+model TrechoRota {
+  id           String        @id @default(uuid())
+  rotaId       String
+  rota         Rota          @relation(fields: [rotaId], references: [id], onDelete: Cascade)
+  sentido      SentidoViagem
+  origem       String        @db.VarChar(80)
+  destino      String        @db.VarChar(80)
+  criadoEm     DateTime      @default(now())
+  atualizadoEm DateTime      @default(now()) @updatedAt
+
+  @@unique([rotaId, sentido])
+  @@map("trechos_rota")
+}
+
 model PontoRota {
-  id             String       @id @default(uuid())
+  id             String        @id @default(uuid())
   rotaId         String
-  rota           Rota         @relation(fields: [rotaId], references: [id], onDelete: Cascade)
+  rota           Rota          @relation(fields: [rotaId], references: [id], onDelete: Cascade)
   universidadeId String
-  universidade   Universidade @relation(fields: [universidadeId], references: [id])
+  universidade   Universidade  @relation(fields: [universidadeId], references: [id])
+  /// IDA: instituições onde os alunos descem; VOLTA: onde embarcam
+  sentido        SentidoViagem @default(IDA)
   ordem          Int
 
+  @@unique([rotaId, sentido, universidadeId])
   @@map("pontos_rota")
 }
 
@@ -252,9 +277,11 @@ model RotaPontoEmbarque {
   rota            Rota          @relation(fields: [rotaId], references: [id], onDelete: Cascade)
   pontoEmbarqueId String
   pontoEmbarque   PontoEmbarque @relation(fields: [pontoEmbarqueId], references: [id])
+  /// IDA: pontos onde os alunos embarcam; VOLTA: onde descem
+  sentido         SentidoViagem @default(IDA)
   ordem           Int
 
-  @@unique([rotaId, pontoEmbarqueId])
+  @@unique([rotaId, sentido, pontoEmbarqueId])
   @@map("rota_pontos_embarque")
 }
 

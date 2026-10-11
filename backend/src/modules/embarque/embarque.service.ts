@@ -74,7 +74,9 @@ export async function escanear(viagemId: string, usuarioId: string, token: strin
   if (!sessao || sessao.viagemId !== viagemId || !sessao.ativa) throw new AppError("QR_INVALIDO");
   if (sessao.expiraEm < new Date()) throw new AppError("QR_EXPIRADO");
 
-  if (!viagem.rota.pontos.some((p) => p.universidadeId === aluno.universidadeId)) throw new AppError("ROTA_INCOMPATIVEL");
+  // Instituição do aluno no trecho desta viagem (na ida, onde desce; na volta, onde embarca)
+  if (!viagem.rota.pontos.some((p) => p.sentido === viagem.sentido && p.universidadeId === aluno.universidadeId))
+    throw new AppError("ROTA_INCOMPATIVEL");
 
   try {
     const embarque = await prisma.$transaction(async (tx) => {

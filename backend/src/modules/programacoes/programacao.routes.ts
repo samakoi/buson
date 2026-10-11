@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { autenticar, exigir } from "../../middlewares/auth";
 import * as programacaoService from "./programacao.service";
+import { rotaEdicaoSchema, rotaSchema } from "../rotas/rota.service";
 
 export const programacaoRouter = Router();
 
@@ -13,9 +14,14 @@ const diasSemana = z
   .min(1, "Escolha ao menos um dia da semana.")
   .refine((d) => new Set(d).size === d.length, "Dia da semana repetido.");
 
+/**
+ * Viagem programada. A rota vem pronta (rotaId) ou é criada junto, com ida e volta (rota):
+ * não é preciso cadastrar a rota antes.
+ */
 export const criarSchema = z
   .object({
-    rotaId: z.string().uuid("Selecione a rota."),
+    rotaId: z.string().uuid("Selecione a rota.").optional(),
+    rota: rotaSchema.optional(),
     onibusId: z.string().uuid("Selecione o ônibus."),
     motoristaId: z.string().uuid("Selecione o motorista."),
     horarioIda: horario,
@@ -23,10 +29,25 @@ export const criarSchema = z
     diasSemana,
     ativa: z.boolean().optional(),
   })
-  .strict();
+  .strict()
+  .refine((d) => !!d.rotaId !== !!d.rota, "Informe a rota existente ou os trechos de ida e volta (um dos dois).");
 
-// A rota não muda: para outra rota, crie outra programação
-export const atualizarSchema = criarSchema.omit({ rotaId: true }).partial().strict();
+/**
+ * A rota da programação não troca por outra, mas os trechos dela podem ser editados aqui
+ * (rota). `versao` = atualizadoEm lido pela tela: se outra pessoa salvou antes, a edição é recusada.
+ */
+export const atualizarSchema = z
+  .object({
+    onibusId: z.string().uuid("Selecione o ônibus.").optional(),
+    motoristaId: z.string().uuid("Selecione o motorista.").optional(),
+    horarioIda: horario.optional(),
+    horarioVolta: horario.nullable().optional(),
+    diasSemana: diasSemana.optional(),
+    ativa: z.boolean().optional(),
+    rota: rotaEdicaoSchema.optional(),
+    versao: z.string().datetime("Versão inválida.").optional(),
+  })
+  .strict();
 
 programacaoRouter.get("/", async (_req, res, next) => {
   try {

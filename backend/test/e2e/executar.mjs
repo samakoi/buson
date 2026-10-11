@@ -30,6 +30,7 @@ const SUITES = [
   "notificacoes",
   "gps",
   "historico",
+  "rotas",
 ];
 
 if (!/_test$/.test(NOME_BANCO)) {

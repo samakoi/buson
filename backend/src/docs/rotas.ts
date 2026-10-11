@@ -122,10 +122,32 @@ export const documentacaoDasRotas: Record<string, DocRota> = {
     descricao: "Avisa os alunos das próximas viagens desse ônibus.",
   },
   "DELETE /onibus/{id}": { resumo: "Exclui ônibus" },
-  "GET /rotas": { resumo: "Lista de rotas com as paradas" },
-  "POST /rotas": { resumo: "Cadastra rota", corpo: rotas.schema, status: 201 },
-  "PATCH /rotas/{id}": { resumo: "Altera rota", corpo: rotas.schema.partial() },
-  "DELETE /rotas/{id}": { resumo: "Exclui rota" },
+  "GET /rotas": {
+    resumo: "Rotas disponíveis com os trechos de ida e volta",
+    descricao: "As excluídas ficam de fora. `pontos`/`pontosEmbarque` repetem a ida, para versões anteriores do app.",
+  },
+  "GET /rotas/{id}": { resumo: "Uma rota com os trechos de ida e volta" },
+  "POST /rotas": {
+    resumo: "Cadastra rota",
+    corpo: rotas.schema,
+    status: 201,
+    descricao: "Com `ida` e `volta` (origem, destino, instituições e pontos de cada trecho) ou no formato antigo, com uma lista só.",
+  },
+  "PATCH /rotas/{id}": {
+    resumo: "Altera rota",
+    corpo: rotas.edicaoSchema,
+    descricao: "Cada trecho enviado substitui as paradas daquele sentido. Com `versao`, recusa se outra pessoa salvou antes (409).",
+  },
+  "GET /rotas/{id}/impacto-exclusao": {
+    resumo: "O que a exclusão da rota afeta",
+    descricao: "Alunos com dias fixos, viagens e reservas futuras, viagem em andamento e viagens que ficam no histórico.",
+  },
+  "DELETE /rotas/{id}": {
+    resumo: "Exclui a rota (exclusão lógica)",
+    consulta: rotas.exclusaoQuerySchema,
+    descricao:
+      "Com vínculos, exige `confirmarVinculos=true` (senão 409 ROTA_COM_VINCULOS com as contagens). Cancela as viagens futuras com aviso, encerra a programação, libera os dias fixos dos alunos (com aviso) e preserva o histórico. Viagem em andamento bloqueia.",
+  },
   "GET /motoristas": { resumo: "Lista de motoristas" },
   "POST /motoristas": { resumo: "Cadastra motorista (cria o usuário)", corpo: motoristas.schema, status: 201 },
   "DELETE /motoristas/{id}": { resumo: "Exclui motorista" },
@@ -169,8 +191,17 @@ export const documentacaoDasRotas: Record<string, DocRota> = {
   "POST /programacoes/gerar": { resumo: "Gera agora as viagens dos próximos dias", descricao: "O agendador já faz isso a cada hora." },
   "GET /programacoes/{id}": { resumo: "Uma programação" },
   "GET /programacoes/{id}/ocupacao": { resumo: "Ocupação por dia da programação" },
-  "POST /programacoes": { resumo: "Cria programação", corpo: programacoes.criarSchema, status: 201 },
-  "PATCH /programacoes/{id}": { resumo: "Altera programação", corpo: programacoes.atualizarSchema },
+  "POST /programacoes": {
+    resumo: "Cria a viagem programada",
+    corpo: programacoes.criarSchema,
+    status: 201,
+    descricao: "Com uma rota existente (`rotaId`) ou criando a rota junto (`rota`, com os trechos de ida e volta).",
+  },
+  "PATCH /programacoes/{id}": {
+    resumo: "Altera a viagem programada",
+    corpo: programacoes.atualizarSchema,
+    descricao: "Inclui os trechos da rota (`rota`). Com `versao`, recusa se outra pessoa salvou antes (409 EDICAO_CONFLITANTE).",
+  },
   "DELETE /programacoes/{id}": { resumo: "Exclui programação" },
 
   // ---- Documentos

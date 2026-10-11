@@ -90,13 +90,14 @@ export async function definirDias(alunoId: string, dias: DiaEscolhido[], autor: 
     // Trava as rotas de agora e as de antes: a geração de viagens dessas rotas espera esta transação
     const programacoes = await travarProgramacoesDasRotas(tx, [...rotasNovas, ...atuais.map((a) => a.rotaId)]);
 
+    // O dia fixo vale para a ida e a volta: a instituição e o ponto do aluno são conferidos na ida
     const rotas = await tx.rota.findMany({
-      where: { id: { in: rotasNovas } },
+      where: { id: { in: rotasNovas }, excluidaEm: null },
       select: {
         id: true,
         nome: true,
-        pontos: { select: { universidadeId: true } },
-        pontosEmbarque: { select: { pontoEmbarqueId: true, pontoEmbarque: { select: { ativo: true } } } },
+        pontos: { where: { sentido: "IDA" }, select: { universidadeId: true } },
+        pontosEmbarque: { where: { sentido: "IDA" }, select: { pontoEmbarqueId: true, pontoEmbarque: { select: { ativo: true } } } },
       },
     });
     for (const rotaId of rotasNovas) {
@@ -264,8 +265,8 @@ export async function revisarAlocacoes(tx: Tx, filtro: { rotaId: string } | { al
       rota: {
         select: {
           nome: true,
-          pontos: { select: { universidadeId: true } },
-          pontosEmbarque: { select: { pontoEmbarqueId: true } },
+          pontos: { where: { sentido: "IDA" }, select: { universidadeId: true } },
+          pontosEmbarque: { where: { sentido: "IDA" }, select: { pontoEmbarqueId: true } },
           programacoes: { where: { ativa: true }, select: { diasSemana: true } },
         },
       },
@@ -367,7 +368,10 @@ export async function diasDoAluno(alunoId: string) {
       orderBy: { diaSemana: "asc" },
     }),
     prisma.programacao.findMany({
-      where: { ativa: true, rota: { pontos: { some: { universidadeId: aluno.universidade.id } } } },
+      where: {
+        ativa: true,
+        rota: { excluidaEm: null, pontos: { some: { universidadeId: aluno.universidade.id, sentido: "IDA" } } },
+      },
       select: {
         horarioIda: true,
         horarioVolta: true,
@@ -377,10 +381,11 @@ export async function diasDoAluno(alunoId: string) {
           select: {
             id: true,
             nome: true,
-            pontos: { select: { universidade: { select: { nome: true } } }, orderBy: { ordem: "asc" } },
+            trechos: { select: { sentido: true, origem: true, destino: true } },
+            pontos: { select: { sentido: true, universidade: { select: { nome: true } } }, orderBy: { ordem: "asc" } },
             pontosEmbarque: {
               where: { pontoEmbarque: { ativo: true } },
-              select: { pontoEmbarque: { select: { id: true, nome: true, endereco: true } } },
+              select: { sentido: true, pontoEmbarque: { select: { id: true, nome: true, endereco: true } } },
               orderBy: { ordem: "asc" },
             },
           },
@@ -395,11 +400,28 @@ export async function diasDoAluno(alunoId: string) {
     programacoes.map((p) => p.rota.id),
     alunoId
   );
+  // Uma opção por viagem, com os dois trechos descritos (o aluno não escolhe ida e volta separadas)
+  const trecho = (p: (typeof programacoes)[number], sentido: "IDA" | "VOLTA", horario: string | null) => {
+    const t = p.rota.trechos.find((x) => x.sentido === sentido);
+    return {
+      origem: t?.origem ?? p.rota.nome,
+      destino: t?.destino ?? p.rota.nome,
+      horario,
+      instituicoes: p.rota.pontos.filter((x) => x.sentido === sentido).map((x) => x.universidade.nome),
+      pontos: p.rota.pontosEmbarque.filter((x) => x.sentido === sentido).map((x) => x.pontoEmbarque.nome),
+    };
+  };
   const opcoes = programacoes.map((p) => ({
-    rota: { id: p.rota.id, nome: p.rota.nome, instituicoes: p.rota.pontos.map((x) => x.universidade.nome) },
+    rota: {
+      id: p.rota.id,
+      nome: p.rota.nome,
+      instituicoes: p.rota.pontos.filter((x) => x.sentido === "IDA").map((x) => x.universidade.nome),
+    },
     horarioIda: p.horarioIda,
     horarioVolta: p.horarioVolta,
-    pontosEmbarque: p.rota.pontosEmbarque.map((x) => x.pontoEmbarque),
+    trechos: { ida: trecho(p, "IDA", p.horarioIda), volta: p.horarioVolta ? trecho(p, "VOLTA", p.horarioVolta) : null },
+    // Onde o aluno embarca (na ida); na volta ele desce no mesmo ponto, se o trecho passar por ele
+    pontosEmbarque: p.rota.pontosEmbarque.filter((x) => x.sentido === "IDA").map((x) => x.pontoEmbarque),
     dias: lerDiasSemana(p.diasSemana).map((diaSemana) => {
       const outros = ocupacao.get(chave(p.rota.id, diaSemana)) ?? 0;
       return {

@@ -75,6 +75,22 @@ export const ERROS = {
   DIA_SEM_TRANSPORTE: { status: 400, mensagem: "Não há transporte programado nesta rota em um dos dias escolhidos." },
   DIAS_LOTADOS: { status: 409, mensagem: "Não há mais vagas em um ou mais dias escolhidos. Escolha outro dia." },
 
+  // ---- Rotas com ida e volta (trechos) e exclusão
+  UNIVERSIDADE_NAO_ENCONTRADA: { status: 404, mensagem: "Instituição não encontrada." },
+  ROTA_COM_VINCULOS: {
+    status: 409,
+    mensagem:
+      "Esta rota tem alunos ou viagens vinculados. Confirme a exclusão para cancelar as viagens futuras e liberar os dias dos alunos.",
+  },
+  ROTA_COM_VIAGEM_EM_ANDAMENTO: {
+    status: 409,
+    mensagem: "Há uma viagem desta rota em andamento. Exclua a rota depois que o motorista encerrar a viagem.",
+  },
+  EDICAO_CONFLITANTE: {
+    status: 409,
+    mensagem: "Esta viagem foi alterada por outra pessoa enquanto você editava. Recarregue para ver a versão atual.",
+  },
+
   // ---- Documentos do aluno
   DOCUMENTO_NAO_ENCONTRADO: { status: 404, mensagem: "Documento não encontrado." },
   ARQUIVO_OBRIGATORIO: { status: 400, mensagem: "Envie o arquivo do documento." },

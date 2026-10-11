@@ -1,143 +1,104 @@
-import { Prisma } from "@prisma/client";
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../../config/prisma";
 import { autenticar, exigir } from "../../middlewares/auth";
 import { AppError } from "../../errors/AppError";
-import { registrarAuditoria } from "../auditoria/auditoria.service";
 import { OPCOES_TX, revisarAlocacoes } from "../alocacao/alocacao.service";
+import {
+  atualizarRota,
+  criarRota,
+  deLegado,
+  excluirRota,
+  formatarRota,
+  impactoExclusao,
+  includeRota,
+  rotaEdicaoSchema,
+  rotaLegadaSchema,
+  rotaSchema,
+} from "./rota.service";
 
 export const rotaRouter = Router();
 
-const includeRota = {
-  pontos: { include: { universidade: true }, orderBy: { ordem: "asc" } },
-  pontosEmbarque: { include: { pontoEmbarque: true }, orderBy: { ordem: "asc" } },
-} satisfies Prisma.RotaInclude;
-
-type RotaCompleta = Prisma.RotaGetPayload<{ include: typeof includeRota }>;
-
-const descrever = (r: RotaCompleta) => ({
-  nome: r.nome,
-  paradas: r.pontos.map((p) => p.universidade.nome),
-  pontosEmbarque: r.pontosEmbarque.map((p) => p.pontoEmbarque.nome),
-});
-
+/** Rotas disponíveis (as excluídas ficam de fora), cada uma com os trechos de ida e volta. */
 rotaRouter.get("/", autenticar, async (_req, res, next) => {
   try {
-    const rotas = await prisma.rota.findMany({ include: includeRota, orderBy: { nome: "asc" } });
-    res.json(rotas);
+    const rotas = await prisma.rota.findMany({ where: { excluidaEm: null }, include: includeRota, orderBy: { nome: "asc" } });
+    res.json(rotas.map(formatarRota));
   } catch (err) {
     next(err);
   }
 });
 
-const semRepetir = (ids: string[]) => new Set(ids).size === ids.length;
-
-export const schema = z.object({
-  nome: z.string().trim().min(2, "Informe o nome da rota."),
-  // Universidades na ordem das paradas
-  universidadeIds: z
-    .array(z.string().uuid())
-    .min(1, "Selecione ao menos uma universidade.")
-    .refine(semRepetir, "A mesma universidade não pode aparecer duas vezes."),
-  // Pontos de embarque na ordem em que o ônibus passa (opcional)
-  pontosEmbarqueIds: z.array(z.string().uuid()).refine(semRepetir, "O mesmo ponto não pode aparecer duas vezes.").optional(),
+rotaRouter.get("/:id", autenticar, exigir("rotas:gerenciar"), async (req, res, next) => {
+  try {
+    const rota = await prisma.rota.findFirst({ where: { id: req.params.id, excluidaEm: null }, include: includeRota });
+    if (!rota) throw new AppError("ROTA_NAO_CADASTRADA");
+    res.json(formatarRota(rota));
+  } catch (err) {
+    next(err);
+  }
 });
 
-async function conferirPontos(tx: Prisma.TransactionClient, ids: string[] | undefined) {
-  if (!ids?.length) return;
-  const ativos = await tx.pontoEmbarque.count({ where: { id: { in: ids }, ativo: true } });
-  if (ativos !== ids.length) throw new AppError("PONTO_EMBARQUE_NAO_ENCONTRADO");
-}
+/** Novo formato (ida e volta) ou o antigo (uma lista para os dois sentidos, de versões anteriores do app). */
+export const schema = z.union([rotaSchema, rotaLegadaSchema]);
+export const edicaoSchema = z.union([rotaEdicaoSchema, rotaLegadaSchema.partial().strict()]);
+const ehNovo = (b: unknown) => !!b && typeof b === "object" && ("ida" in b || "volta" in b || "versao" in b);
 
 rotaRouter.post("/", autenticar, exigir("rotas:gerenciar"), async (req, res, next) => {
   try {
-    const dados = schema.parse(req.body);
     const rota = await prisma.$transaction(async (tx) => {
-      await conferirPontos(tx, dados.pontosEmbarqueIds);
-      const criada = await tx.rota.create({
-        data: {
-          nome: dados.nome,
-          pontos: { create: dados.universidadeIds.map((universidadeId, i) => ({ universidadeId, ordem: i + 1 })) },
-          pontosEmbarque: { create: (dados.pontosEmbarqueIds ?? []).map((pontoEmbarqueId, i) => ({ pontoEmbarqueId, ordem: i + 1 })) },
-        },
-        include: includeRota,
-      });
-      await registrarAuditoria(tx, {
-        usuarioId: req.usuario!.sub,
-        acao: "ROTA_CADASTRADA",
-        entidade: "Rota",
-        entidadeId: criada.id,
-        valorNovo: descrever(criada),
-      });
-      return criada;
+      const entrada = ehNovo(req.body) ? rotaSchema.parse(req.body) : await deLegado(tx, rotaLegadaSchema.parse(req.body));
+      return criarRota(tx, entrada as z.output<typeof rotaSchema>, req.usuario!.sub);
     });
-    res.status(201).json(rota);
+    res.status(201).json(formatarRota(rota));
   } catch (err) {
     next(err);
   }
 });
 
 /**
- * Edita nome, paradas e pontos de embarque. Alunos cuja instituição saiu da rota perdem
- * os dias nela; quem embarcava num ponto removido é avisado para escolher outro.
+ * Edita nome e trechos. Alunos cuja instituição saiu da ida perdem os dias nela; quem
+ * embarcava num ponto removido da ida é avisado para escolher outro.
  */
 rotaRouter.patch("/:id", autenticar, exigir("rotas:gerenciar"), async (req, res, next) => {
   try {
-    const dados = schema.partial().parse(req.body);
     const rota = await prisma.$transaction(async (tx) => {
-      const antes = await tx.rota.findUnique({ where: { id: req.params.id }, include: includeRota });
-      if (!antes) throw new AppError("ROTA_NAO_CADASTRADA");
-      await conferirPontos(tx, dados.pontosEmbarqueIds);
-
-      if (dados.nome) await tx.rota.update({ where: { id: antes.id }, data: { nome: dados.nome } });
-      if (dados.universidadeIds) {
-        await tx.pontoRota.deleteMany({ where: { rotaId: antes.id } });
-        await tx.pontoRota.createMany({
-          data: dados.universidadeIds.map((universidadeId, i) => ({ rotaId: antes.id, universidadeId, ordem: i + 1 })),
-        });
+      let edicao;
+      if (ehNovo(req.body)) edicao = rotaEdicaoSchema.parse(req.body);
+      else {
+        const legado = rotaLegadaSchema.partial().strict().parse(req.body);
+        const atual = await tx.rota.findFirst({ where: { id: req.params.id, excluidaEm: null }, include: includeRota });
+        if (!atual) throw new AppError("ROTA_NAO_CADASTRADA");
+        edicao = await deLegado(tx, legado, atual);
       }
-      if (dados.pontosEmbarqueIds) {
-        await tx.rotaPontoEmbarque.deleteMany({ where: { rotaId: antes.id } });
-        await tx.rotaPontoEmbarque.createMany({
-          data: dados.pontosEmbarqueIds.map((pontoEmbarqueId, i) => ({ rotaId: antes.id, pontoEmbarqueId, ordem: i + 1 })),
-        });
-      }
-
-      const depois = await tx.rota.findUniqueOrThrow({ where: { id: antes.id }, include: includeRota });
-      const [a, d] = [descrever(antes), descrever(depois)];
-      if (JSON.stringify(a) !== JSON.stringify(d)) {
-        await registrarAuditoria(tx, {
-          usuarioId: req.usuario!.sub,
-          acao: "ROTA_ALTERADA",
-          entidade: "Rota",
-          entidadeId: antes.id,
-          valorAnterior: a,
-          valorNovo: d,
-        });
-      }
-      await revisarAlocacoes(tx, { rotaId: antes.id }, req.usuario!.sub);
+      const depois = await atualizarRota(tx, req.params.id, edicao, req.usuario!.sub);
+      await revisarAlocacoes(tx, { rotaId: depois.id }, req.usuario!.sub);
       return depois;
     }, OPCOES_TX);
-    res.json(rota);
+    res.json(formatarRota(rota));
   } catch (err) {
     next(err);
   }
 });
 
+/** O que a exclusão vai afetar: a tela mostra antes de pedir a confirmação. */
+rotaRouter.get("/:id/impacto-exclusao", autenticar, exigir("rotas:gerenciar"), async (req, res, next) => {
+  try {
+    res.json(await impactoExclusao(prisma, req.params.id));
+  } catch (err) {
+    next(err);
+  }
+});
+
+export const exclusaoQuerySchema = z.object({
+  // Com alunos ou viagens vinculados, a exclusão só acontece com a confirmação explícita
+  confirmarVinculos: z.enum(["true", "false"]).optional(),
+});
+
 rotaRouter.delete("/:id", autenticar, exigir("rotas:gerenciar"), async (req, res, next) => {
   try {
-    await prisma.$transaction(async (tx) => {
-      const removida = await tx.rota.delete({ where: { id: req.params.id } });
-      await registrarAuditoria(tx, {
-        usuarioId: req.usuario!.sub,
-        acao: "ROTA_REMOVIDA",
-        entidade: "Rota",
-        entidadeId: removida.id,
-        valorAnterior: { nome: removida.nome },
-      });
-    });
-    res.status(204).send();
+    const { confirmarVinculos } = exclusaoQuerySchema.parse(req.query);
+    res.json(await excluirRota(req.params.id, req.usuario!.sub, confirmarVinculos === "true"));
   } catch (err) {
     next(err);
   }

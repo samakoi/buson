@@ -181,8 +181,13 @@ export async function criarViagem(dados: NovaViagem, adminId: string) {
   const dia = parseDia(dados.data);
   if (dia < inicioDoDia()) throw new AppError("DATA_PASSADA");
 
-  const onibus = await prisma.onibus.findUnique({ where: { id: dados.onibusId } });
+  const [onibus, rota] = await Promise.all([
+    prisma.onibus.findUnique({ where: { id: dados.onibusId } }),
+    // Rota excluída não recebe viagens novas
+    prisma.rota.findFirst({ where: { id: dados.rotaId, excluidaEm: null }, select: { id: true } }),
+  ]);
   if (!onibus) throw new AppError("ONIBUS_NAO_ENCONTRADO");
+  if (!rota) throw new AppError("ROTA_NAO_CADASTRADA");
   const vagas = dados.vagas ?? onibus.capacidade;
   if (vagas > onibus.capacidade) {
     throw new AppError("VAGAS_ACIMA_DA_CAPACIDADE", `O ônibus ${onibus.placa} tem só ${onibus.capacidade} lugares.`);
@@ -462,7 +467,11 @@ export async function calcularRotaDoDia(viagemId: string) {
     select: { pontoEmbarqueId: true, aluno: { select: { universidadeId: true } } },
   });
 
-  const universidades = viagem.rota.pontos.map((ponto) => {
+  // Paradas do trecho desta viagem: na ida, os pontos de embarque e as instituições de destino;
+  // na volta, as instituições onde os alunos embarcam e os pontos onde descem
+  const pontosDoTrecho = viagem.rota.pontos.filter((p) => p.sentido === viagem.sentido);
+  const embarquesDoTrecho = viagem.rota.pontosEmbarque.filter((p) => p.sentido === viagem.sentido);
+  const universidades = pontosDoTrecho.map((ponto) => {
     const alunosNoPonto = ocupantes.filter((c) => c.aluno.universidadeId === ponto.universidadeId).length;
     return {
       universidade: ponto.universidade.nome,
@@ -470,7 +479,7 @@ export async function calcularRotaDoDia(viagemId: string) {
       ativoNoDia: alunosNoPonto > 0,
     };
   });
-  const pontosEmbarque = viagem.rota.pontosEmbarque.map(({ pontoEmbarque }) => {
+  const pontosEmbarque = embarquesDoTrecho.map(({ pontoEmbarque }) => {
     const alunos = ocupantes.filter((c) => c.pontoEmbarqueId === pontoEmbarque.id).length;
     return { id: pontoEmbarque.id, nome: pontoEmbarque.nome, endereco: pontoEmbarque.endereco, alunos, ativoNoDia: alunos > 0 };
   });

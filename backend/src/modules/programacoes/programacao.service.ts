@@ -7,6 +7,7 @@ import { comHorario, diaMes, inicioDoDia, intervaloDeDias, lerDiasSemana, NOMES_
 import { diferenca, registrarAuditoria } from "../auditoria/auditoria.service";
 import { OPCOES_TX, ocupacaoPorDia, revisarAlocacoes } from "../alocacao/alocacao.service";
 import { chaveDataCancelada, excluirViagensComAviso, OCUPA_VAGA, travarViagens } from "../viagens/viagem.service";
+import { atualizarRota, criarRota, EdicaoRota, EntradaRota, formatarRota, includeRota } from "../rotas/rota.service";
 
 /**
  * Programação semanal de cada rota: ônibus, motorista, horários de ida/volta e dias
@@ -18,7 +19,10 @@ import { chaveDataCancelada, excluirViagensComAviso, OCUPA_VAGA, travarViagens }
 type Tx = Prisma.TransactionClient;
 
 export interface DadosProgramacao {
-  rotaId: string;
+  /** Rota já cadastrada... */
+  rotaId?: string;
+  /** ...ou criada junto, com os trechos de ida e volta */
+  rota?: EntradaRota;
   onibusId: string;
   motoristaId: string;
   horarioIda: string;
@@ -28,7 +32,7 @@ export interface DadosProgramacao {
 }
 
 const include = {
-  rota: { select: { id: true, nome: true } },
+  rota: { include: includeRota },
   onibus: { select: { id: true, placa: true, capacidade: true, emManutencao: true } },
   motorista: { select: { id: true, usuario: { select: { nome: true } } } },
 } satisfies Prisma.ProgramacaoInclude;
@@ -42,6 +46,7 @@ async function comOcupacao(programacoes: ProgramacaoCompleta[]) {
   );
   return programacoes.map((p) => ({
     ...p,
+    rota: formatarRota(p.rota),
     diasSemana: lerDiasSemana(p.diasSemana),
     ocupacao: lerDiasSemana(p.diasSemana).map((diaSemana) => {
       const alocados = ocupacao.get(`${p.rotaId}:${diaSemana}`) ?? 0;
@@ -57,7 +62,11 @@ async function comOcupacao(programacoes: ProgramacaoCompleta[]) {
 }
 
 export async function listar() {
-  const programacoes = await prisma.programacao.findMany({ include, orderBy: [{ ativa: "desc" }, { rota: { nome: "asc" } }] });
+  const programacoes = await prisma.programacao.findMany({
+    where: { rota: { excluidaEm: null } },
+    include,
+    orderBy: [{ ativa: "desc" }, { rota: { nome: "asc" } }],
+  });
   return comOcupacao(programacoes);
 }
 
@@ -71,9 +80,10 @@ function validarHorarios(ida: string, volta: string | null | undefined) {
   if (volta && volta <= ida) throw new AppError("HORARIO_VOLTA_INVALIDO");
 }
 
-async function validarReferencias(tx: Tx, d: Pick<DadosProgramacao, "rotaId" | "onibusId" | "motoristaId">) {
+async function validarReferencias(tx: Tx, d: { rotaId: string; onibusId: string; motoristaId: string }) {
   const [rota, onibus, motorista] = await Promise.all([
-    tx.rota.findUnique({ where: { id: d.rotaId }, select: { id: true } }),
+    // Rota excluída não volta a ser programada
+    tx.rota.findFirst({ where: { id: d.rotaId, excluidaEm: null }, select: { id: true } }),
     tx.onibus.findUnique({ where: { id: d.onibusId }, select: { id: true } }),
     tx.motorista.findUnique({ where: { id: d.motoristaId }, select: { id: true } }),
   ]);
@@ -92,10 +102,14 @@ async function garantirUnicaAtiva(tx: Tx, rotaId: string, excetoId?: string) {
 export async function criar(dados: DadosProgramacao, adminId: string) {
   validarHorarios(dados.horarioIda, dados.horarioVolta);
   const criada = await prisma.$transaction(async (tx) => {
-    await validarReferencias(tx, dados);
-    if (dados.ativa !== false) await garantirUnicaAtiva(tx, dados.rotaId);
+    const { rota: novaRota, rotaId: rotaExistente, ...resto } = dados;
+    // A viagem pode nascer com a rota: os trechos de ida e volta são criados aqui mesmo
+    const rotaId = novaRota ? (await criarRota(tx, novaRota, adminId)).id : rotaExistente;
+    if (!rotaId) throw new AppError("ROTA_NAO_CADASTRADA");
+    await validarReferencias(tx, { ...resto, rotaId });
+    if (dados.ativa !== false) await garantirUnicaAtiva(tx, rotaId);
     const programacao = await tx.programacao.create({
-      data: { ...dados, horarioVolta: dados.horarioVolta ?? null, diasSemana: lerDiasSemana(dados.diasSemana) },
+      data: { ...resto, rotaId, horarioVolta: resto.horarioVolta ?? null, diasSemana: lerDiasSemana(resto.diasSemana) },
       include,
     });
     await registrarAuditoria(tx, {
@@ -160,11 +174,22 @@ async function conferirCapacidade(tx: Tx, rotaId: string, dias: number[], capaci
   }
 }
 
-export async function atualizar(id: string, mudancas: Partial<Omit<DadosProgramacao, "rotaId">>, adminId: string) {
+export interface MudancasProgramacao extends Partial<Omit<DadosProgramacao, "rotaId" | "rota">> {
+  /** Trechos de ida e volta editados na própria viagem */
+  rota?: EdicaoRota;
+  /** atualizadoEm que a tela leu: se outra pessoa salvou depois, a edição é recusada */
+  versao?: string;
+}
+
+export async function atualizar(id: string, mudancas: MudancasProgramacao, adminId: string) {
   await prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM programacoes WHERE id = ${id} FOR UPDATE`;
     const atual = await tx.programacao.findUnique({ where: { id }, include });
     if (!atual) throw new AppError("PROGRAMACAO_NAO_ENCONTRADA");
+    if (mudancas.versao && new Date(mudancas.versao).getTime() !== atual.atualizadoEm.getTime()) throw new AppError("EDICAO_CONFLITANTE");
+    if (atual.rota.excluidaEm) throw new AppError("ROTA_NAO_CADASTRADA");
+    // Trechos da rota editados junto com a viagem (mesma transação: tudo ou nada)
+    if (mudancas.rota) await atualizarRota(tx, atual.rotaId, mudancas.rota, adminId);
 
     const novo = {
       onibusId: mudancas.onibusId ?? atual.onibusId,

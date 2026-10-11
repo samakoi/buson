@@ -109,11 +109,11 @@ export async function posicaoAtual(viagemId: string, usuario: JwtPayload) {
           nome: true,
           pontos: {
             orderBy: { ordem: "asc" },
-            select: { universidade: { select: { id: true, nome: true, latitude: true, longitude: true } } },
+            select: { sentido: true, universidade: { select: { id: true, nome: true, latitude: true, longitude: true } } },
           },
           pontosEmbarque: {
             orderBy: { ordem: "asc" },
-            select: { pontoEmbarque: { select: { id: true, nome: true, latitude: true, longitude: true } } },
+            select: { sentido: true, pontoEmbarque: { select: { id: true, nome: true, latitude: true, longitude: true } } },
           },
         },
       },
@@ -137,7 +137,7 @@ export async function posicaoAtual(viagemId: string, usuario: JwtPayload) {
       throw new AppError("ACOMPANHAMENTO_NAO_PERMITIDO");
     // Na ida o aluno espera no ponto de embarque; na volta, na instituição
     const p = checkin.pontoEmbarque;
-    const u = viagem.rota.pontos.find((x) => x.universidade.id === aluno.universidadeId)?.universidade;
+    const u = viagem.rota.pontos.find((x) => x.sentido === viagem.sentido && x.universidade.id === aluno.universidadeId)?.universidade;
     if (viagem.sentido === "IDA" && p?.latitude != null && p.longitude != null) {
       meuDestino = { tipo: "PONTO", nome: p.nome, latitude: p.latitude, longitude: p.longitude };
     } else if (viagem.sentido === "VOLTA" && u?.latitude != null && u.longitude != null) {
@@ -167,8 +167,11 @@ export async function posicaoAtual(viagemId: string, usuario: JwtPayload) {
     posicao,
     atualizadoHaSegundos: posicao ? Math.max(0, Math.round((Date.now() - posicao.registradoEm.getTime()) / 1000)) : null,
     paradas: [
-      ...viagem.rota.pontosEmbarque.map((x) => ({ tipo: "PONTO" as const, ...x.pontoEmbarque })),
-      ...viagem.rota.pontos.map((x) => ({ tipo: "INSTITUICAO" as const, ...x.universidade })),
+      // Só as paradas do trecho desta viagem (ida ou volta)
+      ...viagem.rota.pontosEmbarque
+        .filter((x) => x.sentido === viagem.sentido)
+        .map((x) => ({ tipo: "PONTO" as const, ...x.pontoEmbarque })),
+      ...viagem.rota.pontos.filter((x) => x.sentido === viagem.sentido).map((x) => ({ tipo: "INSTITUICAO" as const, ...x.universidade })),
     ].filter(comCoordenadas),
     meuDestino: meuDestino && {
       ...meuDestino,

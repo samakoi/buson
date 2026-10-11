@@ -65,12 +65,19 @@ async function main() {
     (await prisma.rota.create({
       data: {
         nome: nomeRota,
-        pontos: {
+        // Ida: do Centro às instituições; volta: das instituições ao Centro
+        trechos: {
           create: [
-            { universidadeId: facimp.id, ordem: 1 },
-            { universidadeId: ceuma.id, ordem: 2 },
-            { universidadeId: ifma.id, ordem: 3 },
+            { sentido: "IDA", origem: "Centro", destino: "Instituições" },
+            { sentido: "VOLTA", origem: "Instituições", destino: "Centro" },
           ],
+        },
+        pontos: {
+          create: (["IDA", "VOLTA"] as const).flatMap((sentido) => [
+            { universidadeId: facimp.id, sentido, ordem: 1 },
+            { universidadeId: ceuma.id, sentido, ordem: 2 },
+            { universidadeId: ifma.id, sentido, ordem: 3 },
+          ]),
         },
       },
     }));
