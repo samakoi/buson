@@ -1,5 +1,5 @@
 // Fase 0 — base técnica: API v1, formato de resposta, erros, segurança, sessões, permissões, auditoria
-import { BASE, hojeISO, limparTST, login, ok, req, resultado, sql } from "./lib.mjs";
+import { BASE, hojeISO, limparTST, login, ok, req, resultado, SENHA_TST, sql } from "./lib.mjs";
 
 const RAIZ = BASE.replace(/\/api\/v1$/, "");
 limparTST();
@@ -98,14 +98,42 @@ ok((await req("POST", "/viagens", mot, {})).data.code === "SEM_PERMISSAO", "moto
 ok((await req("GET", "/dashboard/resumo", mot)).status === 403, "motorista não acessa o dashboard");
 ok((await req("GET", "/dashboard/resumo", adm)).status === 200, "admin acessa o dashboard");
 
+// ---- Senha forte ao criar conta (o login continua aceitando as senhas antigas)
+const uniSenha = sql("SELECT id FROM universidades LIMIT 1");
+const fraca = await req("POST", "/auth/cadastro", null, {
+  nome: "TST Fraca",
+  email: "tst.fraca@buson.com",
+  senha: "abc12345",
+  universidadeId: uniSenha,
+});
+ok(
+  fraca.status === 400 &&
+    fraca.data.code === "VALIDACAO" &&
+    /maiúscula/.test(fraca.data.erro) &&
+    /caractere especial/.test(fraca.data.erro),
+  "cadastro recusa senha fraca e diz o que falta",
+  fraca.data
+);
+const motoFraco = await req("POST", "/motoristas", adm, { nome: "TST Moto Fraco", email: "tst.motofraco@buson.com", senha: "12345678" });
+ok(motoFraco.status === 400 && motoFraco.data.code === "VALIDACAO", "motorista também exige senha forte", motoFraco.data);
+ok(
+  sql("SELECT COUNT(*) FROM usuarios WHERE email IN ('tst.fraca@buson.com','tst.motofraco@buson.com')") === "0",
+  "senha fraca não cria usuário"
+);
+ok(
+  (await req("POST", "/auth/login", null, { email: "admin@buson.com", senha: "123456" })).status === 200,
+  "login com senha antiga continua valendo"
+);
+
 // ---- Sessões: rotação, reuso, logout por dispositivo e de todos
 await req("POST", "/auth/cadastro", null, {
   nome: "TST Sessao",
   email: "tst.sessao@buson.com",
-  senha: "123456",
+  senha: SENHA_TST,
   universidadeId: sql("SELECT id FROM universidades LIMIT 1"),
 });
-const loginA = (await req("POST", "/auth/login", null, { email: "tst.sessao@buson.com", senha: "123456", deviceId: "tst-celular-a" })).data;
+const loginA = (await req("POST", "/auth/login", null, { email: "tst.sessao@buson.com", senha: SENHA_TST, deviceId: "tst-celular-a" }))
+  .data;
 ok(loginA.refreshToken?.length > 40 && !loginA.refreshToken.includes("."), "refresh token é opaco (não é JWT)");
 ok(
   sql(`SELECT COUNT(*) FROM refresh_tokens WHERE tokenHash = SHA2('${loginA.refreshToken}', 256)`) === "1",
@@ -122,15 +150,15 @@ ok(reuso.status === 401 && reuso.data.code === "SESSAO_REVOGADA", "reusar token 
 const aposReuso = await req("POST", "/auth/refresh", null, { refreshToken: r1.data.refreshToken });
 ok(aposReuso.status === 401, "reuso derruba também a sessão nova do dispositivo (proteção contra roubo)", aposReuso.data);
 
-const loginX = (await req("POST", "/auth/login", null, { email: "tst.sessao@buson.com", senha: "123456", deviceId: "tst-corrida" })).data;
+const loginX = (await req("POST", "/auth/login", null, { email: "tst.sessao@buson.com", senha: SENHA_TST, deviceId: "tst-corrida" })).data;
 const [c1, c2] = await Promise.all([1, 2].map(() => req("POST", "/auth/refresh", null, { refreshToken: loginX.refreshToken })));
 ok([c1.status, c2.status].filter((s) => s === 200).length === 1, "duas renovações simultâneas do mesmo token: só uma vence", [
   c1.status,
   c2.status,
 ]);
 
-const loginB = (await req("POST", "/auth/login", null, { email: "tst.sessao@buson.com", senha: "123456", deviceId: "tst-tablet-b" })).data;
-const loginC = (await req("POST", "/auth/login", null, { email: "tst.sessao@buson.com", senha: "123456", deviceId: "tst-pc-c" })).data;
+const loginB = (await req("POST", "/auth/login", null, { email: "tst.sessao@buson.com", senha: SENHA_TST, deviceId: "tst-tablet-b" })).data;
+const loginC = (await req("POST", "/auth/login", null, { email: "tst.sessao@buson.com", senha: SENHA_TST, deviceId: "tst-pc-c" })).data;
 const sessoes = await req("GET", "/auth/sessoes", loginC.accessToken);
 ok(
   sessoes.status === 200 && sessoes.data.length === 2 && sessoes.data.every((s) => !("tokenHash" in s)),
@@ -142,8 +170,8 @@ ok((await req("DELETE", `/auth/sessoes/${sessaoB.id}`, loginC.accessToken)).stat
 ok((await req("POST", "/auth/refresh", null, { refreshToken: loginB.refreshToken })).status === 401, "aparelho encerrado não renova mais");
 ok((await req("POST", "/auth/logout", null, { refreshToken: loginC.refreshToken })).status === 204, "logout deste aparelho");
 ok((await req("POST", "/auth/refresh", null, { refreshToken: loginC.refreshToken })).status === 401, "após logout o refresh falha");
-const d1 = (await req("POST", "/auth/login", null, { email: "tst.sessao@buson.com", senha: "123456", deviceId: "tst-d1" })).data;
-const d2 = (await req("POST", "/auth/login", null, { email: "tst.sessao@buson.com", senha: "123456", deviceId: "tst-d2" })).data;
+const d1 = (await req("POST", "/auth/login", null, { email: "tst.sessao@buson.com", senha: SENHA_TST, deviceId: "tst-d1" })).data;
+const d2 = (await req("POST", "/auth/login", null, { email: "tst.sessao@buson.com", senha: SENHA_TST, deviceId: "tst-d2" })).data;
 const todos = await req("POST", "/auth/logout-todos", d1.accessToken);
 ok(todos.status === 200 && todos.data.sessoesEncerradas === 2, "logout de todos os aparelhos", todos.data);
 ok(
@@ -165,7 +193,7 @@ ok(alt === "10\t20\t1", "alteração do ônibus registra antes (10), depois (20)
 await req("PATCH", `/onibus/${bus.id}/manutencao`, adm, { emManutencao: true, observacao: "TST revisão" });
 ok(sql(`SELECT COUNT(*) FROM auditorias WHERE entidadeId='${bus.id}' AND acao='ONIBUS_EM_MANUTENCAO'`) === "1", "manutenção é auditada");
 await req("PATCH", `/onibus/${bus.id}/manutencao`, adm, { emManutencao: false });
-const moto = (await req("POST", "/motoristas", adm, { nome: "TST Motorista F0", email: "tst.motof0@buson.com", senha: "123456" })).data;
+const moto = (await req("POST", "/motoristas", adm, { nome: "TST Motorista F0", email: "tst.motof0@buson.com", senha: SENHA_TST })).data;
 const uni = (await req("POST", "/universidades", adm, { nome: "TST Instituicao F0" })).data;
 const rota = (await req("POST", "/rotas", adm, { nome: "TST Rota F0", universidadeIds: [uni.id] })).data;
 const viagem = (

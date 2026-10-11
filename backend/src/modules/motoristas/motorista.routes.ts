@@ -4,6 +4,7 @@ import { prisma } from "../../config/prisma";
 import { autenticar, exigir } from "../../middlewares/auth";
 import { AppError } from "../../errors/AppError";
 import { hashPassword } from "../../utils/password";
+import { senhaForte } from "../../auth/senha";
 import { registrarAuditoria } from "../auditoria/auditoria.service";
 
 export const motoristaRouter = Router();
@@ -32,7 +33,7 @@ motoristaRouter.get("/", async (_req, res, next) => {
 export const schema = z.object({
   nome: z.string().trim().min(2, "Informe o nome do motorista."),
   email: z.string().trim().toLowerCase().email("E-mail inválido."),
-  senha: z.string().min(6, "A senha deve ter ao menos 6 caracteres."),
+  senha: senhaForte,
   onibusId: z.string().uuid().optional(),
 });
 

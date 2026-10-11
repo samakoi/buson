@@ -1,5 +1,5 @@
 // Testa as melhorias criando dados próprios (prefixo TST) e removendo só eles no final.
-import { BASE as B, sql } from "./lib.mjs";
+import { BASE as B, SENHA_TST, sql } from "./lib.mjs";
 
 async function req(method, path, token, body) {
   const r = await fetch(B + path, {
@@ -13,7 +13,8 @@ async function req(method, path, token, body) {
   const data = corpo && "data" in corpo ? corpo.data : corpo?.error ? { erro: corpo.error.message, code: corpo.error.code } : corpo;
   return { status: r.status, data };
 }
-const login = async (email, senha = "123456") => (await req("POST", "/auth/login", null, { email, senha })).data.accessToken;
+const login = async (email, senha = email.startsWith("tst.") ? SENHA_TST : "123456") =>
+  (await req("POST", "/auth/login", null, { email, senha })).data.accessToken;
 let falhas = 0;
 const ok = (cond, msg, extra) => {
   if (!cond) falhas++;
@@ -53,7 +54,7 @@ ok(dup.status === 409, "placa duplicada → 409 com mensagem clara", dup);
 const mot = await req("POST", "/motoristas", adm, {
   nome: "TST Motorista",
   email: "tst.motorista@buson.com",
-  senha: "123456",
+  senha: SENHA_TST,
   onibusId: bus.data.id,
 });
 ok(mot.status === 201 && mot.data.onibus.placa === "TST-0001", "cria motorista vinculado ao ônibus", mot);
@@ -86,7 +87,7 @@ for (let i = 0; i < 4; i++) {
   const cad = await req("POST", "/auth/cadastro", null, {
     nome: `TST Aluno ${i}`,
     email: ` ${email.toUpperCase()} `,
-    senha: "123456",
+    senha: SENHA_TST,
     universidadeId: facimp,
   });
   if (i === 0) ok(cad.status === 201 && cad.data.email === email, "cadastro normaliza o e-mail", cad);

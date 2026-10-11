@@ -1,7 +1,7 @@
 // Fase 6 (evolução) — GPS: leituras do motorista, filtro, quem vê, distância, embarque, ao vivo, trajeto e retenção
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { hojeISO, limparTST, login, ok, req, resultado, sql } from "./lib.mjs";
+import { hojeISO, limparTST, login, ok, req, resultado, SENHA_TST, sql } from "./lib.mjs";
 
 limparTST();
 const adm = await login("admin@buson.com");
@@ -33,8 +33,8 @@ ok(
 );
 const ponto = (await req("POST", "/pontos-embarque", adm, { nome: "TST Praca GPS", ...PRACA })).data;
 const bus = (await req("POST", "/onibus", adm, { placa: "TST-GPS1", capacidade: 10 })).data;
-await req("POST", "/motoristas", adm, { nome: "TST Motorista GPS", email: "tst.motogps@buson.com", senha: "123456", onibusId: bus.id });
-await req("POST", "/motoristas", adm, { nome: "TST Outro GPS", email: "tst.outrogps@buson.com", senha: "123456" });
+await req("POST", "/motoristas", adm, { nome: "TST Motorista GPS", email: "tst.motogps@buson.com", senha: SENHA_TST, onibusId: bus.id });
+await req("POST", "/motoristas", adm, { nome: "TST Outro GPS", email: "tst.outrogps@buson.com", senha: SENHA_TST });
 const motoristas = (await req("GET", "/motoristas", adm)).data;
 const motId = motoristas.find((m) => m.usuario.email === "tst.motogps@buson.com").id;
 const mot = await login("tst.motogps@buson.com");
@@ -43,7 +43,7 @@ const rota = (await req("POST", "/rotas", adm, { nome: "TST Rota GPS", universid
 const viagem = async (sentido, horario) =>
   (await req("POST", "/viagens", adm, { rotaId: rota.id, onibusId: bus.id, motoristaId: motId, data: hojeISO(), horario, sentido })).data;
 async function aluno(nome, email) {
-  await req("POST", "/auth/cadastro", null, { nome, email, senha: "123456", universidadeId: uni.id });
+  await req("POST", "/auth/cadastro", null, { nome, email, senha: SENHA_TST, universidadeId: uni.id });
   const token = await login(email);
   return { token, id: (await req("GET", "/alunos/me", token)).data.id };
 }

@@ -24,3 +24,6 @@ export type { NomeIcone } from "./icones";
 
 /** Rótulo de formulário para grupos que não são um <Campo> (ex.: chips). */
 export { Rotulo } from "./Rotulo";
+
+/** Requisitos da senha nova, marcados enquanto a pessoa digita. */
+export { RequisitosSenha } from "./RequisitosSenha";

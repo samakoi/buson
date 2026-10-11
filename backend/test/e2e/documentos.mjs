@@ -2,7 +2,7 @@
 import { createHmac } from "node:crypto";
 import { readdirSync, existsSync, rmSync } from "node:fs";
 import path from "node:path";
-import { BASE, limparTST, login, ok, req, resultado, sql } from "./lib.mjs";
+import { BASE, limparTST, login, ok, req, resultado, SENHA_TST, sql } from "./lib.mjs";
 
 const UPLOADS = process.env.UPLOADS_DIR; // a API de teste grava aqui (pasta do scratchpad)
 if (!UPLOADS) throw new Error("Defina UPLOADS_DIR igual ao da API de teste");
@@ -37,10 +37,10 @@ const notificacoes = (email, trecho) =>
 const adm = await login("admin@buson.com");
 const uni = (await req("POST", "/universidades", adm, { nome: "TST Inst Doc" })).data;
 const bus = (await req("POST", "/onibus", adm, { placa: "TST-DOC1", capacidade: 5 })).data;
-await req("POST", "/motoristas", adm, { nome: "TST Motorista Doc", email: "tst.motodoc@buson.com", senha: "123456", onibusId: bus.id });
+await req("POST", "/motoristas", adm, { nome: "TST Motorista Doc", email: "tst.motodoc@buson.com", senha: SENHA_TST, onibusId: bus.id });
 const mot = await login("tst.motodoc@buson.com");
 async function aluno(nome, email) {
-  await req("POST", "/auth/cadastro", null, { nome, email, senha: "123456", universidadeId: uni.id });
+  await req("POST", "/auth/cadastro", null, { nome, email, senha: SENHA_TST, universidadeId: uni.id });
   const token = await login(email);
   return { token, id: (await req("GET", "/alunos/me", token)).data.id, email };
 }

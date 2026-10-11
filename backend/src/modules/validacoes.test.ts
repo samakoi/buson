@@ -7,14 +7,19 @@ import { localizacaoSchema } from "./viagens/viagem.controller";
 const uuid = "8a6e0804-2bd0-4672-b79d-d97027f9071a";
 
 describe("validação das entradas da API", () => {
+  it("login aceita qualquer senha não vazia (as senhas antigas continuam valendo)", () => {
+    expect(loginSchema.safeParse({ email: "a@b.com", senha: "123456" }).success).toBe(true);
+  });
+
   it("e-mail é normalizado (espaços e maiúsculas)", () => {
     expect(loginSchema.parse({ email: "  Aluno@BusOn.COM ", senha: "x" }).email).toBe("aluno@buson.com");
   });
 
-  it("cadastro exige senha de 6+ caracteres e universidade válida", () => {
-    const base = { nome: "Marina", email: "m@x.com", senha: "123456", universidadeId: uuid };
+  it("cadastro exige senha forte e universidade válida", () => {
+    const base = { nome: "Marina", email: "m@x.com", senha: "Onibus@2026", universidadeId: uuid };
     expect(cadastroSchema.safeParse(base).success).toBe(true);
-    expect(cadastroSchema.safeParse({ ...base, senha: "12345" }).success).toBe(false);
+    expect(cadastroSchema.safeParse({ ...base, senha: "123456" }).success).toBe(false);
+    expect(cadastroSchema.safeParse({ ...base, senha: "onibus2026" }).success).toBe(false);
     expect(cadastroSchema.safeParse({ ...base, universidadeId: "ufma" }).success).toBe(false);
   });
 

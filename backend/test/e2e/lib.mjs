@@ -47,7 +47,10 @@ export async function req(method, path, token, body, headers = {}) {
   return { status: r.status, data, corpo, headers: r.headers };
 }
 
-export async function login(email, senha = "123456") {
+/** Senha das contas TST criadas pelos testes (segue a regra de senha forte); as do seed usam 123456 */
+export const SENHA_TST = "Tst@2026bus";
+
+export async function login(email, senha = email.startsWith("tst.") ? SENHA_TST : "123456") {
   const r = await req("POST", "/auth/login", null, { email, senha });
   if (r.status !== 200) throw new Error(`login ${email} falhou: ${JSON.stringify(r.data)}`);
   return r.data.accessToken;

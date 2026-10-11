@@ -1,5 +1,5 @@
 // Fase 1 — gestão de alunos, notificações nos 3 perfis e auditoria
-import { hojeISO, limparTST, login, ok, req, resultado, sql } from "./lib.mjs";
+import { hojeISO, limparTST, login, ok, req, resultado, SENHA_TST, sql } from "./lib.mjs";
 
 limparTST();
 const adm = await login("admin@buson.com");
@@ -11,7 +11,7 @@ const naoLidasAntes = (await req("GET", "/notificacoes", adm)).data.naoLidas;
 const cad = await req("POST", "/auth/cadastro", null, {
   nome: "TST Joana Lima",
   email: "tst.joana@buson.com",
-  senha: "123456",
+  senha: SENHA_TST,
   universidadeId: uni.id,
 });
 ok(cad.status === 201, "cadastro do aluno", cad.data);
@@ -45,7 +45,7 @@ ok(
 await req("POST", "/auth/cadastro", null, {
   nome: "TST Pedro Souza",
   email: "tst.pedro@buson.com",
-  senha: "123456",
+  senha: SENHA_TST,
   universidadeId: uni.id,
 });
 const pedro = await login("tst.pedro@buson.com");
@@ -92,7 +92,7 @@ ok(
 
 // Aluno inativo não faz check-in
 const bus = (await req("POST", "/onibus", adm, { placa: "TST-F1", capacidade: 10 })).data;
-const moto = (await req("POST", "/motoristas", adm, { nome: "TST Motorista F1", email: "tst.motof1@buson.com", senha: "123456" })).data;
+const moto = (await req("POST", "/motoristas", adm, { nome: "TST Motorista F1", email: "tst.motof1@buson.com", senha: SENHA_TST })).data;
 const rota = (await req("POST", "/rotas", adm, { nome: "TST Rota F1", universidadeIds: [uni.id] })).data;
 const viagem = (
   await req("POST", "/viagens", adm, { rotaId: rota.id, onibusId: bus.id, motoristaId: moto.id, data: hojeISO(), horario: "23:59" })

@@ -1,7 +1,7 @@
 // Fase 5 (evolução) — notificações/push: aparelhos, fila, preferências, tokens inválidos, recibos e lembretes
 // A API de teste roda com PUSH_MODO=teste (carteiro falso) e ciclos curtos:
 //   PUSH_INTERVALO_MS=300 RECIBOS_INTERVALO_MS=600 RECIBOS_ESPERA_MS=0 LEMBRETES_INTERVALO_MS=1000 LEMBRETE_VESPERA_HORARIO=00:00
-import { hojeISO, limparTST, login, ok, req, resultado, sql } from "./lib.mjs";
+import { hojeISO, limparTST, login, ok, req, resultado, SENHA_TST, sql } from "./lib.mjs";
 
 limparTST();
 const R = Date.now().toString(36);
@@ -23,11 +23,11 @@ const ativo = (token) => sql(`SELECT CONCAT(ativo,'/',IFNULL(motivoDesativacao,'
 // ---- Preparação
 const uni = (await req("POST", "/universidades", adm, { nome: "TST Inst Push" })).data;
 const bus = (await req("POST", "/onibus", adm, { placa: "TST-PUS1", capacidade: 10 })).data;
-await req("POST", "/motoristas", adm, { nome: "TST Motorista Push", email: "tst.motopush@buson.com", senha: "123456", onibusId: bus.id });
+await req("POST", "/motoristas", adm, { nome: "TST Motorista Push", email: "tst.motopush@buson.com", senha: SENHA_TST, onibusId: bus.id });
 const motId = (await req("GET", "/motoristas", adm)).data.find((m) => m.usuario.email === "tst.motopush@buson.com").id;
 const rota = (await req("POST", "/rotas", adm, { nome: "TST Rota Push", universidadeIds: [uni.id] })).data;
 async function aluno(nome, email) {
-  await req("POST", "/auth/cadastro", null, { nome, email, senha: "123456", universidadeId: uni.id });
+  await req("POST", "/auth/cadastro", null, { nome, email, senha: SENHA_TST, universidadeId: uni.id });
   const token = await login(email);
   const id = (await req("GET", "/alunos/me", token)).data.id;
   await req("PATCH", `/alunos/${id}/status`, adm, { status: "ATIVO" });
@@ -188,7 +188,7 @@ ok(
   ativo(t.ana1).startsWith("0/") && ativo(`ExponentPushToken[tst-ana-cel-novo-${R}]`) === "1/-",
   "mesmo aparelho com token novo: o antigo sai"
 );
-const sessao = (await req("POST", "/auth/login", null, { email: alunos.ana.email, senha: "123456", deviceId: "tst-cel-ana" })).data;
+const sessao = (await req("POST", "/auth/login", null, { email: alunos.ana.email, senha: SENHA_TST, deviceId: "tst-cel-ana" })).data;
 await req("POST", "/auth/logout", sessao.accessToken, { refreshToken: sessao.refreshToken });
 ok(ativo(`ExponentPushToken[tst-ana-cel-novo-${R}]`) === "0/Saiu do aparelho", "sair do aparelho desliga o push dele");
 await req("POST", "/notificacoes/dispositivos", alunos.bia.token, {

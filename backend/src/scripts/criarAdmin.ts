@@ -2,6 +2,7 @@ import "dotenv/config";
 import { createInterface } from "node:readline";
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../utils/password";
+import { requisitosFaltando } from "../auth/senha";
 
 /**
  * Cria o primeiro administrador (produção/staging não usam o seed de demonstração).
@@ -12,6 +13,7 @@ import { hashPassword } from "../utils/password";
 
 const prisma = new PrismaClient();
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Administrador: além da regra de senha forte, no mínimo 10 caracteres
 const SENHA_MINIMA = 10;
 
 /** Linhas do stdin quando ele não é um terminal (ex.: testes automáticos). */
@@ -75,8 +77,10 @@ async function principal() {
   if (nome.length < 3) throw new Error("Informe o nome completo.");
   const email = (await perguntar("E-mail: ")).toLowerCase();
   if (!EMAIL.test(email)) throw new Error("E-mail inválido.");
-  const senha = await perguntarSenha(`Senha (mínimo ${SENHA_MINIMA} caracteres): `);
+  const senha = await perguntarSenha(`Senha (mínimo ${SENHA_MINIMA} caracteres, com maiúscula, minúscula, número e caractere especial): `);
   if (senha.length < SENHA_MINIMA) throw new Error(`A senha precisa ter ao menos ${SENHA_MINIMA} caracteres.`);
+  const faltando = requisitosFaltando(senha);
+  if (faltando.length) throw new Error(`A senha precisa ter: ${faltando.join(", ")}.`);
   if ((await perguntarSenha("Repita a senha: ")) !== senha) throw new Error("As senhas não conferem.");
 
   const existente = await prisma.usuario.findUnique({ where: { email }, select: { papel: true } });

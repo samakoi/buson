@@ -4,8 +4,9 @@ import { useSessao } from "../../store/sessao";
 import { api } from "../../services/api";
 import { Universidade } from "../../types";
 import { criarEstilos } from "../../theme/TemaProvider";
-import { Aviso, Botao, BotaoIcone, Campo, Chips, Rotulo, Texto } from "../../components/ui";
+import { Aviso, Botao, BotaoIcone, Campo, Chips, RequisitosSenha, Rotulo, Texto } from "../../components/ui";
 import { mensagemDeErro } from "../../utils/feedback";
+import { senhaForte } from "../../utils/senha";
 
 export default function CadastroScreen({ onVoltar }: { onVoltar: () => void }) {
   const { login } = useSessao();
@@ -32,7 +33,7 @@ export default function CadastroScreen({ onVoltar }: { onVoltar: () => void }) {
   function validar(): string | null {
     if (nome.trim().length < 2) return "Informe seu nome.";
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) return "Informe um e-mail válido.";
-    if (senha.length < 6) return "A senha deve ter ao menos 6 caracteres.";
+    if (!senhaForte(senha)) return "A senha ainda não cumpre todos os requisitos.";
     if (senha !== confirmacao) return "As senhas não conferem.";
     if (!universidadeId) return "Selecione sua universidade.";
     return null;
@@ -101,11 +102,12 @@ export default function CadastroScreen({ onVoltar }: { onVoltar: () => void }) {
             value={senha}
             onChangeText={setSenha}
             autoComplete="new-password"
-            placeholder="Mínimo de 6 caracteres"
+            placeholder="Crie uma senha forte"
             returnKeyType="next"
             onSubmitEditing={() => confirmacaoRef.current?.focus()}
             submitBehavior="submit"
           />
+          <RequisitosSenha senha={senha} />
           <Campo
             ref={confirmacaoRef}
             rotulo="Confirme a senha"

@@ -1,5 +1,5 @@
 // Fase 2 (evolução) — alocação: pontos de embarque, programação semanal, dias do aluno e capacidade por dia
-import { hojeISO, limparTST, login, ok, req, resultado, sql } from "./lib.mjs";
+import { hojeISO, limparTST, login, ok, req, resultado, SENHA_TST, sql } from "./lib.mjs";
 
 limparTST();
 const adm = await login("admin@buson.com");
@@ -12,7 +12,7 @@ const uniA = (await req("POST", "/universidades", adm, { nome: "TST Inst A" })).
 const uniB = (await req("POST", "/universidades", adm, { nome: "TST Inst B" })).data;
 const bus = (await req("POST", "/onibus", adm, { placa: "TST-AL1", capacidade: 3 })).data;
 const bus2 = (await req("POST", "/onibus", adm, { placa: "TST-AL2", capacidade: 2 })).data;
-await req("POST", "/motoristas", adm, { nome: "TST Motorista Al", email: "tst.motoal@buson.com", senha: "123456", onibusId: bus.id });
+await req("POST", "/motoristas", adm, { nome: "TST Motorista Al", email: "tst.motoal@buson.com", senha: SENHA_TST, onibusId: bus.id });
 const motId = (await req("GET", "/motoristas", adm)).data.find((m) => m.usuario.email === "tst.motoal@buson.com").id;
 
 // ---- Pontos de embarque
@@ -66,7 +66,7 @@ const alunoTk = await (async () => {
   await req("POST", "/auth/cadastro", null, {
     nome: "TST Intruso",
     email: "tst.intruso@buson.com",
-    senha: "123456",
+    senha: SENHA_TST,
     universidadeId: uniA.id,
   });
   return login("tst.intruso@buson.com");
@@ -86,7 +86,7 @@ ok((await contarViagens()) === 12, "a programação gera ida e volta dos próxim
 
 // ---- Alunos
 async function novoAluno(nome, email, uni, ativar = true) {
-  await req("POST", "/auth/cadastro", null, { nome, email, senha: "123456", universidadeId: uni });
+  await req("POST", "/auth/cadastro", null, { nome, email, senha: SENHA_TST, universidadeId: uni });
   const token = await login(email);
   const id = (await req("GET", "/alunos/me", token)).data.id;
   if (ativar) await req("PATCH", `/alunos/${id}/status`, adm, { status: "ATIVO" });

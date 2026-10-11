@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { z } from "zod";
+import { senhaForte } from "../../auth/senha";
 import * as authService from "./auth.service";
 
 const email = z.string().trim().toLowerCase().email("Informe um e-mail válido.");
@@ -7,7 +8,7 @@ const email = z.string().trim().toLowerCase().email("Informe um e-mail válido."
 export const cadastroSchema = z.object({
   nome: z.string().trim().min(2, "Informe seu nome."),
   email,
-  senha: z.string().min(6, "A senha deve ter ao menos 6 caracteres."),
+  senha: senhaForte,
   universidadeId: z.string().uuid("Selecione sua universidade."),
 });
 

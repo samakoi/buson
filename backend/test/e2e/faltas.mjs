@@ -1,7 +1,7 @@
 // Fase 4 (evolução) — faltas: registro ao encerrar, volta liberada, aviso prévio, justificativa, decisão e alerta
 import { existsSync, readdirSync, rmSync } from "node:fs";
 import path from "node:path";
-import { BASE, hojeISO, limparTST, login, ok, req, resultado, sql } from "./lib.mjs";
+import { BASE, hojeISO, limparTST, login, ok, req, resultado, SENHA_TST, sql } from "./lib.mjs";
 
 const UPLOADS = process.env.UPLOADS_DIR;
 if (!UPLOADS) throw new Error("Defina UPLOADS_DIR igual ao da API de teste");
@@ -23,7 +23,7 @@ const notif = (email, trecho) =>
 // ---- Preparação: rota programada todos os dias, ônibus de 4 lugares
 const uni = (await req("POST", "/universidades", adm, { nome: "TST Inst Falta" })).data;
 const bus = (await req("POST", "/onibus", adm, { placa: "TST-FAL1", capacidade: 4 })).data;
-await req("POST", "/motoristas", adm, { nome: "TST Motorista Falta", email: "tst.motofal@buson.com", senha: "123456", onibusId: bus.id });
+await req("POST", "/motoristas", adm, { nome: "TST Motorista Falta", email: "tst.motofal@buson.com", senha: SENHA_TST, onibusId: bus.id });
 const motId = (await req("GET", "/motoristas", adm)).data.find((m) => m.usuario.email === "tst.motofal@buson.com").id;
 const mot = await login("tst.motofal@buson.com");
 const rota = (await req("POST", "/rotas", adm, { nome: "TST Rota Falta", universidadeIds: [uni.id] })).data;
@@ -49,7 +49,7 @@ const ida = await viagemDe("IDA");
 const volta = await viagemDe("VOLTA");
 
 async function aluno(nome, email, dias) {
-  await req("POST", "/auth/cadastro", null, { nome, email, senha: "123456", universidadeId: uni.id });
+  await req("POST", "/auth/cadastro", null, { nome, email, senha: SENHA_TST, universidadeId: uni.id });
   const token = await login(email);
   const id = (await req("GET", "/alunos/me", token)).data.id;
   await req("PATCH", `/alunos/${id}/status`, adm, { status: "ATIVO" });

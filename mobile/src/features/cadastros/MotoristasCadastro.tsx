@@ -16,10 +16,12 @@ import {
   EstadoVazio,
   Folha,
   ItemLista,
+  RequisitosSenha,
   Rotulo,
   iniciaisDe,
 } from "../../components/ui";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
+import { senhaForte } from "../../utils/senha";
 import { BarraSecao } from "./BarraSecao";
 
 export default function MotoristasCadastro() {
@@ -50,7 +52,7 @@ export default function MotoristasCadastro() {
   async function adicionar() {
     if (nome.trim().length < 2) return setErro("Informe o nome do motorista.");
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setErro("Informe um e-mail válido.");
-    if (senha.length < 6) return setErro("A senha inicial deve ter ao menos 6 caracteres.");
+    if (!senhaForte(senha)) return setErro("A senha inicial ainda não cumpre todos os requisitos.");
     setErro(null);
     setSalvando(true);
     try {
@@ -122,9 +124,10 @@ export default function MotoristasCadastro() {
           senha
           value={senha}
           onChangeText={setSenha}
-          placeholder="Mínimo de 6 caracteres"
+          placeholder="Crie uma senha forte"
           ajuda="Passe a senha ao motorista; ele entra com o e-mail e esta senha."
         />
+        <RequisitosSenha senha={senha} />
         <Rotulo>Ônibus habitual (opcional)</Rotulo>
         <Chips
           opcoes={onibus.map((o) => ({ valor: o.id, rotulo: o.placa }))}

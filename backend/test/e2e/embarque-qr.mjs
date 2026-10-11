@@ -1,5 +1,5 @@
 // Fase 1 (evolução) — embarque pelo QR temporário do motorista: fluxo e testes de segurança
-import { hojeISO, limparTST, login, ok, req, resultado, sql } from "./lib.mjs";
+import { hojeISO, limparTST, login, ok, req, resultado, SENHA_TST, sql } from "./lib.mjs";
 
 limparTST();
 const adm = await login("admin@buson.com");
@@ -10,8 +10,8 @@ const uniA = (await req("POST", "/universidades", adm, { nome: "TST Inst A" })).
 const uniB = (await req("POST", "/universidades", adm, { nome: "TST Inst B" })).data;
 const bus = (await req("POST", "/onibus", adm, { placa: "TST-QR1", capacidade: 10 })).data;
 const bus2 = (await req("POST", "/onibus", adm, { placa: "TST-QR2", capacidade: 10 })).data;
-await req("POST", "/motoristas", adm, { nome: "TST Motorista QR", email: "tst.motoqr@buson.com", senha: "123456", onibusId: bus.id });
-await req("POST", "/motoristas", adm, { nome: "TST Motorista Outro", email: "tst.motoout@buson.com", senha: "123456" });
+await req("POST", "/motoristas", adm, { nome: "TST Motorista QR", email: "tst.motoqr@buson.com", senha: SENHA_TST, onibusId: bus.id });
+await req("POST", "/motoristas", adm, { nome: "TST Motorista Outro", email: "tst.motoout@buson.com", senha: SENHA_TST });
 const motoristas = (await req("GET", "/motoristas", adm)).data;
 const motQrId = motoristas.find((m) => m.usuario.email === "tst.motoqr@buson.com").id;
 const motOutId = motoristas.find((m) => m.usuario.email === "tst.motoout@buson.com").id;
@@ -24,7 +24,7 @@ const outraViagem = (
 ).data;
 
 async function aluno(nome, email, uni) {
-  await req("POST", "/auth/cadastro", null, { nome, email, senha: "123456", universidadeId: uni });
+  await req("POST", "/auth/cadastro", null, { nome, email, senha: SENHA_TST, universidadeId: uni });
   return login(email);
 }
 const ana = await aluno("TST Ana", "tst.ana@buson.com", uniA.id);
