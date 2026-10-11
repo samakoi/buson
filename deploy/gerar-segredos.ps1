@@ -36,5 +36,5 @@ if ($Ambiente -eq 'staging') {
 [System.IO.File]::WriteAllText($destino, $texto, (New-Object System.Text.UTF8Encoding $false))
 
 Write-Host "Criado: $destino"
-Write-Host "Senhas geradas. Agora complete no arquivo: TUNNEL_TOKEN, R2_*, SENTRY_DSN (veja o GUIA_INSTALACAO.md, seção 10)."
+Write-Host "Senhas geradas. Agora complete no arquivo: TUNNEL_TOKEN, R2_*, SENTRY_DSN (veja docs/deploy.md, seção 2)."
 Write-Host "Guarde uma cópia desse arquivo num lugar seguro (gerenciador de senhas): as senhas do MySQL e as chaves do R2 estão só nele."

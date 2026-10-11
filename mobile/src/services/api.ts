@@ -7,7 +7,7 @@ import { lerToken, salvarTokens } from "./tokens";
  * - No emulador Android, "localhost" do seu computador é 10.0.2.2
  * - No Expo Go (celular físico), use o IP da sua máquina na rede local, ex: 192.168.0.10
  * - No simulador iOS e no navegador, "localhost" funciona normalmente
- * Ajuste a constante abaixo conforme o seu ambiente (veja o GUIA_INSTALACAO.md),
+ * Ajuste a constante abaixo conforme o seu ambiente (veja docs/desenvolvimento.md),
  * ou defina EXPO_PUBLIC_API_URL ao iniciar o Expo. A API é versionada: termina em /api/v1.
  */
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.3.126:3333/api/v1";

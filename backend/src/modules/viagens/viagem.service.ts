@@ -13,7 +13,7 @@ import { OPCOES_TX } from "../alocacao/alocacao.service";
 export { OCUPA_VAGA, contarOcupados, promoverProximoDaEspera, travarViagens };
 
 /**
- * Regras de negócio implementadas aqui (ver Bus_On_Documentacao_Completa.docx, seção 3):
+ * Regras de negócio implementadas aqui (ver docs/api.md, "Regras de negócio principais"):
  *  - 3.1 Reserva antecipada: check-in fecha automaticamente ao atingir o limite de vagas.
  *  - 3.2 Lista de espera inteligente: cancelamento promove automaticamente o próximo da fila.
  *  - 3.3 Rota inteligente: pontos sem alunos confirmados são sinalizados como removidos do dia.

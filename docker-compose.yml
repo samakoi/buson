@@ -1,5 +1,4 @@
-version: "3.8"
-
+# MySQL para desenvolvimento local (docs/desenvolvimento.md). Produção e staging: deploy/docker-compose.yml.
 services:
   mysql:
     image: mysql:8.0

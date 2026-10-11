@@ -1,45 +1,73 @@
-# 🚌 Bus On
+# Bus On
 
-Sistema de gestão de transporte universitário — API REST + banco MySQL + app
-mobile em React Native (Expo).
+Gestão do transporte universitário de Imperatriz (MA). Alunos reservam vaga por dia da semana e embarcam por QR Code,
+motoristas operam a viagem e compartilham o GPS do ônibus, e a administração acompanha ocupação, documentos e faltas.
 
-Este pacote contém o código inicial (MVP) do projeto, implementando as regras
-de negócio centrais descritas na documentação: reserva antecipada, lista de
-espera inteligente, rota inteligente e confirmação de embarque via QR Code.
+- **App Android** (APK) e **site** instalável (PWA) a partir do mesmo código: `app.onbus.online`
+- **API** REST: `api.onbus.online/api/v1`
 
-## Como rodar
+## O que o sistema faz
 
-Siga o **[GUIA_INSTALACAO.md](./GUIA_INSTALACAO.md)** — ele tem o passo a
-passo completo, desde instalar o Node.js até testar o app no seu celular.
-
-Resumo rápido (veja o guia para detalhes):
-
-```bash
-# 1. banco de dados
-docker compose up -d
-
-# 2. backend
-cd backend
-cp .env.example .env
-npm install
-npx prisma migrate dev --name init
-npm run seed
-npm run dev
-
-# 3. mobile (em outro terminal)
-cd mobile
-npm install
-npx expo start
-```
-
-## Documentação
-
-- `Bus_On_Documentacao_Completa.docx` (gerada anteriormente) — visão geral,
-  regras de negócio, design system e roadmap completos.
-- Este código implementa o backend e o app mobile a partir dessa
-  especificação, seção por seção.
+| Aluno | Motorista | Administração |
+|---|---|---|
+| Cadastro e envio do comprovante de matrícula | Viagens do dia, iniciar e encerrar | Alunos: busca, perfil, aprovação de documentos |
+| Dias fixos de uso e confirmação de presença | QR de embarque e confirmação manual | Programação semanal, ônibus, rotas, pontos, motoristas |
+| Lista de espera com aviso de vaga | Lista de passageiros e rota do dia | Dashboard: ocupação, presença e faltas |
+| Onde está o ônibus (mapa) | GPS compartilhado durante a viagem | Mapa ao vivo e trajeto |
+| Faltas e justificativas | Avisos | Decisão sobre justificativas, auditoria |
 
 ## Stack
 
-- **Backend**: Node.js, Express, TypeScript, Prisma ORM, MySQL, JWT, Bcrypt, Zod
-- **Mobile**: React Native, Expo, React Navigation, Axios, AsyncStorage
+| | |
+|---|---|
+| API | Node.js 24, Express, TypeScript, Prisma, MySQL 8, Zod, JWT, Pino, Sentry |
+| App e site | Expo SDK 57 (React Native), React Navigation, TanStack Query, Zustand, Leaflet |
+| Infraestrutura | Docker Compose, Cloudflare (Tunnel, Pages, R2), EAS (build, update, push), GitHub Actions |
+
+## Começando
+
+```bash
+docker compose up -d                      # MySQL local
+
+cd backend
+cp .env.example .env && npm install
+npx prisma migrate dev && npm run seed
+npm run dev                               # http://localhost:3333/api/v1  (Swagger em /api/v1/docs)
+
+cd ../mobile
+npm install
+npx expo start                            # w = navegador
+```
+
+Usuários de demonstração (senha `123456`): `admin@buson.com`, `motorista@buson.com`, `aluno@buson.com`.
+O passo a passo completo está em [docs/desenvolvimento.md](./docs/desenvolvimento.md).
+
+## Documentação
+
+| Documento | Conteúdo |
+|---|---|
+| [Arquitetura](./docs/arquitetura.md) | visão geral, camadas, dados, sessão, tarefas em segundo plano, ambientes |
+| [Desenvolvimento](./docs/desenvolvimento.md) | rodar localmente, testes, conferências antes do PR, problemas comuns |
+| [API](./docs/api.md) | convenções, sessão, recursos, regras de negócio, como adicionar uma rota |
+| [App](./docs/app.md) | organização, dados com React Query, sessão, push, GPS, APK e atualizações |
+| [Site (PWA)](./docs/site.md) | montagem, segurança e publicação no Cloudflare Pages |
+| [Implantação](./docs/deploy.md) | servidor, túnel, segredos, atualização, backup, monitoramento, segurança |
+| [Decisões (ADR)](./docs/adr) | por que cada escolha de arquitetura foi feita |
+| [Como contribuir](./CONTRIBUTING.md) | fluxo de branches, padrões e conferências |
+| [Histórico](./CHANGELOG.md) | o que mudou em cada fase |
+
+## Estrutura
+
+```
+backend/   API (src/modules por assunto, prisma/, test/e2e)
+mobile/    app Android e site (src/features por assunto)
+deploy/    Docker Compose de produção/staging e scripts de operação
+docs/      documentação
+```
+
+## Próximos passos
+
+- Recuperação de senha por e-mail
+- Exportar o relatório de faltas (CSV/PDF)
+- Avisos no celular para quem usa o site (Web Push)
+- Publicação na Play Store (hoje o app é distribuído como APK e como site)

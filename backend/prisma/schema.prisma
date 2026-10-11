@@ -1,5 +1,5 @@
 // Schema do banco de dados do Bus On
-// Documentação: veja Bus_On_Documentacao_Completa.docx, seção 8.
+// Documentação: veja docs/arquitetura.md (seção "Dados") e docs/api.md.
 
 generator client {
   provider = "prisma-client-js"
