@@ -26,6 +26,9 @@ O script [`scripts/build-web.mjs`](../mobile/scripts/build-web.mjs) roda `expo e
   (mapa, conferido por hash SRI), o leitor de QR para iPhone e o contador de visitas do Cloudflare;
 - os arquivos com hash ficam em cache por 1 ano; a página sempre confere se há versão nova.
 
+O Cloudflare Pages não publica pastas chamadas `node_modules`: o script move as fontes e imagens das bibliotecas
+(`assets/node_modules`) para `assets/pacotes`, corrige os caminhos e falha se algo continuar lá.
+
 Desempenho: só o Ionicons entra no pacote e as abas de cada perfil são arquivos separados, carregados depois do login.
 
 Para testar no computador contra a API local:

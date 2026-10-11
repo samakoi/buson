@@ -5,6 +5,19 @@ As versões do Bus On são entregues por fases, cada uma num branch e PR própri
 
 ## Não lançado
 
+### Fase 11: histórico de viagens, senha forte e fluxos de uso
+
+- **Histórico de viagens** (administração): botão Histórico na aba Viagens, com períodos prontos ou personalizado,
+  filtros de rota, motorista, sentido e situação, totais do período e lista paginada. O detalhe mostra horários de
+  início e fim, números, trajeto no mapa e a situação de cada passageiro. API: `GET /viagens/historico` e
+  `GET /viagens/:id/detalhe`; a viagem passa a guardar `iniciadaEm` e `encerradaEm`.
+- **Senha forte** ao criar conta (aluno, motorista e administrador): 8+ caracteres, com maiúscula, minúscula, número e
+  caractere especial. O app marca cada requisito enquanto a pessoa digita. O login continua aceitando as senhas atuais.
+- **Correção no site**: os ícones do menu e as imagens das bibliotecas não apareciam no Cloudflare Pages, que não
+  publica pastas chamadas `node_modules`. O build do site agora usa `assets/pacotes` e falha se sobrar algo lá.
+- **Fluxos de uso** em [docs/fluxos.md](./docs/fluxos.md) (Mermaid) e numa página visual clicável.
+- Testes: suíte E2E nova do histórico (26 checagens) e testes unitários da regra de senha.
+
 ### Fase 10: qualidade, desempenho e documentação
 
 **Padrões do repositório**

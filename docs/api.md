@@ -44,6 +44,7 @@ sequenceDiagram
 | Grupo | Rotas principais |
 |---|---|
 | Autenticação | `/auth/cadastro`, `/auth/login`, `/auth/refresh`, `/auth/me`, `/auth/sessoes` |
+| Histórico | `/viagens/historico` (paginado, com filtros e totais), `/viagens/:id/detalhe` (passageiros e horários) |
 | Viagens | `/viagens`, `/viagens/atual`, `/viagens/:id/checkin`, `/viagens/:id/iniciar`, `/viagens/:id/encerrar`, `/viagens/:id/passageiros`, `/viagens/:id/rota` |
 | Embarque | `/viagens/:id/embarque/sessao` (QR do motorista), `/scan` (aluno), `/manual` |
 | GPS | `/viagens/:id/localizacao` (envio e última posição), `/viagens/:id/trajeto`, `/viagens/ao-vivo` |
@@ -59,6 +60,10 @@ sequenceDiagram
 Cada rota no Swagger mostra o resumo, quem pode chamar (permissão e papéis), os parâmetros e o corpo esperado.
 
 ## Regras de negócio principais
+
+- **Senha forte** ao criar uma senha (cadastro do aluno, motorista e administrador): 8+ caracteres com maiúscula,
+  minúscula, número e caractere especial (`auth/senha.ts`; o app usa a mesma regra em `utils/senha.ts`). O login
+  aceita as senhas antigas.
 
 - **Vaga por dia da semana**: o aluno escolhe dias fixos (`PUT /alunos/me/dias`) dentro da capacidade de cada dia. Com
   algum dia lotado, a resposta é `409` com a lista dos dias. A checagem roda em transação com trava na programação.

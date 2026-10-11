@@ -51,6 +51,13 @@ Regras:
   [`services/queryClient.ts`](../mobile/src/services/queryClient.ts)).
 - Escritas (POST/PATCH) chamam `api` direto e tratam o erro com `mensagemDeErro(err, "texto padrão")`.
 
+## Histórico de viagens (administração)
+
+Na aba **Viagens › Histórico** ([`HistoricoViagens.tsx`](../mobile/src/features/viagens/HistoricoViagens.tsx)): os mesmos
+períodos do Dashboard ([`utils/periodos.ts`](../mobile/src/utils/periodos.ts)), filtros numa folha e a lista paginada.
+Tocar numa viagem abre [`DetalheViagemScreen`](../mobile/src/features/viagens/DetalheViagemScreen.tsx), com o trajeto
+no mapa quando houve GPS.
+
 ## Sessão e armazenamento
 
 - [`services/api.ts`](../mobile/src/services/api.ts): axios com o token, desembrulha o `{ data }` e renova a sessão

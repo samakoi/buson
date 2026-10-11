@@ -46,6 +46,7 @@ O passo a passo completo está em [docs/desenvolvimento.md](./docs/desenvolvimen
 
 | Documento | Conteúdo |
 |---|---|
+| [Fluxos de uso](./docs/fluxos.md) | como aluno, motorista e administração usam o app, passo a passo |
 | [Arquitetura](./docs/arquitetura.md) | visão geral, camadas, dados, sessão, tarefas em segundo plano, ambientes |
 | [Desenvolvimento](./docs/desenvolvimento.md) | rodar localmente, testes, conferências antes do PR, problemas comuns |
 | [API](./docs/api.md) | convenções, sessão, recursos, regras de negócio, como adicionar uma rota |
