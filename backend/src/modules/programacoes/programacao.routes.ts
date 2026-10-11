@@ -13,7 +13,7 @@ const diasSemana = z
   .min(1, "Escolha ao menos um dia da semana.")
   .refine((d) => new Set(d).size === d.length, "Dia da semana repetido.");
 
-const criarSchema = z
+export const criarSchema = z
   .object({
     rotaId: z.string().uuid("Selecione a rota."),
     onibusId: z.string().uuid("Selecione o ônibus."),
@@ -26,7 +26,7 @@ const criarSchema = z
   .strict();
 
 // A rota não muda: para outra rota, crie outra programação
-const atualizarSchema = criarSchema.omit({ rotaId: true }).partial().strict();
+export const atualizarSchema = criarSchema.omit({ rotaId: true }).partial().strict();
 
 programacaoRouter.get("/", async (_req, res, next) => {
   try {

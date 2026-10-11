@@ -19,7 +19,7 @@ async function getMotoristaId(usuarioId: string) {
 
 const dia = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida (use AAAA-MM-DD).");
 
-const listarQuerySchema = z.object({ desde: dia.optional() });
+export const listarQuerySchema = z.object({ desde: dia.optional() });
 
 export async function listar(req: Request, res: Response, next: NextFunction) {
   try {
@@ -31,7 +31,7 @@ export async function listar(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-const novaViagemSchema = z.object({
+export const novaViagemSchema = z.object({
   rotaId: z.string().uuid("Selecione a rota."),
   onibusId: z.string().uuid("Selecione o ônibus."),
   motoristaId: z.string().uuid("Selecione o motorista."),
@@ -78,7 +78,7 @@ export async function checkin(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-const cancelamentoSchema = z.object({
+export const cancelamentoSchema = z.object({
   motivo: z.enum(["DOENCA", "COMPROMISSO_ACADEMICO", "COMPROMISSO_PESSOAL", "TRABALHO", "TRANSPORTE_PROPRIO", "OUTRO"]).optional(),
   diaTodo: z.boolean().optional(),
 });
@@ -134,7 +134,7 @@ export async function encerrar(req: Request, res: Response, next: NextFunction) 
 
 // ---- GPS (Fase 6)
 
-const leituraSchema = z.object({
+export const leituraSchema = z.object({
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
   velocidade: z.number().min(0).max(100).nullable().optional(), // m/s (até 360 km/h)
@@ -144,7 +144,7 @@ const leituraSchema = z.object({
 });
 
 /** Lote de leituras do GPS do motorista (ou uma leitura só, no formato antigo). */
-const localizacaoSchema = z.union([
+export const localizacaoSchema = z.union([
   z.object({ pontos: z.array(leituraSchema).min(1).max(200) }).strict(),
   z
     .object({ latitude: leituraSchema.shape.latitude, longitude: leituraSchema.shape.longitude })

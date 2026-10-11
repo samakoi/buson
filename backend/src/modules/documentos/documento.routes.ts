@@ -16,7 +16,7 @@ const statusDocumento = z.enum(["PENDENTE", "EM_ANALISE", "APROVADO", "REPROVADO
  * Abre o arquivo pelo link temporário (o navegador/visualizador não manda o token de
  * login; a assinatura do link é que autoriza). Fica antes do `autenticar`.
  */
-const arquivoSchema = z.object({ expira: z.coerce.number().int(), assinatura: z.string().min(10).max(100) });
+export const arquivoSchema = z.object({ expira: z.coerce.number().int(), assinatura: z.string().min(10).max(100) });
 
 documentoRouter.get("/:id/arquivo", async (req, res, next) => {
   try {
@@ -31,7 +31,7 @@ documentoRouter.use(autenticar);
 
 // ---- Aluno
 
-const envioSchema = z.object({ tipo: z.enum(["DECLARACAO", "COMPROVANTE", "OUTRO"]).default("COMPROVANTE") });
+export const envioSchema = z.object({ tipo: z.enum(["DECLARACAO", "COMPROVANTE", "OUTRO"]).default("COMPROVANTE") });
 
 documentoRouter.post("/", exigir("aluno:proprio"), upload.single("arquivo"), async (req, res, next) => {
   try {
@@ -61,7 +61,7 @@ documentoRouter.post("/:id/link", async (req, res, next) => {
 
 // ---- Administração
 
-const listarSchema = z.object({
+export const listarSchema = z.object({
   status: statusDocumento.optional(),
   busca: z.string().max(80).optional(),
   pagina: z.coerce.number().int().min(1).default(1),
@@ -84,7 +84,7 @@ documentoRouter.post("/:id/aprovar", exigir("alunos:gerenciar"), async (req, res
   }
 });
 
-const reprovarSchema = z.object({
+export const reprovarSchema = z.object({
   motivo: z.string().trim().min(5, "Informe o motivo da reprovação (o aluno vai ler).").max(300, "O motivo pode ter até 300 caracteres."),
 });
 

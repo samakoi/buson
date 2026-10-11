@@ -29,7 +29,7 @@ motoristaRouter.get("/", async (_req, res, next) => {
   }
 });
 
-const schema = z.object({
+export const schema = z.object({
   nome: z.string().trim().min(2, "Informe o nome do motorista."),
   email: z.string().trim().toLowerCase().email("E-mail inválido."),
   senha: z.string().min(6, "A senha deve ter ao menos 6 caracteres."),

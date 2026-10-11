@@ -20,7 +20,7 @@ alunoRouter.get("/me", exigir("aluno:proprio"), async (req, res, next) => {
   }
 });
 
-const dadosSchema = z.object({
+export const dadosSchema = z.object({
   nome: z.string().trim().min(2, "Informe seu nome.").optional(),
   matricula: z.string().trim().min(3, "Informe a matrícula.").max(40).optional(),
   curso: z.string().trim().min(2, "Informe o curso.").max(120).optional(),
@@ -43,7 +43,7 @@ alunoRouter.patch("/me", exigir("aluno:proprio"), async (req, res, next) => {
 
 // ---- Dias de uso (alocação por dia da semana)
 
-const diasSchema = z
+export const diasSchema = z
   .object({
     dias: z
       .array(
@@ -108,7 +108,7 @@ alunoRouter.put("/:id/dias", exigir("alunos:gerenciar"), async (req, res, next) 
 
 const status = z.enum(["PENDENTE", "ATIVO", "INATIVO"]);
 
-const listarSchema = z.object({
+export const listarSchema = z.object({
   busca: z.string().max(80).optional(),
   status: status.optional(),
   universidadeId: z.string().uuid().optional(),
@@ -136,7 +136,7 @@ alunoRouter.get("/:id", exigir("alunos:ler"), async (req, res, next) => {
   }
 });
 
-const statusSchema = z.object({ status, motivo: z.string().trim().max(200).optional() });
+export const statusSchema = z.object({ status, motivo: z.string().trim().max(200).optional() });
 
 alunoRouter.patch("/:id/status", exigir("alunos:gerenciar"), async (req, res, next) => {
   try {

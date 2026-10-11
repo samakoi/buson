@@ -25,9 +25,11 @@ export function autenticar(req: Request, _res: Response, next: NextFunction) {
 
 /** Exige ao menos uma das permissões (o backend sempre valida — nunca só a interface). */
 export function exigir(...permissoes: Permissao[]) {
-  return (req: Request, _res: Response, next: NextFunction) => {
+  const middleware = (req: Request, _res: Response, next: NextFunction) => {
     if (!req.usuario) return next(new AppError("NAO_AUTENTICADO"));
     if (!permissoes.some((p) => temPermissao(req.usuario!.papel, p))) return next(new AppError("SEM_PERMISSAO"));
     next();
   };
+  // A documentação OpenAPI lê as permissões daqui
+  return Object.assign(middleware, { permissoes });
 }

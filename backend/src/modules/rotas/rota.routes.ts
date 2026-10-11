@@ -33,7 +33,7 @@ rotaRouter.get("/", autenticar, async (_req, res, next) => {
 
 const semRepetir = (ids: string[]) => new Set(ids).size === ids.length;
 
-const schema = z.object({
+export const schema = z.object({
   nome: z.string().trim().min(2, "Informe o nome da rota."),
   // Universidades na ordem das paradas
   universidadeIds: z

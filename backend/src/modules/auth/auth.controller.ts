@@ -4,7 +4,7 @@ import * as authService from "./auth.service";
 
 const email = z.string().trim().toLowerCase().email("Informe um e-mail válido.");
 
-const cadastroSchema = z.object({
+export const cadastroSchema = z.object({
   nome: z.string().trim().min(2, "Informe seu nome."),
   email,
   senha: z.string().min(6, "A senha deve ter ao menos 6 caracteres."),
@@ -13,13 +13,13 @@ const cadastroSchema = z.object({
 
 const deviceId = z.string().trim().max(100).optional();
 
-const loginSchema = z.object({
+export const loginSchema = z.object({
   email,
   senha: z.string().min(1, "Informe a senha."),
   deviceId,
 });
 
-const refreshSchema = z.object({
+export const refreshSchema = z.object({
   refreshToken: z.string().min(20, "Sessão inválida. Entre novamente."),
   deviceId,
 });

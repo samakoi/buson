@@ -37,7 +37,7 @@ onibusRouter.get("/", async (_req, res, next) => {
   }
 });
 
-const schema = z.object({
+export const schema = z.object({
   placa: z.string().trim().toUpperCase().min(4, "A placa deve ter ao menos 4 caracteres."),
   capacidade: z.number().int().positive("A capacidade deve ser maior que zero.").default(30),
 });
@@ -91,7 +91,7 @@ onibusRouter.patch("/:id", async (req, res, next) => {
   }
 });
 
-const manutencaoSchema = z.object({
+export const manutencaoSchema = z.object({
   emManutencao: z.boolean(),
   observacao: z.string().trim().max(200).optional(),
 });

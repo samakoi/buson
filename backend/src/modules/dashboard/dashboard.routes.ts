@@ -120,7 +120,7 @@ dashboardRouter.get("/ocupacao-por-universidade", async (_req, res, next) => {
 });
 
 const dia = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida (use AAAA-MM-DD).");
-const relatorioSchema = z.object({ inicio: dia.optional(), fim: dia.optional() });
+export const relatorioSchema = z.object({ inicio: dia.optional(), fim: dia.optional() });
 const MAX_DIAS = 366;
 
 /**

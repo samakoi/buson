@@ -20,6 +20,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^7.3.4",
     "@aws-sdk/client-s3": "^3.1142.0",
     "@prisma/client": "^5.19.1",
     "@sentry/node": "^11.1.0",
@@ -35,6 +36,7 @@
     "pino": "^10.3.1",
     "pino-http": "^11.0.0",
     "prisma": "^5.22.0",
+    "swagger-ui-express": "^5.0.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -45,6 +47,7 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/multer": "^2.2.0",
     "@types/node": "^20.14.15",
+    "@types/swagger-ui-express": "^4.1.8",
     "eslint": "^10.11.0",
     "globals": "^17.12.0",
     "prettier": "3.9.10",

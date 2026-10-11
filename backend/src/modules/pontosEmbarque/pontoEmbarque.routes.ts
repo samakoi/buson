@@ -27,7 +27,7 @@ pontoEmbarqueRouter.get("/", async (req, res, next) => {
 
 pontoEmbarqueRouter.use(exigir("rotas:gerenciar"));
 
-const schema = z
+export const schema = z
   .object({
     nome: z.string().trim().min(2, "Informe o nome do ponto.").max(120),
     endereco: z.string().trim().max(200).nullable().optional(),

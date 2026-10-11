@@ -14,6 +14,7 @@ import { programacaoRouter } from "../modules/programacoes/programacao.routes";
 import { pontoEmbarqueRouter } from "../modules/pontosEmbarque/pontoEmbarque.routes";
 import { documentoRouter } from "../modules/documentos/documento.routes";
 import { faltaRouter } from "../modules/faltas/falta.routes";
+import { montar } from "./montar";
 
 export const routes = Router();
 
@@ -37,16 +38,16 @@ routes.get("/app/versao", (_req, res) => {
   res.json({ android: { versaoMinima: env.appAndroid.versaoMinima, link: env.appAndroid.link } });
 });
 
-routes.use("/auth", authRouter);
-routes.use("/viagens", viagemRouter);
-routes.use("/universidades", universidadeRouter);
-routes.use("/onibus", onibusRouter);
-routes.use("/rotas", rotaRouter);
-routes.use("/dashboard", dashboardRouter);
-routes.use("/motoristas", motoristaRouter);
-routes.use("/notificacoes", notificacaoRouter);
-routes.use("/alunos", alunoRouter);
-routes.use("/programacoes", programacaoRouter);
-routes.use("/pontos-embarque", pontoEmbarqueRouter);
-routes.use("/documentos", documentoRouter);
-routes.use("/faltas", faltaRouter);
+montar(routes, "/auth", authRouter);
+montar(routes, "/viagens", viagemRouter);
+montar(routes, "/universidades", universidadeRouter);
+montar(routes, "/onibus", onibusRouter);
+montar(routes, "/rotas", rotaRouter);
+montar(routes, "/dashboard", dashboardRouter);
+montar(routes, "/motoristas", motoristaRouter);
+montar(routes, "/notificacoes", notificacaoRouter);
+montar(routes, "/alunos", alunoRouter);
+montar(routes, "/programacoes", programacaoRouter);
+montar(routes, "/pontos-embarque", pontoEmbarqueRouter);
+montar(routes, "/documentos", documentoRouter);
+montar(routes, "/faltas", faltaRouter);

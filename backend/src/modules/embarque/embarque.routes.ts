@@ -25,7 +25,7 @@ embarqueRouter.post("/sessao", exigir("viagem:operar"), async (req, res, next) =
 });
 
 // Aluno escaneia o QR do motorista. O aluno é SEMPRE o do login — o corpo só traz o token.
-const scanSchema = z.object({ token: z.string().min(20, "QR Code inválido.").max(200) }).strict();
+export const scanSchema = z.object({ token: z.string().min(20, "QR Code inválido.").max(200) }).strict();
 
 embarqueRouter.post("/scan", exigir("embarque:escanear"), async (req, res, next) => {
   try {
@@ -37,7 +37,7 @@ embarqueRouter.post("/scan", exigir("embarque:escanear"), async (req, res, next)
 });
 
 // Emergência: motorista confirma o embarque de um aluno com vaga confirmada
-const manualSchema = z.object({ alunoId: z.string().uuid("Aluno inválido.") });
+export const manualSchema = z.object({ alunoId: z.string().uuid("Aluno inválido.") });
 
 embarqueRouter.post("/manual", exigir("viagem:operar"), async (req, res, next) => {
   try {

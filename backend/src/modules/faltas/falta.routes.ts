@@ -12,7 +12,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: TAM
 const dia = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida (use AAAA-MM-DD).");
 
 // Anexo aberto pelo link temporário (a assinatura autoriza; fica antes do `autenticar`)
-const anexoSchema = z.object({ expira: z.coerce.number().int(), assinatura: z.string().min(10).max(100) });
+export const anexoSchema = z.object({ expira: z.coerce.number().int(), assinatura: z.string().min(10).max(100) });
 
 faltaRouter.get("/:id/anexo", async (req, res, next) => {
   try {
@@ -35,7 +35,7 @@ faltaRouter.get("/me", exigir("aluno:proprio"), async (req, res, next) => {
   }
 });
 
-const justificativaSchema = z.object({
+export const justificativaSchema = z.object({
   justificativa: z.string().trim().min(5, "Explique o motivo da falta.").max(500, "A justificativa pode ter até 500 caracteres."),
 });
 
@@ -59,7 +59,7 @@ faltaRouter.post("/:id/anexo/link", async (req, res, next) => {
 
 // ---- Administração
 
-const listarSchema = z.object({
+export const listarSchema = z.object({
   situacao: z.enum(["AGUARDANDO_DECISAO", "SEM_JUSTIFICATIVA", "JUSTIFICADA", "INDEFERIDA"]).optional(),
   inicio: dia.optional(),
   fim: dia.optional(),
@@ -78,7 +78,7 @@ faltaRouter.get("/", exigir("alunos:ler"), async (req, res, next) => {
   }
 });
 
-const justificarSchema = z.object({ observacao: z.string().trim().max(300).optional() });
+export const justificarSchema = z.object({ observacao: z.string().trim().max(300).optional() });
 
 faltaRouter.post("/:id/justificar", exigir("alunos:gerenciar"), async (req, res, next) => {
   try {
@@ -89,7 +89,7 @@ faltaRouter.post("/:id/justificar", exigir("alunos:gerenciar"), async (req, res,
   }
 });
 
-const indeferirSchema = z.object({
+export const indeferirSchema = z.object({
   motivo: z
     .string()
     .trim()

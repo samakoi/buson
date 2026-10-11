@@ -16,7 +16,7 @@ universidadeRouter.get("/", async (_req, res, next) => {
   }
 });
 
-const schema = z.object({
+export const schema = z.object({
   nome: z.string().trim().min(2, "Informe o nome da universidade."),
   endereco: z.string().trim().optional(),
   // Coordenadas da parada (mapa e distância do ônibus)

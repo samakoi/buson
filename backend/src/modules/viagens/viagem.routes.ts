@@ -2,6 +2,7 @@ import { Router } from "express";
 import * as viagemController from "./viagem.controller";
 import { autenticar, exigir } from "../../middlewares/auth";
 import { embarqueRouter } from "../embarque/embarque.routes";
+import { montar } from "../../routes/montar";
 
 export const viagemRouter = Router();
 
@@ -28,4 +29,4 @@ viagemRouter.get("/:id/localizacao", viagemController.posicaoAtual);
 viagemRouter.get("/:id/trajeto", exigir("dashboard:ler"), viagemController.trajeto);
 
 // Embarque pelo QR temporário do motorista (sessão, scan do aluno e manual)
-viagemRouter.use("/:id/embarque", embarqueRouter);
+montar(viagemRouter, "/:id/embarque", embarqueRouter);

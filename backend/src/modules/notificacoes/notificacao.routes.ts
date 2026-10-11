@@ -29,7 +29,7 @@ notificacaoRouter.post("/lidas", async (req, res, next) => {
 
 // ---- Push: aparelhos do usuário (vários por usuário)
 
-const dispositivoSchema = z
+export const dispositivoSchema = z
   .object({
     token: z.string().trim().min(10).max(255),
     plataforma: z.enum(["ANDROID", "IOS"]),
@@ -45,9 +45,11 @@ notificacaoRouter.post("/dispositivos", async (req, res, next) => {
   }
 });
 
+export const removerDispositivoSchema = z.object({ token: z.string().min(10).max(255) });
+
 notificacaoRouter.post("/dispositivos/remover", async (req, res, next) => {
   try {
-    const { token } = z.object({ token: z.string().min(10).max(255) }).parse(req.body);
+    const { token } = removerDispositivoSchema.parse(req.body);
     await pushService.removerDispositivo(req.usuario!.sub, token);
     res.json({ ok: true });
   } catch (err) {
@@ -65,7 +67,7 @@ notificacaoRouter.get("/preferencias", async (req, res, next) => {
   }
 });
 
-const preferenciasSchema = z.object({ desligadas: z.array(z.enum(["LEMBRETE", "TRANSPORTE"])).max(2) }).strict();
+export const preferenciasSchema = z.object({ desligadas: z.array(z.enum(["LEMBRETE", "TRANSPORTE"])).max(2) }).strict();
 
 notificacaoRouter.put("/preferencias", async (req, res, next) => {
   try {
