@@ -3,7 +3,7 @@ import { StyleSheet, Vibration, View } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BarcodeScanningResult, CameraView, useCameraPermissions } from "expo-camera";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
 import { elevacao } from "../../theme/tokens";
 import { Aviso, Botao, Cabecalho, Card, Carregando, EstadoVazio, ItemLista, Tela, Texto } from "../../components/ui";

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Linking, Platform, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { Viagem } from "../../types";
 import { useTema } from "../../theme/TemaProvider";

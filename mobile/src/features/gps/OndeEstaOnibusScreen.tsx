@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { View } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTema } from "../../theme/TemaProvider";
 import { Aviso, Botao, Cabecalho, Card, Carregando, Pilula, Tela, Texto } from "../../components/ui";
 import { mensagemDeErro } from "../../utils/feedback";

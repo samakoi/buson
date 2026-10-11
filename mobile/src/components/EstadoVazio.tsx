@@ -1,6 +1,6 @@
 import React from "react";
 import { View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTema } from "../theme/TemaProvider";
 import { Texto } from "./Texto";
 import { Botao } from "./Botao";

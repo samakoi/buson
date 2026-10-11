@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { criarEstilos, useTema } from "../../theme/TemaProvider";
 import { BarraProgresso, Texto } from "../../components/ui";
 import { DIAS_SEMANA_COMPLETOS } from "../../utils/datas";

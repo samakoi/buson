@@ -1,5 +1,5 @@
 import React from "react";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { BottomTabNavigationOptions } from "@react-navigation/bottom-tabs";
 import { useTema } from "../theme/TemaProvider";
 import type { NomeIcone } from "../components/icones";

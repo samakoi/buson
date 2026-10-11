@@ -1,6 +1,6 @@
 import React from "react";
 import { ActivityIndicator, Pressable, StyleProp, View, ViewStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { criarEstilos, useTema } from "../theme/TemaProvider";
 import { Texto } from "./Texto";
 import { NomeIcone } from "./icones";
