@@ -165,7 +165,7 @@ export default function ViagensScreen() {
 
       {aba === "historico" && <HistoricoViagens rotas={rotas} motoristas={motoristas} />}
 
-      {aba === "programacao" && <ProgramacaoSecao rotas={rotas} onibus={onibus} motoristas={motoristas} aoMudarViagens={recarregar} />}
+      {aba === "programacao" && <ProgramacaoSecao aoMudarViagens={recarregar} />}
 
       {aba === "viagens" && viagens.length === 0 && (
         <Card>
@@ -271,7 +271,11 @@ export default function ViagensScreen() {
 
         <Rotulo>Rota</Rotulo>
         <Chips
-          opcoes={rotas.map((r) => ({ valor: r.id, rotulo: r.nome, detalhe: r.pontos.map((p) => p.universidade.nome).join(" → ") }))}
+          opcoes={rotas.map((r) => {
+            // Mostra o trecho do sentido escolhido acima (ida ou volta)
+            const t = sentido === "VOLTA" ? r.trechos.volta : r.trechos.ida;
+            return { valor: r.id, rotulo: r.nome, detalhe: `${t.origem} → ${t.destino}` };
+          })}
           valor={rotaId}
           onChange={setRotaId}
           vazio="Cadastre uma rota na aba Cadastros."

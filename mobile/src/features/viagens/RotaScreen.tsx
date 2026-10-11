@@ -14,10 +14,45 @@ export default function RotaScreen() {
 
   const aguardando = viagem?.status === "AGUARDANDO";
   const universidades = rota?.universidades ?? [];
-  // Pontos de embarque só importam na ida (na volta o ônibus busca nas instituições)
-  const pontos = rota?.sentido === "IDA" ? rota.pontosEmbarque : [];
+  // Paradas do trecho desta viagem: na ida embarca nos pontos e desce nas instituições;
+  // na volta embarca nas instituições e desce nos pontos
+  const volta = rota?.sentido === "VOLTA";
+  const pontos = rota?.pontosEmbarque ?? [];
   const ativas = universidades.filter((p) => p.ativoNoDia).length;
   const semAlunos = aguardando ? "Ninguém com vaga ainda" : "Sem passageiros — pode pular esta parada";
+
+  const secaoPontos = pontos.length > 0 && (
+    <>
+      <Secao titulo={volta ? "Pontos de desembarque" : "Pontos de embarque"} />
+      <Card>
+        <Trajeto
+          riscarInativas={!aguardando}
+          paradas={pontos.map((p) => ({
+            nome: p.nome,
+            detalhe: p.ativoNoDia
+              ? `${p.alunos} aluno(s) ${volta ? "descem" : "embarcam"} aqui${p.endereco ? ` • ${p.endereco}` : ""}`
+              : semAlunos,
+            ativa: p.ativoNoDia,
+          }))}
+        />
+      </Card>
+    </>
+  );
+  const secaoInstituicoes = (
+    <>
+      <Secao titulo={volta ? "Buscar nas instituições" : "Instituições"} />
+      <Card>
+        <Trajeto
+          riscarInativas={!aguardando}
+          paradas={universidades.map((p) => ({
+            nome: p.universidade,
+            detalhe: p.ativoNoDia ? `${p.alunosConfirmados} aluno(s) com vaga` : semAlunos,
+            ativa: p.ativoNoDia,
+          }))}
+        />
+      </Card>
+    </>
+  );
 
   return (
     <Tela atualizando={atualizando} onAtualizar={atualizar}>
@@ -36,33 +71,8 @@ export default function RotaScreen() {
         </Card>
       ) : (
         <>
-          {pontos.length > 0 && (
-            <>
-              <Secao titulo="Pontos de embarque" />
-              <Card>
-                <Trajeto
-                  riscarInativas={!aguardando}
-                  paradas={pontos.map((p) => ({
-                    nome: p.nome,
-                    detalhe: p.ativoNoDia ? `${p.alunos} aluno(s) embarcam aqui${p.endereco ? ` • ${p.endereco}` : ""}` : semAlunos,
-                    ativa: p.ativoNoDia,
-                  }))}
-                />
-              </Card>
-            </>
-          )}
-
-          <Secao titulo={rota?.sentido === "VOLTA" ? "Buscar nas instituições" : "Instituições"} />
-          <Card>
-            <Trajeto
-              riscarInativas={!aguardando}
-              paradas={universidades.map((p) => ({
-                nome: p.universidade,
-                detalhe: p.ativoNoDia ? `${p.alunosConfirmados} aluno(s) com vaga` : semAlunos,
-                ativa: p.ativoNoDia,
-              }))}
-            />
-          </Card>
+          {volta ? secaoInstituicoes : secaoPontos}
+          {volta ? secaoPontos : secaoInstituicoes}
           <Texto variante="pequeno" cor="textoSuave" alinhar="center">
             Paradas sem alunos com vaga saem do trajeto do dia automaticamente.
           </Texto>

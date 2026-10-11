@@ -1,26 +1,14 @@
-import React, { useState } from "react";
-import { Pressable, View } from "react-native";
-import { Motorista, Onibus, Programacao, Rota } from "../../types";
+import React from "react";
+import { View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Programacao } from "../../types";
+import type { PilhaAdmin } from "../../navigation/AdminTabs";
 import { criarEstilos } from "../../theme/TemaProvider";
-import { Aviso, Botao, Campo, Card, Carregando, Chips, EstadoVazio, Folha, Pilula, Rotulo, Texto } from "../../components/ui";
+import { Botao, Card, Carregando, EstadoVazio, Pilula, Rotulo, Texto } from "../../components/ui";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
-import { DIAS_SEMANA, listarDias, mascararHora } from "../../utils/datas";
+import { DIAS_SEMANA, listarDias } from "../../utils/datas";
 import { useExcluirProgramacao, useGerarViagens, useProgramacoes, useSalvarProgramacao } from "./api";
-
-const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
-const DIAS_UTEIS = [1, 2, 3, 4, 5];
-
-type Formulario = {
-  id?: string;
-  rotaId: string | null;
-  motoristaId: string | null;
-  onibusId: string | null;
-  horarioIda: string;
-  horarioVolta: string;
-  diasSemana: number[];
-};
-
-const novo: Formulario = { rotaId: null, motoristaId: null, onibusId: null, horarioIda: "", horarioVolta: "", diasSemana: DIAS_UTEIS };
 
 /** Ocupação de cada dia: alunos com dia fixo / lugares do ônibus. */
 export function OcupacaoDias({ dias }: { dias: { diaSemana: number; alocados: number; capacidade: number }[] }) {
@@ -45,107 +33,24 @@ export function OcupacaoDias({ dias }: { dias: { diaSemana: number; alocados: nu
   );
 }
 
-/** Seleção de vários dias da semana (Dom … Sáb). */
-function DiasDaSemana({ valor, onChange }: { valor: number[]; onChange: (dias: number[]) => void }) {
-  const s = useEstilos();
-  return (
-    <View style={s.diasSemana}>
-      {DIAS_SEMANA.map((nome, dia) => {
-        const ativo = valor.includes(dia);
-        return (
-          <Pressable
-            key={dia}
-            onPress={() => onChange(ativo ? valor.filter((d) => d !== dia) : [...valor, dia].sort())}
-            style={[s.botaoDia, ativo && s.botaoDiaAtivo]}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: ativo }}
-          >
-            <Texto variante="pequenoForte" cor={ativo ? "sobrePrimaria" : "texto"}>
-              {nome}
-            </Texto>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
 /**
  * Programação semanal de cada rota. Ela gera sozinha as viagens de ida e volta dos
  * próximos 7 dias (os alunos com dia fixo já entram com vaga garantida).
  */
 export function ProgramacaoSecao({
-  rotas,
-  onibus,
-  motoristas,
   aoMudarViagens,
 }: {
-  rotas: Rota[];
-  onibus: Onibus[];
-  motoristas: Motorista[];
   /** Chamado quando viagens podem ter sido criadas/alteradas (para a lista de viagens recarregar). */
   aoMudarViagens: () => void;
 }) {
   const s = useEstilos();
+  const navegacao = useNavigation<NativeStackNavigationProp<PilhaAdmin>>();
   const { data: programacoes = [], isLoading } = useProgramacoes();
-  const [form, setForm] = useState<Formulario | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
-  const salvar = useSalvarProgramacao(() => {
-    setForm(null);
-    aoMudarViagens();
-  });
+  const salvar = useSalvarProgramacao(aoMudarViagens);
   const excluir = useExcluirProgramacao();
   const gerar = useGerarViagens();
-
-  function abrir(p?: Programacao) {
-    setErro(null);
-    setForm(
-      p
-        ? {
-            id: p.id,
-            rotaId: p.rotaId,
-            motoristaId: p.motoristaId,
-            onibusId: p.onibusId,
-            horarioIda: p.horarioIda,
-            horarioVolta: p.horarioVolta ?? "",
-            diasSemana: p.diasSemana,
-          }
-        : novo
-    );
-  }
-
-  function escolherMotorista(id: string) {
-    if (!form) return;
-    // Sugere o ônibus do motorista
-    const doMotorista = motoristas.find((m) => m.id === id)?.onibusId;
-    setForm({ ...form, motoristaId: id, onibusId: doMotorista ?? form.onibusId });
-  }
-
-  async function confirmarFormulario() {
-    if (!form) return;
-    if (!form.rotaId) return setErro("Selecione a rota.");
-    if (!form.motoristaId) return setErro("Selecione o motorista.");
-    if (!form.onibusId) return setErro("Selecione o ônibus.");
-    if (!HORA.test(form.horarioIda)) return setErro("Informe o horário da ida (HH:MM).");
-    if (form.horarioVolta && !HORA.test(form.horarioVolta)) return setErro("Informe o horário da volta (HH:MM) ou deixe em branco.");
-    if (form.diasSemana.length === 0) return setErro("Escolha ao menos um dia da semana.");
-    setErro(null);
-    try {
-      await salvar.mutateAsync({
-        id: form.id,
-        dados: {
-          rotaId: form.rotaId,
-          motoristaId: form.motoristaId,
-          onibusId: form.onibusId,
-          horarioIda: form.horarioIda,
-          horarioVolta: form.horarioVolta || null,
-          diasSemana: form.diasSemana,
-        },
-      });
-    } catch (err) {
-      setErro(mensagemDeErro(err, "Não foi possível salvar a programação."));
-    }
-  }
+  // Criar e editar abrem a tela da viagem, com a rota (ida e volta) dentro dela
+  const abrir = (p?: Programacao) => navegacao.navigate("EditarViagem", p ? { programacaoId: p.id } : undefined);
 
   async function alternarAtiva(p: Programacao) {
     if (p.ativa) {
@@ -193,9 +98,6 @@ export function ProgramacaoSecao({
 
   if (isLoading) return <Carregando />;
 
-  const rotaTemProgramacao = new Set(programacoes.filter((p) => p.ativa).map((p) => p.rotaId));
-  const onibusEscolhido = onibus.find((o) => o.id === form?.onibusId);
-
   return (
     <View>
       <View style={s.barra}>
@@ -204,7 +106,7 @@ export function ProgramacaoSecao({
         </Texto>
       </View>
       <View style={s.acoes}>
-        <Botao titulo="Nova" icone="add" onPress={() => abrir()} style={{ flex: 1 }} />
+        <Botao titulo="Nova viagem" icone="add" onPress={() => abrir()} style={{ flex: 1 }} />
         <Botao
           titulo="Gerar agora"
           icone="refresh"
@@ -219,9 +121,9 @@ export function ProgramacaoSecao({
         <Card>
           <EstadoVazio
             icone="repeat-outline"
-            titulo="Nenhuma programação"
-            texto="Programe cada rota uma vez (dias, horários, ônibus e motorista) e as viagens passam a ser criadas automaticamente."
-            acao={{ titulo: "Nova programação", icone: "add", onPress: () => abrir() }}
+            titulo="Nenhuma viagem programada"
+            texto="Crie a viagem uma vez (ida e volta, dias, ônibus e motorista) e as viagens de cada dia passam a ser criadas sozinhas."
+            acao={{ titulo: "Nova viagem", icone: "add", onPress: () => abrir() }}
           />
         </Card>
       )}
@@ -235,8 +137,13 @@ export function ProgramacaoSecao({
             <Pilula texto={p.ativa ? "Ativa" : "Suspensa"} tom={p.ativa ? "sucesso" : "neutro"} icone={p.ativa ? "repeat" : "pause"} />
           </View>
           <Texto variante="pequeno" cor="textoSuave">
-            {listarDias(p.diasSemana)} • Ida {p.horarioIda}
-            {p.horarioVolta ? ` • Volta ${p.horarioVolta}` : " • sem volta"}
+            {listarDias(p.diasSemana)}
+          </Texto>
+          <Texto variante="pequeno">
+            Ida {p.horarioIda} • {p.rota.trechos.ida.origem} → {p.rota.trechos.ida.destino}
+          </Texto>
+          <Texto variante="pequeno">
+            {p.horarioVolta ? `Volta ${p.horarioVolta} • ${p.rota.trechos.volta.origem} → ${p.rota.trechos.volta.destino}` : "Sem volta"}
           </Texto>
           <Texto variante="pequeno" cor="textoSuave">
             {p.onibus.placa} ({p.onibus.capacidade} lugares) • {p.motorista.usuario.nome}
@@ -271,97 +178,6 @@ export function ProgramacaoSecao({
           />
         </Card>
       ))}
-
-      <Folha visivel={!!form} onFechar={() => setForm(null)} titulo={form?.id ? "Editar programação" : "Nova programação"}>
-        {form && (
-          <>
-            {erro && <Aviso tipo="erro" titulo={erro} />}
-
-            <Rotulo>Rota</Rotulo>
-            {form.id ? (
-              <Texto variante="corpoForte">{rotas.find((r) => r.id === form.rotaId)?.nome}</Texto>
-            ) : (
-              <Chips
-                opcoes={rotas.map((r) => ({
-                  valor: r.id,
-                  rotulo: r.nome,
-                  detalhe: rotaTemProgramacao.has(r.id) ? "já programada" : r.pontos.map((p) => p.universidade.nome).join(" → "),
-                  desabilitado: rotaTemProgramacao.has(r.id),
-                }))}
-                valor={form.rotaId}
-                onChange={(rotaId) => setForm({ ...form, rotaId })}
-                vazio="Cadastre uma rota na aba Cadastros."
-              />
-            )}
-
-            <Rotulo>Dias da semana</Rotulo>
-            <DiasDaSemana valor={form.diasSemana} onChange={(diasSemana) => setForm({ ...form, diasSemana })} />
-
-            <View style={s.horarios}>
-              <View style={{ flex: 1 }}>
-                <Campo
-                  rotulo="Saída da ida"
-                  value={form.horarioIda}
-                  onChangeText={(t) => setForm({ ...form, horarioIda: mascararHora(t) })}
-                  placeholder="HH:MM"
-                  keyboardType="number-pad"
-                  maxLength={5}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Campo
-                  rotulo="Saída da volta"
-                  value={form.horarioVolta}
-                  onChangeText={(t) => setForm({ ...form, horarioVolta: mascararHora(t) })}
-                  placeholder="Opcional"
-                  keyboardType="number-pad"
-                  maxLength={5}
-                />
-              </View>
-            </View>
-
-            <Rotulo>Motorista</Rotulo>
-            <Chips
-              opcoes={motoristas.map((m) => ({ valor: m.id, rotulo: m.usuario.nome, detalhe: m.onibus?.placa }))}
-              valor={form.motoristaId}
-              onChange={escolherMotorista}
-              vazio="Cadastre um motorista na aba Cadastros."
-            />
-
-            <Rotulo>Ônibus</Rotulo>
-            <Chips
-              opcoes={onibus.map((o) => ({
-                valor: o.id,
-                rotulo: o.placa,
-                detalhe: o.emManutencao ? "em manutenção" : `${o.capacidade} lugares`,
-              }))}
-              valor={form.onibusId}
-              onChange={(onibusId) => setForm({ ...form, onibusId })}
-              vazio="Cadastre um ônibus na aba Cadastros."
-            />
-            {onibusEscolhido && (
-              <Texto variante="legenda" cor="textoFraco" style={{ marginTop: 8 }}>
-                Cada dia comporta {onibusEscolhido.capacidade} alunos com dia fixo — a capacidade do ônibus.
-              </Texto>
-            )}
-
-            {form.id && (
-              <Aviso tipo="info" titulo="Vale também para as próximas viagens" style={{ marginTop: 16, marginBottom: 0 }}>
-                As viagens que ainda não começaram recebem os novos horários, ônibus e motorista. Dias removidos têm as viagens canceladas e
-                os alunos avisados.
-              </Aviso>
-            )}
-
-            <Botao
-              titulo={form.id ? "Salvar programação" : "Criar programação"}
-              icone="checkmark"
-              onPress={confirmarFormulario}
-              carregando={salvar.isPending}
-              style={{ marginTop: 24 }}
-            />
-          </>
-        )}
-      </Folha>
     </View>
   );
 }
@@ -371,7 +187,6 @@ const useEstilos = criarEstilos((t) => ({
   acoes: { flexDirection: "row", gap: t.espaco.sm, marginBottom: t.espaco.lg },
   cartao: { marginBottom: t.espaco.md, gap: t.espaco.xs },
   topo: { flexDirection: "row", alignItems: "center", gap: t.espaco.sm, marginBottom: t.espaco.xs },
-  horarios: { flexDirection: "row", gap: t.espaco.md },
   ocupacao: { flexDirection: "row", flexWrap: "wrap", gap: t.espaco.sm },
   dia: {
     minWidth: 56,
@@ -383,17 +198,4 @@ const useEstilos = criarEstilos((t) => ({
   },
   diaCheio: { backgroundColor: t.cores.perigoFundo },
   diaQuase: { backgroundColor: t.cores.alertaFundo },
-  diasSemana: { flexDirection: "row", flexWrap: "wrap", gap: t.espaco.sm },
-  botaoDia: {
-    minWidth: 52,
-    minHeight: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: t.raio.pill,
-    borderWidth: 1.5,
-    borderColor: t.cores.borda,
-    backgroundColor: t.cores.superficie,
-    paddingHorizontal: t.espaco.md,
-  },
-  botaoDiaAtivo: { backgroundColor: t.cores.primariaForte, borderColor: t.cores.primariaForte },
 }));

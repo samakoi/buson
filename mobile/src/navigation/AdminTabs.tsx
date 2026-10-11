@@ -14,6 +14,7 @@ import DocumentosScreen from "../features/documentos/DocumentosScreen";
 import FaltasScreen from "../features/faltas/FaltasScreen";
 import AoVivoScreen from "../features/gps/AoVivoScreen";
 import DetalheViagemScreen from "../features/viagens/DetalheViagemScreen";
+import EditarViagemScreen from "../features/alocacao/EditarViagemScreen";
 
 export type AbasAdmin = { Dashboard: undefined; Alunos: undefined; Viagens: undefined; Cadastros: undefined; Avisos: undefined };
 export type PilhaAdmin = {
@@ -24,6 +25,8 @@ export type PilhaAdmin = {
   Faltas: undefined;
   AoVivo: undefined;
   DetalheViagem: { viagemId: string };
+  /** Sem parâmetros = nova viagem; rotaId sem programação = rota dos Cadastros (soRota: não programa por padrão) */
+  EditarViagem: { programacaoId?: string; rotaId?: string; soRota?: boolean } | undefined;
 };
 
 const Tab = createBottomTabNavigator<AbasAdmin>();
@@ -60,6 +63,7 @@ export default function AdminNavegacao() {
       <Pilha.Screen name="Faltas" component={FaltasScreen} />
       <Pilha.Screen name="AoVivo" component={AoVivoScreen} />
       <Pilha.Screen name="DetalheViagem" component={DetalheViagemScreen} />
+      <Pilha.Screen name="EditarViagem" component={EditarViagemScreen} />
     </Pilha.Navigator>
   );
 }

@@ -27,3 +27,7 @@ export { Rotulo } from "./Rotulo";
 
 /** Requisitos da senha nova, marcados enquanto a pessoa digita. */
 export { RequisitosSenha } from "./RequisitosSenha";
+
+/** Paradas em ordem: subir, descer, tirar e adicionar. */
+export { ListaOrdenada } from "./ListaOrdenada";
+export type { ItemOrdenavel } from "./ListaOrdenada";

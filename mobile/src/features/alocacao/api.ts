@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../services/api";
 import { DiasDoAluno, OcupacaoSemanal, PontoEmbarque, Programacao } from "../../types";
 import { chavesViagem } from "../viagens/api";
+import type { DadosRota } from "../cadastros/api";
 
 export const chavesAlocacao = {
   dias: (alunoId?: string) => ["dias", alunoId ?? "eu"] as const,
@@ -87,7 +88,12 @@ export function useProgramacoes() {
 }
 
 export interface DadosProgramacao {
-  rotaId: string;
+  /** Rota existente... */
+  rotaId?: string;
+  /** ...ou criada/editada junto com a viagem (trechos de ida e volta) */
+  rota?: Partial<DadosRota> & { versao?: string };
+  /** atualizadoEm lido pela tela (a API recusa se outra pessoa salvou depois) */
+  versao?: string;
   onibusId: string;
   motoristaId: string;
   horarioIda: string;
@@ -110,6 +116,9 @@ export function useSalvarProgramacao(aoConcluir?: () => void) {
     onSuccess: () => {
       cliente.invalidateQueries({ queryKey: chavesAlocacao.programacoes });
       cliente.invalidateQueries({ queryKey: chavesAlocacao.ocupacaoSemanal });
+      // A rota pode ter sido criada ou editada junto, e as viagens futuras mudam
+      cliente.invalidateQueries({ queryKey: ["rotas"] });
+      cliente.invalidateQueries({ queryKey: ["viagens"] });
       aoConcluir?.();
     },
   });

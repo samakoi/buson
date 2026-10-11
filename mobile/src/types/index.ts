@@ -78,11 +78,39 @@ export interface PontoEmbarque {
   _count?: { rotas: number };
 }
 
+/**
+ * Um trecho da rota. IDA: embarque nos pontos, desembarque nas instituições.
+ * VOLTA: embarque nas instituições, desembarque nos pontos. O horário fica na programação.
+ */
+export interface TrechoRota {
+  sentido: SentidoViagem;
+  origem: string;
+  destino: string;
+  instituicoes: { id: string; ordem: number; universidadeId: string; universidade: Universidade }[];
+  pontosEmbarque: { id: string; ordem: number; pontoEmbarqueId: string; pontoEmbarque: PontoEmbarque }[];
+}
+
 export interface Rota {
   id: string;
   nome: string;
+  /** Versão para a edição (evita sobrescrever a alteração de outra pessoa) */
+  atualizadoEm: string;
+  /** Paradas da ida (mantidas para telas e versões antigas) */
   pontos: { id: string; ordem: number; universidade: Universidade }[];
   pontosEmbarque: { id: string; ordem: number; pontoEmbarque: PontoEmbarque }[];
+  trechos: { ida: TrechoRota; volta: TrechoRota };
+}
+
+/** GET /rotas/:id/impacto-exclusao */
+export interface ImpactoExclusaoRota {
+  rota: { id: string; nome: string };
+  alunosComDiasFixos: number;
+  viagensFuturas: number;
+  reservasFuturas: number;
+  viagensEmAndamento: number;
+  viagensNoHistorico: number;
+  programacoes: number;
+  temVinculos: boolean;
 }
 
 export interface Motorista {
@@ -164,10 +192,20 @@ export interface DiasDoAluno {
     rota: { id: string; nome: string; instituicoes: string[] };
     horarioIda: string;
     horarioVolta: string | null;
+    /** A viagem é uma opção só: ida e volta descritas (volta null = sem volta) */
+    trechos: { ida: TrechoOpcao; volta: TrechoOpcao | null };
     pontosEmbarque: { id: string; nome: string; endereco: string | null }[];
     /** ocupados/disponiveis não contam o próprio aluno */
     dias: { diaSemana: number; nome: string; capacidade: number; ocupados: number; disponiveis: number }[];
   }[];
+}
+
+export interface TrechoOpcao {
+  origem: string;
+  destino: string;
+  horario: string | null;
+  instituicoes: string[];
+  pontos: string[];
 }
 
 export interface OcupacaoDia {
@@ -187,7 +225,8 @@ export interface Programacao {
   horarioVolta: string | null;
   diasSemana: number[];
   ativa: boolean;
-  rota: { id: string; nome: string };
+  atualizadoEm: string;
+  rota: Rota;
   onibus: { id: string; placa: string; capacidade: number; emManutencao: boolean };
   motorista: { id: string; usuario: { nome: string } };
   ocupacao: (OcupacaoDia & { disponiveis: number })[];

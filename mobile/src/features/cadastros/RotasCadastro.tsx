@@ -1,142 +1,33 @@
-import React, { useState } from "react";
-import { Pressable, View } from "react-native";
-import { api } from "../../services/api";
+import React from "react";
+import { View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Rota } from "../../types";
+import type { PilhaAdmin } from "../../navigation/AdminTabs";
 import { useDadosDaTela } from "../../hooks/useDadosDaTela";
-import { useRotas, useUniversidades } from "./api";
-import { usePontosEmbarque } from "../alocacao/api";
-import { criarEstilos, useTema } from "../../theme/TemaProvider";
-import { Aviso, Botao, BotaoIcone, Campo, Card, Carregando, EstadoVazio, Folha, ItemLista, Rotulo, Texto } from "../../components/ui";
-import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
+import { useExcluirRota, useRotas } from "./api";
+import { useTema } from "../../theme/TemaProvider";
+import { BotaoIcone, Card, Carregando, EstadoVazio, ItemLista } from "../../components/ui";
 import { BarraSecao } from "./BarraSecao";
 
-/** Seleção em que a ordem dos toques define a ordem (paradas / pontos de embarque). */
-function SelecaoOrdenada({
-  opcoes,
-  selecionados,
-  onChange,
-  vazio,
-}: {
-  opcoes: { id: string; nome: string }[];
-  selecionados: string[];
-  onChange: (ids: string[]) => void;
-  vazio: string;
-}) {
-  const s = useEstilos();
-  const alternar = (id: string) => onChange(selecionados.includes(id) ? selecionados.filter((x) => x !== id) : [...selecionados, id]);
-  const nomeDe = (id: string) => opcoes.find((o) => o.id === id)?.nome ?? "";
-  return (
-    <>
-      <View style={s.paradas}>
-        {opcoes.map((o) => {
-          const ordem = selecionados.indexOf(o.id);
-          const ativa = ordem >= 0;
-          return (
-            <Pressable
-              key={o.id}
-              onPress={() => alternar(o.id)}
-              style={[s.parada, ativa && s.paradaAtiva]}
-              accessibilityRole="button"
-              accessibilityState={{ selected: ativa }}
-            >
-              {ativa && (
-                <View style={s.ordem}>
-                  <Texto variante="legenda" cor="primaria" style={{ fontWeight: "800" }}>
-                    {ordem + 1}
-                  </Texto>
-                </View>
-              )}
-              <Texto variante="pequenoForte" cor={ativa ? "sobrePrimaria" : "texto"}>
-                {o.nome}
-              </Texto>
-            </Pressable>
-          );
-        })}
-        {opcoes.length === 0 && (
-          <Texto variante="pequeno" cor="textoFraco">
-            {vazio}
-          </Texto>
-        )}
-      </View>
-      {selecionados.length > 0 && (
-        <Texto variante="pequenoForte" cor="primaria" style={{ marginTop: 12 }}>
-          {selecionados.map(nomeDe).join(" → ")}
-        </Texto>
-      )}
-    </>
-  );
-}
+const resumoTrecho = (nome: string, t: Rota["trechos"]["ida"]) =>
+  `${nome}: ${t.origem} → ${t.destino}` + (t.instituicoes.length ? ` (${t.instituicoes.map((p) => p.universidade.nome).join(", ")})` : "");
 
+/**
+ * Rotas cadastradas, cada uma com a ida e a volta. Criar e editar usam a mesma tela da viagem
+ * (a rota é gerenciada dentro dela); daqui dá para salvar só a rota, sem programar a viagem.
+ */
 export default function RotasCadastro() {
   const { cores } = useTema();
-  const [aberto, setAberto] = useState(false);
-  const [editandoId, setEditandoId] = useState<string | null>(null);
-  const [nome, setNome] = useState("");
-  // Itens na ordem em que foram tocados = ordem do trajeto
-  const [paradas, setParadas] = useState<string[]>([]);
-  const [pontos, setPontos] = useState<string[]>([]);
-  const [erro, setErro] = useState<string | null>(null);
-  const [salvando, setSalvando] = useState(false);
-
+  const navegacao = useNavigation<NativeStackNavigationProp<PilhaAdmin>>();
   const consultaRotas = useRotas();
-  const consultaUniversidades = useUniversidades();
-  const consultaPontos = usePontosEmbarque();
   const rotas = consultaRotas.data ?? [];
-  const universidades = consultaUniversidades.data ?? [];
-  const pontosEmbarque = consultaPontos.data ?? [];
-  const { carregando, recarregar } = useDadosDaTela([consultaRotas, consultaUniversidades, consultaPontos]);
+  const { carregando } = useDadosDaTela(consultaRotas);
+  const { excluir } = useExcluirRota();
 
-  function abrir(r?: Rota) {
-    setEditandoId(r?.id ?? null);
-    setNome(r?.nome ?? "");
-    setParadas(r?.pontos.map((p) => p.universidade.id) ?? []);
-    setPontos(r?.pontosEmbarque.map((p) => p.pontoEmbarque.id) ?? []);
-    setErro(null);
-    setAberto(true);
-  }
-
-  function fechar() {
-    setAberto(false);
-    setEditandoId(null);
-  }
-
-  async function salvar() {
-    if (nome.trim().length < 2) return setErro("Informe o nome da rota.");
-    if (paradas.length === 0) return setErro("Toque nas universidades na ordem das paradas.");
-    setErro(null);
-    setSalvando(true);
-    try {
-      const dados = { nome: nome.trim(), universidadeIds: paradas, pontosEmbarqueIds: pontos };
-      if (editandoId) await api.patch(`/rotas/${editandoId}`, dados);
-      else await api.post("/rotas", dados);
-      fechar();
-      await recarregar();
-    } catch (err) {
-      setErro(mensagemDeErro(err, "Não foi possível salvar a rota."));
-    } finally {
-      setSalvando(false);
-    }
-  }
-
-  async function remover(r: Rota) {
-    const ok = await confirmar("Excluir rota", `Excluir a rota ${r.nome}?`, { textoConfirmar: "Excluir", destrutivo: true });
-    if (!ok) return;
-    try {
-      await api.delete(`/rotas/${r.id}`);
-      await recarregar();
-    } catch (err) {
-      avisar(
-        "Não foi possível excluir",
-        mensagemDeErro(err, "Tente novamente.") + " Rotas com viagens cadastradas não podem ser excluídas."
-      );
-    }
-  }
+  const abrir = (r?: Rota) => navegacao.navigate("EditarViagem", r ? { rotaId: r.id, soRota: true } : { soRota: true });
 
   if (carregando) return <Carregando />;
-
-  const rotaEditada = rotas.find((r) => r.id === editandoId);
-  const saemParadas = rotaEditada?.pontos.some((p) => !paradas.includes(p.universidade.id));
-  const saemPontos = rotaEditada?.pontosEmbarque.some((p) => !pontos.includes(p.pontoEmbarque.id));
 
   return (
     <View>
@@ -146,17 +37,14 @@ export default function RotasCadastro() {
         {rotas.map((r, i) => (
           <ItemLista
             key={r.id}
-            icone="git-commit-outline"
+            icone="swap-horizontal-outline"
             titulo={r.nome}
-            subtitulo={
-              r.pontos.map((p) => p.universidade.nome).join(" → ") +
-              (r.pontosEmbarque.length ? `\nEmbarque: ${r.pontosEmbarque.map((p) => p.pontoEmbarque.nome).join(" → ")}` : "")
-            }
+            subtitulo={`${resumoTrecho("Ida", r.trechos.ida)}\n${resumoTrecho("Volta", r.trechos.volta)}`}
             ultimo={i === rotas.length - 1}
             direita={
               <View style={{ flexDirection: "row" }}>
                 <BotaoIcone icone="create-outline" rotulo={`Editar ${r.nome}`} onPress={() => abrir(r)} />
-                <BotaoIcone icone="trash-outline" rotulo={`Excluir ${r.nome}`} cor={cores.perigo} onPress={() => remover(r)} />
+                <BotaoIcone icone="trash-outline" rotulo={`Excluir ${r.nome}`} cor={cores.perigo} onPress={() => excluir(r)} />
               </View>
             }
           />
@@ -165,58 +53,11 @@ export default function RotasCadastro() {
           <EstadoVazio
             icone="map-outline"
             titulo="Nenhuma rota"
+            texto="As rotas também são criadas junto com a viagem, em Viagens › Programação semanal."
             acao={{ titulo: "Adicionar rota", icone: "add", onPress: () => abrir() }}
           />
         )}
       </Card>
-
-      <Folha visivel={aberto} onFechar={fechar} titulo={editandoId ? "Editar rota" : "Nova rota"}>
-        {erro && <Aviso tipo="erro" titulo={erro} />}
-        <Campo rotulo="Nome" value={nome} onChangeText={setNome} placeholder="Ex.: Rota Noturna 02" />
-
-        <Rotulo>Pontos de embarque — toque na ordem em que o ônibus passa</Rotulo>
-        <SelecaoOrdenada
-          opcoes={pontosEmbarque}
-          selecionados={pontos}
-          onChange={setPontos}
-          vazio="Nenhum ponto cadastrado (opcional). Cadastre em Cadastros › Pontos."
-        />
-
-        <Rotulo>Instituições — toque na ordem do trajeto</Rotulo>
-        <SelecaoOrdenada opcoes={universidades} selecionados={paradas} onChange={setParadas} vazio="Cadastre universidades primeiro." />
-
-        {(saemParadas || saemPontos) && (
-          <Aviso tipo="alerta" titulo="Alunos serão avisados" style={{ marginTop: 16, marginBottom: 0 }}>
-            {saemParadas ? "Alunos de instituições que saem da rota perdem os dias nela. " : ""}
-            {saemPontos ? "Quem embarca num ponto removido precisará escolher outro." : ""}
-          </Aviso>
-        )}
-
-        <Botao
-          titulo={editandoId ? "Salvar rota" : "Adicionar rota"}
-          icone={editandoId ? "checkmark" : "add"}
-          onPress={salvar}
-          carregando={salvando}
-          style={{ marginTop: 24 }}
-        />
-      </Folha>
     </View>
   );
 }
-
-const useEstilos = criarEstilos((t) => ({
-  paradas: { flexDirection: "row", flexWrap: "wrap", gap: t.espaco.sm },
-  parada: {
-    minHeight: 40,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: t.espaco.sm,
-    borderRadius: t.raio.pill,
-    borderWidth: 1.5,
-    borderColor: t.cores.borda,
-    backgroundColor: t.cores.superficie,
-    paddingHorizontal: t.espaco.md,
-  },
-  paradaAtiva: { backgroundColor: t.cores.primariaForte, borderColor: t.cores.primariaForte },
-  ordem: { width: 22, height: 22, borderRadius: 11, backgroundColor: t.cores.superficie, alignItems: "center", justifyContent: "center" },
-}));

@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from "react";
 import { View } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Aviso, Botao, Cabecalho, Card, Carregando, Chips, EstadoVazio, Rotulo, Tela, Texto } from "../../components/ui";
 import { avisar, mensagemDeErro } from "../../utils/feedback";
 import { listarDias } from "../../utils/datas";
 import { useTema } from "../../theme/TemaProvider";
-import { DiasDoAluno } from "../../types";
+import { DiasDoAluno, TrechoOpcao } from "../../types";
 import { DiaEscolhido, useDias, useSalvarDias } from "./api";
 import { SeletorDias } from "./SeletorDias";
 
@@ -173,7 +174,7 @@ function FormularioDias({
         <>
           {data.opcoes.length > 1 && (
             <>
-              <Rotulo>Rota</Rotulo>
+              <Rotulo>Viagem</Rotulo>
               <Chips
                 opcoes={data.opcoes.map((o) => {
                   const qtd = [...escolhas.values()].filter((r) => r === o.rota.id).length;
@@ -187,14 +188,27 @@ function FormularioDias({
 
           {opcao && (
             <>
+              {/* A viagem é uma opção só: o dia escolhido vale para a ida e para a volta */}
               <Card style={{ marginTop: data.opcoes.length > 1 ? espaco.lg : 0 }}>
-                <Texto variante="subtitulo">{opcao.rota.nome}</Texto>
-                <Texto variante="pequeno" cor="textoSuave">
-                  {opcao.rota.instituicoes.join(" → ")}
+                <Texto variante="legenda" cor="textoSuave">
+                  VIAGEM
                 </Texto>
-                <Texto variante="pequenoForte" cor="primaria" style={{ marginTop: espaco.sm }}>
-                  Ida {opcao.horarioIda}
-                  {opcao.horarioVolta ? ` • Volta ${opcao.horarioVolta}` : ""}
+                <Texto variante="subtitulo">{opcao.rota.nome}</Texto>
+                <TrechoDaViagem titulo="Ida" icone="arrow-forward" trecho={opcao.trechos?.ida} horario={opcao.horarioIda} />
+                {opcao.horarioVolta ? (
+                  <TrechoDaViagem
+                    titulo="Volta"
+                    icone="arrow-back"
+                    trecho={opcao.trechos?.volta ?? undefined}
+                    horario={opcao.horarioVolta}
+                  />
+                ) : (
+                  <Texto variante="pequeno" cor="textoSuave" style={{ marginTop: espaco.md }}>
+                    Esta viagem não tem volta.
+                  </Texto>
+                )}
+                <Texto variante="legenda" cor="textoFraco" style={{ marginTop: espaco.md }}>
+                  O dia escolhido vale para a ida e para a volta.
                 </Texto>
               </Card>
 
@@ -240,5 +254,43 @@ function FormularioDias({
         </>
       )}
     </Tela>
+  );
+}
+
+/** Um trecho da viagem para o aluno: origem → destino, horário e as instituições do trajeto. */
+function TrechoDaViagem({
+  titulo,
+  icone,
+  trecho,
+  horario,
+}: {
+  titulo: string;
+  icone: "arrow-forward" | "arrow-back";
+  trecho: TrechoOpcao | undefined;
+  horario: string;
+}) {
+  const { cores, espaco } = useTema();
+  return (
+    <View style={{ flexDirection: "row", gap: espaco.md, marginTop: espaco.md }}>
+      <Ionicons name={icone} size={18} color={cores.primaria} style={{ marginTop: 2 }} />
+      <View style={{ flex: 1 }}>
+        <Texto variante="pequenoForte" cor="primaria">
+          {titulo.toUpperCase()} • sai às {horario}
+        </Texto>
+        {trecho && (
+          <>
+            <Texto variante="corpoForte">
+              {trecho.origem} → {trecho.destino}
+            </Texto>
+            {trecho.instituicoes.length > 0 && (
+              <Texto variante="pequeno" cor="textoSuave">
+                {titulo === "Ida" ? "Desce em: " : "Embarca em: "}
+                {trecho.instituicoes.join(", ")}
+              </Texto>
+            )}
+          </>
+        )}
+      </View>
+    </View>
   );
 }
