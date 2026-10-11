@@ -18,7 +18,19 @@ import { NOME_BANCO, sql } from "./lib.mjs";
 const RAIZ = fileURLToPath(new URL("../..", import.meta.url)); // pasta backend/
 const AQUI = fileURLToPath(new URL(".", import.meta.url));
 const DATABASE_URL = process.env.DATABASE_URL_TESTE ?? "mysql://root:senha123@localhost:3306/bus_on_test";
-const SUITES = ["base", "limites", "regressao", "alunos", "embarque-qr", "alocacao", "documentos", "faltas", "notificacoes", "gps"];
+const SUITES = [
+  "base",
+  "limites",
+  "regressao",
+  "alunos",
+  "embarque-qr",
+  "alocacao",
+  "documentos",
+  "faltas",
+  "notificacoes",
+  "gps",
+  "historico",
+];
 
 if (!/_test$/.test(NOME_BANCO)) {
   console.error(`Banco "${NOME_BANCO}" recusado: os testes só rodam em bancos cujo nome termina em _test.`);
