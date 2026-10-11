@@ -711,28 +711,34 @@ Android e computador.
 
 ### 12.1 Publicar no Cloudflare Pages (uma vez)
 
-São dois projetos no Cloudflare Pages, um por ambiente, os dois ligados ao repositório do GitHub.
-Cada push no branch do projeto publica o site sozinho.
+São dois projetos **Pages** (não Worker), um por ambiente, ligados ao repositório do GitHub.
+Cada push no branch do projeto publica o site sozinho, em cerca de 1 minuto.
 
-1. No painel da Cloudflare, abra **Workers & Pages › Create › Pages › Connect to Git** e autorize o GitHub.
-   Escolha o repositório `samakoi/buson`.
-2. Configure o projeto **`buson-web`** (produção):
+> No painel novo, o botão **Create** abre a criação de **Worker** (tela *"Set up your application"*, com o
+> campo **Deploy command**). Esse caminho está errado para o site: procure a opção de **Pages**
+> (link *"Looking to deploy Pages? Get started"*) e escolha **Import an existing Git repository**.
+> Na tela certa existem os campos **Framework preset** e **Build output directory**, e não existe Deploy command.
 
-   | Campo | Valor |
-   |---|---|
-   | Production branch | `main` |
-   | Build command | `cd mobile && npm ci && npm run build:web` |
-   | Build output directory | `mobile/dist` |
-   | Variáveis (Environment variables) | `BUSON_WEB` = `producao` e `NODE_VERSION` = `24` |
+1. Em **Workers & Pages › Create**, vá para **Pages › Import an existing Git repository**, autorize o GitHub
+   e escolha o repositório `samakoi/buson`.
+2. Preencha os campos:
 
-3. Depois do primeiro build, abra **Custom domains › Set up a custom domain** e informe `app.onbus.online`.
-   O Cloudflare cria o DNS sozinho.
-4. Repita os passos 1 a 3 para o projeto **`buson-web-staging`**, com estes valores:
-   - Production branch: o branch em teste (hoje `fase-9-web`; depois, o que for para o staging);
-   - `BUSON_WEB` = `staging`;
-   - domínio `app-staging.onbus.online`.
-5. Em **Settings › Builds & deployments** de cada projeto, deixe *Preview deployments* em **None**.
-   Assim, só o branch escolhido publica.
+   | Campo | Teste (staging) | Produção |
+   |---|---|---|
+   | Production branch | o branch em teste (ex.: `fase-9-web`) | `main` |
+   | Framework preset | None | None |
+   | Build command | `cd mobile && npm ci && npm run build:web -- staging` | `cd mobile && npm ci && npm run build:web -- producao` |
+   | Build output directory | `mobile/dist` | `mobile/dist` |
+   | Domínio (aba **Custom domains**) | `app-staging.onbus.online` | `app.onbus.online` |
+
+   O ambiente vai no próprio comando (`-- staging` / `-- producao`), então não precisa de variável.
+3. Depois do primeiro build com **Success**, abra **Custom domains › Set up a custom domain**, informe o domínio
+   e clique em **Activate domain**.
+4. Se o domínio responder "Hello world", ele está preso a um Worker criado por engano. Apague esse Worker e,
+   em **DNS › Records**, a linha do tipo **Worker** com o mesmo nome. Depois clique em **Retry** no domínio do projeto Pages.
+
+Hoje o staging é o projeto Pages **`buson`** (`buson-608.pages.dev`), publicado em `app-staging.onbus.online`
+e construído a partir do branch `fase-9-web`.
 
 A API de cada ambiente já aceita o seu site: `CORS_ORIGINS` no arquivo de ambiente do servidor
 (`https://app.onbus.online` na produção, `https://app-staging.onbus.online` no staging).
