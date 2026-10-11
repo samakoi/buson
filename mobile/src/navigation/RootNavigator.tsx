@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, lazy, useEffect, useMemo, useState } from "react";
 import { DarkTheme, DefaultTheme, NavigationContainer, Theme } from "@react-navigation/native";
 import Constants from "expo-constants";
 import { View } from "react-native";
@@ -9,10 +9,13 @@ import { Carregando } from "../components/ui";
 import { NotificacoesProvider } from "../features/avisos/NotificacoesContext";
 import LoginScreen from "../features/auth/LoginScreen";
 import CadastroScreen from "../features/auth/CadastroScreen";
-import AlunoTabs from "./AlunoTabs";
-import MotoristaTabs from "./MotoristaTabs";
-import AdminTabs from "./AdminTabs";
 import { navegacaoRef } from "../features/push/abrirAviso";
+
+// Cada perfil carrega só as próprias telas: no site, viram arquivos separados, baixados
+// só por quem entra com aquele perfil (o aluno não baixa as telas de admin e motorista)
+const AlunoTabs = lazy(() => import("./AlunoTabs"));
+const MotoristaTabs = lazy(() => import("./MotoristaTabs"));
+const AdminTabs = lazy(() => import("./AdminTabs"));
 
 function FluxoDeEntrada() {
   const [tela, setTela] = useState<"login" | "cadastro">("login");
@@ -66,7 +69,9 @@ export default function RootNavigator() {
       ) : (
         // Avisos (e o badge das abas) valem para os três perfis
         <NotificacoesProvider>
-          {usuario.papel === "ALUNO" ? <AlunoTabs /> : usuario.papel === "MOTORISTA" ? <MotoristaTabs /> : <AdminTabs />}
+          <Suspense fallback={<Carregando />}>
+            {usuario.papel === "ALUNO" ? <AlunoTabs /> : usuario.papel === "MOTORISTA" ? <MotoristaTabs /> : <AdminTabs />}
+          </Suspense>
         </NotificacoesProvider>
       )}
     </NavigationContainer>
