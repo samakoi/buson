@@ -38,6 +38,8 @@ export const corsRestrito = cors({
     callback(new AppError("ORIGEM_NAO_PERMITIDA"));
   },
   exposedHeaders: ["X-Request-Id", "RateLimit", "RateLimit-Policy"],
+  // O navegador guarda a resposta do "preflight" por 10 min (menos idas e voltas no site)
+  maxAge: 600,
 });
 
 /**

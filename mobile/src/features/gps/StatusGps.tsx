@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Linking, Platform, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import { Viagem } from "../../types";
 import { useTema } from "../../theme/TemaProvider";
 import { Botao, Card, Texto } from "../../components/ui";
@@ -12,6 +13,15 @@ import { iniciarRastreamento, pararRastreamento, useEstadoGps, viagemRastreada }
  */
 export function useGpsDaViagem(viagem: Pick<Viagem, "id" | "status"> | null | undefined) {
   const tentada = useRef<string | null>(null);
+  // No navegador o GPS só funciona com a página aberta: a tela fica acesa durante a viagem
+  const emAndamento = viagem?.status === "EM_ANDAMENTO";
+  useEffect(() => {
+    if (Platform.OS !== "web" || !emAndamento) return;
+    activateKeepAwakeAsync("gps-viagem").catch(() => {});
+    return () => {
+      deactivateKeepAwake("gps-viagem").catch(() => {});
+    };
+  }, [emAndamento]);
   useEffect(() => {
     if (!viagem) return;
     (async () => {
@@ -49,12 +59,20 @@ export function StatusGps({ viagemId }: { viagemId: string }) {
       titulo: "Compartilhando localização",
       texto: "Os alunos veem o ônibus no mapa, mesmo com a tela apagada.",
     },
-    "primeiro-plano": {
-      icone: "navigate-circle-outline",
-      cor: cores.alerta,
-      titulo: "Localização só com o app aberto",
-      texto: "Se bloquear o celular, a posição para de atualizar. No app instalado (APK), permita a localização \"o tempo todo\".",
-    },
+    "primeiro-plano":
+      Platform.OS === "web"
+        ? {
+            icone: "navigate-circle-outline",
+            cor: cores.alerta,
+            titulo: "Localização com a tela aberta",
+            texto: "No navegador, mantenha esta tela aberta durante a viagem (ela fica acesa sozinha). Se trocar de aba ou bloquear o celular, o ônibus para de se mover no mapa.",
+          }
+        : {
+            icone: "navigate-circle-outline",
+            cor: cores.alerta,
+            titulo: "Localização só com o app aberto",
+            texto: "Se bloquear o celular, a posição para de atualizar. No app instalado (APK), permita a localização \"o tempo todo\".",
+          },
     "sem-permissao": {
       icone: "location-outline",
       cor: cores.perigo,

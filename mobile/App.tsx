@@ -9,6 +9,7 @@ import { queryClient } from "./src/services/queryClient";
 import RootNavigator from "./src/navigation/RootNavigator";
 import { envolverApp, iniciarMonitoramento } from "./src/services/monitoramento";
 import { AtualizacaoObrigatoria } from "./src/features/atualizacao/AtualizacaoObrigatoria";
+import { MolduraWeb } from "./src/features/web/MolduraWeb";
 
 // Sentry (só com EXPO_PUBLIC_SENTRY_DSN no build)
 iniciarMonitoramento();
@@ -22,7 +23,10 @@ function App() {
           <StatusBar style="auto" />
           {/* APK antigo demais vê "Atualize o Bus On"; atualizações pela internet chegam sozinhas */}
           <AtualizacaoObrigatoria>
-            <RootNavigator />
+            {/* No navegador do computador, o app abre numa coluna central */}
+            <MolduraWeb>
+              <RootNavigator />
+            </MolduraWeb>
           </AtualizacaoObrigatoria>
         </TemaProvider>
       </QueryClientProvider>

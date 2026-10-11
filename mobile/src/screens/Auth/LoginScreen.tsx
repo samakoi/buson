@@ -5,6 +5,7 @@ import { criarEstilos } from "../../theme/TemaProvider";
 import { Aviso, Botao, Campo, Texto } from "../../components/ui";
 import { Logo } from "../../components/Logo";
 import { mensagemDeErro } from "../../utils/feedback";
+import { InstalarApp } from "../../features/web/InstalarApp";
 
 export default function LoginScreen({ onCriarConta }: { onCriarConta: () => void }) {
   const { login } = useSessao();
@@ -87,6 +88,9 @@ export default function LoginScreen({ onCriarConta }: { onCriarConta: () => void
               Desenvolvimento: aluno@buson.com, motorista@buson.com ou admin@buson.com (senha: 123456)
             </Texto>
           )}
+
+          {/* Só no navegador: instalar como app (PWA) */}
+          <InstalarApp />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

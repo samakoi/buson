@@ -31,6 +31,7 @@ if ($Ambiente -eq 'staging') {
     $texto = $texto -replace '(?m)^NODE_ENV=production', 'NODE_ENV=staging'
     $texto = $texto -replace '(?m)^PORTA_LOCAL=4000', 'PORTA_LOCAL=4001'
     $texto = $texto -replace '(?m)^PASTA_BACKUPS=\.\./backups/producao', 'PASTA_BACKUPS=../backups/staging'
+    $texto = $texto -replace '(?m)^CORS_ORIGINS=https://app\.onbus\.online', 'CORS_ORIGINS=https://app-staging.onbus.online'
 }
 [System.IO.File]::WriteAllText($destino, $texto, (New-Object System.Text.UTF8Encoding $false))
 

@@ -27,29 +27,27 @@ const TILES = process.env.EXPO_PUBLIC_MAPA_TILES ?? "https://tile.openstreetmap.
 // Centro de Imperatriz-MA enquanto não há posição
 const CENTRO = [-5.5263, -47.4777];
 
-export function mapaHtml() {
-  return `<!doctype html>
-<html lang="pt-BR"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>
-  html,body,#m{margin:0;height:100%;background:#E8EEF5;font-family:system-ui,sans-serif}
-  .onibus{width:38px;height:38px;border-radius:19px;background:#1E5AA8;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:20px}
-  .parada{width:16px;height:16px;border-radius:8px;border:3px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
-  .PONTO{background:#137047}.INSTITUICAO{background:#0D2F52}.DESTINO{background:#E07B00;width:22px;height:22px;border-radius:11px}
-  .leaflet-tooltip{font-weight:600}
-</style></head>
-<body><div id="m"></div>
-<script>
+// Leaflet fixo na versão 1.9.4, conferido pelo hash (SRI): se o CDN entregar outro arquivo, o navegador recusa
+export const LEAFLET_JS = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js";
+export const LEAFLET_CSS = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css";
+const SRI_JS = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
+const SRI_CSS = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
+
+/** O código que desenha o mapa (separado do HTML: no site ele entra como arquivo, não em linha). */
+export const MAPA_SCRIPT = `
   var mapa = L.map('m', { zoomControl: true }).setView(${JSON.stringify(CENTRO)}, 13);
   L.tileLayer(${JSON.stringify(TILES)}, { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(mapa);
   var camada = L.layerGroup().addTo(mapa);
   var ajustado = false;
+  function texto(s) {
+    var d = document.createElement('div');
+    d.textContent = String(s == null ? '' : s);
+    return d.innerHTML;
+  }
   function icone(tipo) {
     if (tipo === 'ONIBUS') return L.divIcon({ className: '', html: '<div class="onibus">🚌</div>', iconSize: [38, 38], iconAnchor: [19, 19] });
     var t = tipo === 'DESTINO' ? 22 : 16;
-    return L.divIcon({ className: '', html: '<div class="parada ' + tipo + '"></div>', iconSize: [t, t], iconAnchor: [t / 2, t / 2] });
+    return L.divIcon({ className: '', html: '<div class="parada ' + texto(tipo) + '"></div>', iconSize: [t, t], iconAnchor: [t / 2, t / 2] });
   }
   window.atualizar = function (d) {
     camada.clearLayers();
@@ -60,7 +58,7 @@ export function mapaHtml() {
     }
     (d.marcadores || []).forEach(function (m) {
       var mk = L.marker([m.latitude, m.longitude], { icon: icone(m.tipo), zIndexOffset: m.tipo === 'ONIBUS' ? 1000 : 0 }).addTo(camada);
-      mk.bindTooltip(m.rotulo, { direction: 'top', offset: [0, m.tipo === 'ONIBUS' ? -18 : -8], permanent: m.tipo === 'ONIBUS' || m.tipo === 'DESTINO' });
+      mk.bindTooltip(texto(m.rotulo), { direction: 'top', offset: [0, m.tipo === 'ONIBUS' ? -18 : -8], permanent: m.tipo === 'ONIBUS' || m.tipo === 'DESTINO' });
       limites.push([m.latitude, m.longitude]);
     });
     if ((!ajustado || d.ajustar) && limites.length) {
@@ -69,5 +67,26 @@ export function mapaHtml() {
       ajustado = true;
     }
   };
-</script></body></html>`;
+`;
+
+/**
+ * Página do mapa. `scriptSrc`: endereço do MAPA_SCRIPT como arquivo (o site usa um blob:,
+ * porque a política de segurança do site proíbe scripts em linha); sem ele, o script vai em linha (WebView).
+ */
+export function mapaHtml(opcoes: { scriptSrc?: string } = {}) {
+  return `<!doctype html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link rel="stylesheet" href="${LEAFLET_CSS}" integrity="${SRI_CSS}" crossorigin="">
+<script src="${LEAFLET_JS}" integrity="${SRI_JS}" crossorigin=""></script>
+<style>
+  html,body,#m{margin:0;height:100%;background:#E8EEF5;font-family:system-ui,sans-serif}
+  .onibus{width:38px;height:38px;border-radius:19px;background:#1E5AA8;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:20px}
+  .parada{width:16px;height:16px;border-radius:8px;border:3px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .PONTO{background:#137047}.INSTITUICAO{background:#0D2F52}.DESTINO{background:#E07B00;width:22px;height:22px;border-radius:11px}
+  .leaflet-tooltip{font-weight:600}
+</style></head>
+<body><div id="m"></div>
+${opcoes.scriptSrc ? `<script src="${opcoes.scriptSrc}"></script>` : `<script>${MAPA_SCRIPT}</script>`}
+</body></html>`;
 }

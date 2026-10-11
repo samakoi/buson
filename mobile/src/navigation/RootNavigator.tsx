@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { DarkTheme, DefaultTheme, NavigationContainer, Theme } from "@react-navigation/native";
+import Constants from "expo-constants";
 import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSessao } from "../store/sessao";
@@ -58,7 +59,8 @@ export default function RootNavigator() {
   if (carregando) return <Carregando />;
 
   return (
-    <NavigationContainer ref={navegacaoRef} theme={temaNavegacao}>
+    // No navegador, o título da aba é sempre o nome do app ("Bus On" ou "Bus On Teste")
+    <NavigationContainer ref={navegacaoRef} theme={temaNavegacao} documentTitle={{ formatter: () => Constants.expoConfig?.name ?? "Bus On" }}>
       {!usuario ? (
         <FluxoDeEntrada />
       ) : (

@@ -380,7 +380,8 @@ rodar** em bancos cujo nome não termine em `_test`. No app (`mobile`), use `npm
 
 - Recuperação de senha por e-mail
 - Exportar o relatório de faltas (CSV/PDF)
-- Publicação na Play Store (hoje o app é distribuído como APK; veja a seção 6.1)
+- Publicação na Play Store (hoje o app é distribuído como APK e como site; veja as seções 11 e 12)
+- Avisos no celular para quem usa o site (Web Push)
 
 ---
 
@@ -688,6 +689,66 @@ No **Bus On Teste**, com a API de staging, confira:
 - a versão no menu da conta.
 
 Só depois gere o APK oficial.
+
+---
+
+## 12. O site (PWA): Bus On no navegador
+
+O mesmo app roda no navegador, em `https://app.onbus.online`, e no teste, em `https://app-staging.onbus.online`.
+Ele funciona em iPhone, Android e computador, e pode ser **instalado como app** pelo navegador (PWA):
+fica com ícone na tela inicial e abre em tela cheia, sem passar por loja.
+
+| | Site (PWA) | APK Android |
+|---|---|---|
+| Quem usa | Todos os perfis, em qualquer aparelho | Android |
+| Custo | Grátis (Cloudflare Pages) | Grátis (link direto) |
+| GPS do motorista | Só com a tela aberta (ela fica acesa sozinha durante a viagem) | Também com a tela apagada |
+| Avisos no celular (push) | Ainda não (aparecem na aba Avisos) | Sim |
+| Atualização | Sempre a última versão ao abrir | Pela internet (seção 11.2) |
+
+Página para divulgar aos alunos: `https://app.onbus.online/instalar`, com o passo a passo para iPhone,
+Android e computador.
+
+### 12.1 Publicar no Cloudflare Pages (uma vez)
+
+São dois projetos no Cloudflare Pages, um por ambiente, os dois ligados ao repositório do GitHub.
+Cada push no branch do projeto publica o site sozinho.
+
+1. No painel da Cloudflare, abra **Workers & Pages › Create › Pages › Connect to Git** e autorize o GitHub.
+   Escolha o repositório `samakoi/buson`.
+2. Configure o projeto **`buson-web`** (produção):
+
+   | Campo | Valor |
+   |---|---|
+   | Production branch | `main` |
+   | Build command | `cd mobile && npm ci && npm run build:web` |
+   | Build output directory | `mobile/dist` |
+   | Variáveis (Environment variables) | `BUSON_WEB` = `producao` e `NODE_VERSION` = `24` |
+
+3. Depois do primeiro build, abra **Custom domains › Set up a custom domain** e informe `app.onbus.online`.
+   O Cloudflare cria o DNS sozinho.
+4. Repita os passos 1 a 3 para o projeto **`buson-web-staging`**, com estes valores:
+   - Production branch: o branch em teste (hoje `fase-9-web`; depois, o que for para o staging);
+   - `BUSON_WEB` = `staging`;
+   - domínio `app-staging.onbus.online`.
+5. Em **Settings › Builds & deployments** de cada projeto, deixe *Preview deployments* em **None**.
+   Assim, só o branch escolhido publica.
+
+A API de cada ambiente já aceita o seu site: `CORS_ORIGINS` no arquivo de ambiente do servidor
+(`https://app.onbus.online` na produção, `https://app-staging.onbus.online` no staging).
+Depois de mudar esse valor, rode `atualizar.ps1 -Ambiente <ambiente> -Forcar`.
+
+### 12.2 Como o site é montado
+
+`npm run build:web -- producao` (ou `staging`) gera `mobile/dist`:
+
+- usa o endereço da API do perfil correspondente no `mobile/eas.json`, o mesmo do APK;
+- no staging, o nome vira "Bus On Teste" com a cor laranja;
+- grava o `_headers` com a política de segurança (CSP): o site só carrega código dele mesmo, mais dois arquivos fixos de fora, o Leaflet (mapa, conferido por hash) e o leitor de QR para iPhone;
+- os arquivos com hash ficam em cache por 1 ano, e a página sempre confere se há versão nova.
+
+Para testar no computador contra a API local: `npm run build:web -- staging --api http://localhost:3333/api/v1`.
+Depois, sirva a pasta `dist`. A API local precisa ter a origem do servidor de teste em `CORS_ORIGINS`.
 
 ---
 

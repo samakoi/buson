@@ -38,7 +38,7 @@ const ambiente = {
   DATABASE_URL,
   DATABASE_URL_TESTE: DATABASE_URL,
   JWT_SECRET: process.env.JWT_SECRET ?? "segredo-dos-testes-e2e-com-mais-de-32-caracteres",
-  CORS_ORIGINS: "http://localhost:8083",
+  CORS_ORIGINS: "http://localhost:8083,https://app.onbus.online",
   UPLOADS_DIR: uploads,
   LOG_LEVEL: "info",
   SENTRY_DSN: "",

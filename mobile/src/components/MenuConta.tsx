@@ -9,6 +9,7 @@ import { Folha } from "./Folha";
 import { Botao } from "./Botao";
 import { Pilula } from "./Pilula";
 import { infoDaVersao, procurarEAplicarAtualizacao } from "../features/atualizacao/versao";
+import { InstalarApp } from "../features/web/InstalarApp";
 
 export function iniciaisDe(nome: string) {
   const partes = nome.trim().split(/\s+/);
@@ -89,6 +90,7 @@ export function MenuConta() {
         </View>
         <Botao titulo="Sair deste aparelho" icone="log-out-outline" variante="perigoFantasma" onPress={sair} style={{ marginTop: 8 }} />
         <Botao titulo="Sair de todos os aparelhos" icone="phone-portrait-outline" variante="fantasma" onPress={sairDeTodosOsAparelhos} />
+        <InstalarApp compacto />
         <View style={s.versao}>
           <Texto variante="pequeno" cor="textoFraco" alinhar="center">
             Bus On {infoDaVersao().texto}

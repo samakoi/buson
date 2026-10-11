@@ -1,16 +1,20 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 import { criarEstilos } from "../../theme/TemaProvider";
-import { DadosMapa, mapaHtml } from "./mapaHtml";
+import { DadosMapa, MAPA_SCRIPT, mapaHtml } from "./mapaHtml";
 
 type JanelaMapa = Window & { atualizar?: (d: DadosMapa) => void };
+
+// O site proíbe scripts em linha (Content-Security-Policy): o código do mapa entra como arquivo blob:
+let urlDoScript: string | null = null;
+const scriptDoMapa = () => (urlDoScript ??= URL.createObjectURL(new Blob([MAPA_SCRIPT], { type: "text/javascript" })));
 
 /** Mapa OpenStreetMap no navegador (iframe com a mesma página do celular). */
 export function MapaOSM({ dados, altura = 320 }: { dados: DadosMapa; altura?: number }) {
   const s = useEstilos();
   const ref = useRef<HTMLIFrameElement>(null);
   const [pronto, setPronto] = useState(false);
-  const html = useMemo(() => mapaHtml(), []);
+  const html = useMemo(() => mapaHtml({ scriptSrc: scriptDoMapa() }), []);
 
   useEffect(() => {
     const janela = ref.current?.contentWindow as JanelaMapa | null | undefined;

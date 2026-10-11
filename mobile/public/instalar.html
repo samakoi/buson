@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Como instalar o Bus On</title>
+    <meta name="description" content="Instale o Bus On no celular: iPhone, Android ou computador." />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#1E5AA8" />
+    <style>
+      :root {
+        --fundo: #f4f7fb;
+        --cartao: #ffffff;
+        --texto: #14233a;
+        --suave: #4a5a70;
+        --primaria: #1e5aa8;
+        --marinho: #0d2f52;
+        --borda: #dce4ee;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fundo: #0b1520;
+          --cartao: #132235;
+          --texto: #e8eef5;
+          --suave: #a9bdd3;
+          --primaria: #7fb0ec;
+          --marinho: #e8eef5;
+          --borda: #23384f;
+        }
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--fundo); color: var(--texto); font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+      main { max-width: 640px; margin: 0 auto; padding: 32px 16px 48px; }
+      header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+      header img { width: 64px; height: 64px; border-radius: 16px; }
+      h1 { margin: 0; font-size: 28px; color: var(--marinho); }
+      header p { margin: 2px 0 0; color: var(--suave); }
+      .abrir { display: block; text-align: center; background: var(--primaria); color: #fff; text-decoration: none; font-weight: 700; padding: 14px; border-radius: 14px; margin: 8px 0 28px; }
+      @media (prefers-color-scheme: dark) { .abrir { color: #0b1520; } }
+      section { background: var(--cartao); border: 1px solid var(--borda); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
+      h2 { margin: 0 0 8px; font-size: 20px; color: var(--marinho); }
+      ol { margin: 0; padding-left: 22px; }
+      li { margin: 6px 0; }
+      b { color: var(--marinho); }
+      .nota { color: var(--suave); font-size: 15px; margin: 10px 0 0; }
+      footer { color: var(--suave); font-size: 14px; text-align: center; margin-top: 24px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="/logo192.png" alt="" />
+        <div>
+          <h1>Instale o Bus On</h1>
+          <p>Transporte universitário sem fila e sem surpresa.</p>
+        </div>
+      </header>
+
+      <a class="abrir" href="/">Abrir o Bus On no navegador</a>
+
+      <section>
+        <h2>iPhone (Safari)</h2>
+        <ol>
+          <li>Abra este endereço no <b>Safari</b>.</li>
+          <li>Toque em <b>Compartilhar</b> (o quadrado com a seta para cima).</li>
+          <li>Role a lista e toque em <b>Adicionar à Tela de Início</b>, depois em <b>Adicionar</b>.</li>
+        </ol>
+        <p class="nota">O ícone do Bus On aparece na tela inicial e o app abre em tela cheia.</p>
+      </section>
+
+      <section>
+        <h2>Android (Chrome)</h2>
+        <ol>
+          <li>Abra este endereço no <b>Chrome</b>.</li>
+          <li>Toque no menu <b>⋮</b> (canto de cima).</li>
+          <li>Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.</li>
+        </ol>
+        <p class="nota">Motoristas: peçam o link do app Android (APK) à administração. Com ele, o GPS do ônibus continua funcionando com a tela apagada.</p>
+      </section>
+
+      <section>
+        <h2>Computador</h2>
+        <ol>
+          <li>Abra o Bus On no Chrome ou no Edge.</li>
+          <li>Clique no ícone de instalar, na barra de endereço, ou use o próprio site normalmente.</li>
+        </ol>
+      </section>
+
+      <footer>Entre com o mesmo e-mail e senha em qualquer aparelho.</footer>
+    </main>
+  </body>
+</html>

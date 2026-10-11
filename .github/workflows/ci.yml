@@ -71,6 +71,8 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npx expo-doctor
+      - name: Site (PWA) monta
+        run: npm run build:web -- producao
 
   docker:
     name: Imagem Docker da API

@@ -38,6 +38,21 @@ const bloqueada = await fetch(`${BASE}/`, { headers: { Origin: "https://site-mal
 const bloqueadaJson = await bloqueada.json();
 ok(bloqueada.status === 403 && bloqueadaJson.error?.code === "ORIGEM_NAO_PERMITIDA", "origem desconhecida é bloqueada", bloqueadaJson);
 ok((await fetch(`${BASE}/`)).status === 200, "app nativo (sem Origin) continua funcionando");
+// Site (PWA): o navegador pergunta antes (preflight) se pode mandar o token
+const preflight = await fetch(`${BASE}/auth/me`, {
+  method: "OPTIONS",
+  headers: { Origin: "https://app.onbus.online", "Access-Control-Request-Method": "GET", "Access-Control-Request-Headers": "authorization,content-type" },
+});
+ok(
+  preflight.status === 204 &&
+    preflight.headers.get("access-control-allow-origin") === "https://app.onbus.online" &&
+    /authorization/i.test(preflight.headers.get("access-control-allow-headers") ?? "") &&
+    preflight.headers.get("access-control-max-age") === "600",
+  "site configurado: preflight libera o token (Authorization) e fica em cache 10 min",
+  Object.fromEntries(preflight.headers)
+);
+const siteErrado = await fetch(`${BASE}/`, { headers: { Origin: "https://app-staging.onbus.online" } });
+ok(siteErrado.status === 403, "site de outro ambiente (não configurado) é bloqueado");
 
 // ---- Códigos de erro
 const senhaErrada = await req("POST", "/auth/login", null, { email: "admin@buson.com", senha: "errada" });
