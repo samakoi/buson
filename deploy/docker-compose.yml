@@ -81,6 +81,9 @@ services:
       mysql:
         condition: service_healthy
     command: ["node", "dist/backup/agendador.js"]
+    # A imagem é a da API, mas aqui não roda a API: a checagem de /saude não vale para este container
+    healthcheck:
+      disable: true
     environment:
       NODE_ENV: ${NODE_ENV}
       DATABASE_URL: mysql://buson:${MYSQL_SENHA}@mysql:3306/bus_on
@@ -113,6 +116,8 @@ services:
       - uploads:/app/uploads
       - ${PASTA_BACKUPS}:/backups:ro
     command: ["node", "dist/backup/restaurar.js"]
+    healthcheck:
+      disable: true
 
   # Cloudflare Tunnel: publica a API no seu domínio sem abrir portas no roteador.
   # Liga sozinho quando TUNNEL_TOKEN está definido (o atualizar.ps1 ativa o perfil).
