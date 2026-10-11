@@ -70,21 +70,25 @@ async function resumirViagens(viagemIds: string[]) {
 }
 
 export interface FiltroViagensAdmin {
-  desde?: string; // YYYY-MM-DD
+  desde?: string; // YYYY-MM-DD (padrão: hoje)
 }
+
+/** Teto da lista do admin: a programação gera só os próximos dias, então isso cobre semanas de viagens */
+const MAX_VIAGENS_ADMIN = 300;
 
 /**
  * Lista as viagens visíveis para o usuário:
- *  - ADMIN: todas (ou a partir de `desde`)
+ *  - ADMIN: a partir de `desde` (hoje, se não vier), até MAX_VIAGENS_ADMIN
  *  - MOTORISTA: as viagens de hoje atribuídas a ele
  *  - ALUNO: as viagens de hoje cuja rota passa pela universidade dele (com o check-in dele, se houver)
  */
 export async function listarViagens(usuario: JwtPayload, filtro: FiltroViagensAdmin = {}) {
   if (usuario.papel === "ADMIN") {
     const viagens = await prisma.viagem.findMany({
-      where: filtro.desde ? { data: { gte: parseDia(filtro.desde) } } : undefined,
+      where: { data: { gte: filtro.desde ? parseDia(filtro.desde) : inicioDoDia() } },
       include: viagemInclude,
       orderBy: [{ data: "asc" }, { horario: "asc" }],
+      take: MAX_VIAGENS_ADMIN,
     });
     const resumos = await resumirViagens(viagens.map((v) => v.id));
     return viagens.map((v) => ({ ...v, resumo: resumos.get(v.id)! }));
