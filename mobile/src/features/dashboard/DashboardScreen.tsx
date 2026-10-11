@@ -23,7 +23,8 @@ import {
   Texto,
   iniciaisDe,
 } from "../../components/ui";
-import { dataPorExtenso, diaISO, formatarDiaBR, formatarDiaCurto, mascararDia, parseDiaBR, somarDias } from "../../utils/datas";
+import { dataPorExtenso, formatarDiaBR, formatarDiaCurto, mascararDia, parseDiaBR } from "../../utils/datas";
+import { PRESETS_PERIODO, PresetPeriodo, periodoDoPreset } from "../../utils/periodos";
 import { mensagemDeErro } from "../../utils/feedback";
 import { situacaoFalta, statusViagem } from "../../utils/rotulos";
 import { useNavigation } from "@react-navigation/native";
@@ -33,32 +34,8 @@ import { queryClient } from "../../services/queryClient";
 import { chavesAlocacao } from "../alocacao/api";
 import { OcupacaoSemanalCard } from "../alocacao/OcupacaoSemanalCard";
 
-type Preset = "hoje" | "ontem" | "7d" | "30d" | "mes" | "personalizado";
-
-const presets: { valor: Preset; rotulo: string }[] = [
-  { valor: "hoje", rotulo: "Hoje" },
-  { valor: "ontem", rotulo: "Ontem" },
-  { valor: "7d", rotulo: "7 dias" },
-  { valor: "30d", rotulo: "30 dias" },
-  { valor: "mes", rotulo: "Este mês" },
-  { valor: "personalizado", rotulo: "Personalizado" },
-];
-
-function periodoDoPreset(preset: Exclude<Preset, "personalizado">) {
-  const hoje = diaISO();
-  switch (preset) {
-    case "hoje":
-      return { inicio: hoje, fim: hoje };
-    case "ontem":
-      return { inicio: somarDias(hoje, -1), fim: somarDias(hoje, -1) };
-    case "7d":
-      return { inicio: somarDias(hoje, -6), fim: hoje };
-    case "30d":
-      return { inicio: somarDias(hoje, -29), fim: hoje };
-    case "mes":
-      return { inicio: `${hoje.slice(0, 8)}01`, fim: hoje };
-  }
-}
+type Preset = PresetPeriodo;
+const presets = PRESETS_PERIODO;
 
 const FALTAS_VISIVEIS = 8;
 

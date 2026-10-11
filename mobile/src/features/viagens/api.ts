@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../services/api";
-import { Checkin, Onibus, RotaDoDia, Viagem } from "../../types";
+import { Checkin, DetalheViagem, HistoricoViagens, Onibus, RotaDoDia, SentidoViagem, StatusViagem, Viagem } from "../../types";
 import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 
 export const chavesViagem = {
@@ -9,7 +9,19 @@ export const chavesViagem = {
   passageiros: (viagemId?: string) => ["viagens", viagemId, "passageiros"] as const,
   lista: (desde: string) => ["viagens", "lista", desde] as const,
   frota: ["onibus", "status"] as const,
+  historico: (f: FiltroHistorico) => ["viagens", "historico", f] as const,
+  detalhe: (viagemId: string) => ["viagens", viagemId, "detalhe"] as const,
 };
+
+/** Filtros do histórico de viagens (administração). */
+export interface FiltroHistorico {
+  inicio: string;
+  fim: string;
+  rotaId?: string;
+  motoristaId?: string;
+  sentido?: SentidoViagem;
+  status?: StatusViagem;
+}
 
 /** Situação da frota (ônibus em manutenção), para o aluno. */
 export type StatusFrota = Pick<Onibus, "id" | "placa" | "emManutencao" | "observacaoManutencao">;
@@ -82,4 +94,24 @@ export function useViagensDesde(desde: string) {
 
 export function useFrota() {
   return useQuery({ queryKey: chavesViagem.frota, queryFn: async () => (await api.get<StatusFrota[]>("/onibus/status")).data });
+}
+
+/** Histórico de viagens, mais recentes primeiro, em páginas de 20 ("carregar mais"). */
+export function useHistoricoViagens(filtro: FiltroHistorico) {
+  return useInfiniteQuery({
+    queryKey: chavesViagem.historico(filtro),
+    queryFn: async ({ pageParam }) =>
+      (await api.get<HistoricoViagens>("/viagens/historico", { params: { ...filtro, pagina: pageParam, porPagina: 20 } })).data,
+    initialPageParam: 1,
+    getNextPageParam: (ultima, todas) => (todas.reduce((n, p) => n + p.itens.length, 0) < ultima.total ? ultima.pagina + 1 : undefined),
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** Detalhe de uma viagem (horários, números e passageiros). */
+export function useDetalheViagem(viagemId: string) {
+  return useQuery({
+    queryKey: chavesViagem.detalhe(viagemId),
+    queryFn: async () => (await api.get<DetalheViagem>(`/viagens/${viagemId}/detalhe`)).data,
+  });
 }

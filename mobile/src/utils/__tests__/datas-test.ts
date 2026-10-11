@@ -3,6 +3,7 @@ import {
   diaMes,
   formatarDiaBR,
   formatarDuracao,
+  formatarHora,
   listarDias,
   mascararDia,
   mascararHora,
@@ -76,6 +77,10 @@ describe("tempo", () => {
     expect(formatarDuracao(45)).toBe("45 min");
     expect(formatarDuracao(120)).toBe("2h");
     expect(formatarDuracao(135)).toBe("2h15");
+  });
+
+  it("formatarHora usa o fuso do aparelho", () => {
+    expect(formatarHora(new Date(2026, 9, 11, 7, 5).toISOString())).toBe("07:05");
   });
 
   it("diaMes usa o fuso do aparelho", () => {

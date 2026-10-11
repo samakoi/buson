@@ -28,9 +28,16 @@ import { avisar, confirmar, mensagemDeErro } from "../../utils/feedback";
 import { diaISO, formatarDiaCurto, mascararDia, mascararHora, parseDiaBR, somarDias } from "../../utils/datas";
 import { statusViagem } from "../../utils/rotulos";
 import { ProgramacaoSecao } from "../alocacao/ProgramacaoSecao";
+import { HistoricoViagens } from "./HistoricoViagens";
 
 type OpcaoData = "hoje" | "amanha" | "outra";
-type Aba = "viagens" | "programacao";
+type Aba = "viagens" | "programacao" | "historico";
+
+const subtitulos: Record<Aba, string> = {
+  viagens: "De hoje em diante",
+  programacao: "Rotas que se repetem toda semana",
+  historico: "Viagens que já aconteceram",
+};
 
 export default function ViagensScreen() {
   const { cores } = useTema();
@@ -129,7 +136,7 @@ export default function ViagensScreen() {
     <Tela atualizando={atualizando} onAtualizar={atualizar}>
       <Cabecalho
         titulo="Viagens"
-        subtitulo={aba === "viagens" ? "De hoje em diante" : "Rotas que se repetem toda semana"}
+        subtitulo={subtitulos[aba]}
         acoes={
           aba === "viagens" ? (
             <BotaoIcone
@@ -149,11 +156,14 @@ export default function ViagensScreen() {
           opcoes={[
             { valor: "viagens", rotulo: "Próximas viagens" },
             { valor: "programacao", rotulo: "Programação semanal" },
+            { valor: "historico", rotulo: "Histórico" },
           ]}
           valor={aba}
           onChange={setAba}
         />
       </View>
+
+      {aba === "historico" && <HistoricoViagens rotas={rotas} motoristas={motoristas} />}
 
       {aba === "programacao" && <ProgramacaoSecao rotas={rotas} onibus={onibus} motoristas={motoristas} aoMudarViagens={recarregar} />}
 

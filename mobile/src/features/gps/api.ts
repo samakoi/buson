@@ -21,7 +21,8 @@ export function useAoVivo() {
   });
 }
 
-export function useTrajeto(viagemId: string | null) {
+/** Trajeto percorrido; `atualizar: false` para viagens já encerradas (o trajeto não muda mais). */
+export function useTrajeto(viagemId: string | null, { atualizar = true }: { atualizar?: boolean } = {}) {
   return useQuery({
     queryKey: ["gps", "trajeto", viagemId],
     queryFn: async () =>
@@ -31,7 +32,7 @@ export function useTrajeto(viagemId: string | null) {
         )
       ).data,
     enabled: !!viagemId,
-    refetchInterval: 30_000,
+    refetchInterval: atualizar ? 30_000 : false,
   });
 }
 

@@ -103,3 +103,9 @@ export function listarDias(dias: number[]): string {
 export function diaMes(dataIso: string): string {
   return formatarDiaBR(diaISO(new Date(dataIso))).slice(0, 5);
 }
+
+/** Data/hora ISO da API → "07:42" (no fuso do aparelho) */
+export function formatarHora(dataIso: string): string {
+  const d = new Date(dataIso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}

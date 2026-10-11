@@ -370,3 +370,51 @@ export interface Relatorio {
     situacao: SituacaoFalta;
   }[];
 }
+
+// ---- Histórico de viagens (administração)
+
+export interface ViagemHistorico extends Viagem {
+  iniciadaEm: string | null;
+  encerradaEm: string | null;
+  resumo: ResumoViagem & { faltas: number };
+}
+
+export interface HistoricoViagens {
+  itens: ViagemHistorico[];
+  total: number;
+  pagina: number;
+  porPagina: number;
+  periodo: { inicio: string; fim: string };
+  totais: { viagens: number; embarcados: number; faltas: number };
+}
+
+export type SituacaoPassageiro = "EMBARCOU" | "FALTOU" | "AUSENCIA_AVISADA" | "CANCELOU" | "ESPERA" | "PREVISTO";
+
+export interface PassageiroHistorico {
+  alunoId: string;
+  nome: string;
+  matricula: string | null;
+  universidade: string;
+  pontoEmbarque: string | null;
+  situacao: SituacaoPassageiro;
+  embarqueEm: string | null;
+  metodoEmbarque: "QR_MOTORISTA" | "MANUAL" | null;
+  motivoAusencia: MotivoAusencia | null;
+  canceladoEm: string | null;
+  falta: { status: StatusFalta; justificada: boolean } | null;
+}
+
+export interface DetalheViagem {
+  viagem: Omit<ViagemHistorico, "resumo"> & { avulsa: boolean };
+  resumo: {
+    vagas: number;
+    embarcaram: number;
+    faltaram: number;
+    ausenciasAvisadas: number;
+    cancelaram: number;
+    espera: number;
+    previstos: number;
+  };
+  passageiros: PassageiroHistorico[];
+  gps: { pontos: number };
+}

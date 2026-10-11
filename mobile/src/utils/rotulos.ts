@@ -1,6 +1,15 @@
 import type { NomeIcone } from "../components/icones";
 import type { Tom } from "../theme/tokens";
-import type { CategoriaNotificacao, Falta, MotivoAusencia, SituacaoFalta, StatusConta, StatusDocumento, StatusViagem } from "../types";
+import type {
+  CategoriaNotificacao,
+  Falta,
+  MotivoAusencia,
+  SituacaoFalta,
+  SituacaoPassageiro,
+  StatusConta,
+  StatusDocumento,
+  StatusViagem,
+} from "../types";
 
 /** Rótulos únicos de status — use sempre estes em vez de escrever o texto na tela. */
 export const statusViagem: Record<StatusViagem, { rotulo: string; tom: Tom; icone: NomeIcone }> = {
@@ -133,3 +142,13 @@ export function mudancaAuditoria(h: { valorAnterior: Record<string, unknown> | n
   }
   return "";
 }
+
+/** Situação do aluno numa viagem já consultada no histórico. */
+export const situacaoPassageiro: Record<SituacaoPassageiro, { rotulo: string; tom: Tom; icone: NomeIcone }> = {
+  EMBARCOU: { rotulo: "Embarcou", tom: "sucesso", icone: "checkmark-circle" },
+  FALTOU: { rotulo: "Faltou", tom: "perigo", icone: "close-circle" },
+  AUSENCIA_AVISADA: { rotulo: "Avisou que não ia", tom: "info", icone: "chatbubble-ellipses-outline" },
+  CANCELOU: { rotulo: "Cancelou", tom: "neutro", icone: "remove-circle-outline" },
+  ESPERA: { rotulo: "Ficou na espera", tom: "alerta", icone: "hourglass-outline" },
+  PREVISTO: { rotulo: "Com vaga", tom: "info", icone: "person-outline" },
+};
